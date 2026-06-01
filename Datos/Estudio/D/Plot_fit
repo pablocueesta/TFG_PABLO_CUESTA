@@ -54,8 +54,8 @@ def limpiar_datos(x, y, err):
         np.isfinite(y) &
         np.isfinite(err) &
         (err > 0) &
-        (err/y < 0.5) &
-        (err < 100.0)
+        (err/y < 1.0) &
+        (err < 10.0)
     )
 
     return x[mask], y[mask], err[mask]

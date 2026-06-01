@@ -1,40 +1,40 @@
-Sigma ResX 3 hits: 0.1554 mm
-Sigma ResZ 3 hits: 0.1479 mm
-Sigma ResX 4 hits: 0.5205 mm
-Sigma ResZ 4 hits: 0.9108 mm
-Eventos 3 hits total: 4573
-Eventos 3 hits tras cut: 4343
-Eventos 4 hits total: 14161
-Eventos 4 hits tras cut: 13451
+Sigma ResX 3 hits: 0.1436 mm
+Sigma ResZ 3 hits: 0.1410 mm
+Sigma ResX 4 hits: 0.5460 mm
+Sigma ResZ 4 hits: 0.8122 mm
+Eventos 3 hits total: 11640
+Eventos 3 hits tras cut: 11058
+Eventos 4 hits total: 36738
+Eventos 4 hits tras cut: 34900
 
 --- Residual X (3 hits) ---
-Gauss simple: mu = 0.0026, sigma = 0.1253
-Doble Gauss:
-   mu = 0.0026
-   sigma1 (core) = 0.1154 +- 0.0029
-   sigma2 (cola) = 0.2485 +- 0.0409
-   mu = 0.0026 +- 0.0010
-
---- Residual Z (3 hits) ---
-Gauss simple: mu = -0.0007, sigma = 0.1187
-Doble Gauss:
-   mu = -0.0007
-   sigma1 (core) = 0.1082 +- 0.0033
-   sigma2 (cola) = 0.2442 +- 0.0452
-   mu = -0.0007 +- 0.0012
-
---- Residual X (4 hits) ---
-Gauss simple: mu = 0.0001, sigma = 0.0361
-Doble Gauss:
-   mu = 0.0001
-   sigma1 (core) = 0.0124 +- 0.0005
-   sigma2 (cola) = 0.0552 +- 0.0012
-   mu = 0.0001 +- 0.0003
-
---- Residual Z (4 hits) ---
-Gauss simple: mu = 0.0008, sigma = 0.0373
+Gauss simple: mu = 0.0007, sigma = 0.1221
 Doble Gauss:
    mu = 0.0007
-   sigma1 (core) = 0.0132 +- 0.0005
-   sigma2 (cola) = 0.0563 +- 0.0013
-   mu = 0.0007 +- 0.0003
+   sigma1 (core) = 0.1122 +- 0.0032
+   sigma2 (cola) = 0.2453 +- 0.0484
+   mu = 0.0007 +- 0.0010
+
+--- Residual Z (3 hits) ---
+Gauss simple: mu = -0.0010, sigma = 0.1219
+Doble Gauss:
+   mu = -0.0011
+   sigma1 (core) = 0.1098 +- 0.0034
+   sigma2 (cola) = 0.2142 +- 0.0312
+   mu = -0.0011 +- 0.0009
+
+--- Residual X (4 hits) ---
+Gauss simple: mu = 0.0009, sigma = 0.0368
+Doble Gauss:
+   mu = 0.0004
+   sigma1 (core) = 0.0151 +- 0.0004
+   sigma2 (cola) = 0.0570 +- 0.0011
+   mu = 0.0004 +- 0.0002
+
+--- Residual Z (4 hits) ---
+Gauss simple: mu = -0.0001, sigma = 0.0365
+Doble Gauss:
+   mu = 0.0001
+   sigma1 (core) = 0.0138 +- 0.0005
+   sigma2 (cola) = 0.0546 +- 0.0012
+   mu = 0.0001 +- 0.0003

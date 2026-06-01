@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 sigma_hit = 0.085
-D=22.50
+D=25.00
 theta=0.00
 
 def aplicar_percentil(data, p=95):
@@ -14,7 +14,7 @@ def aplicar_percentil(data, p=95):
     high = np.percentile(data, 100 - (100-p)/2)
     return data[(data > low) & (data < high)]
 
-archivo = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Sim1D22ymedio.csv"
+archivo = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\SimD25.csv"
 
 salida = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\hits_validos_s{sigma_hit:.3f}_{D:.1f}_{theta:.2f}.txt"
 salida_plots = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\D\{sigma_hit:.3f}_{D:.1f}_{theta:.2f}.png"
