@@ -1,0 +1,92 @@
+import os
+import re
+import glob
+
+from matplotlib.pylab import block
+
+# Ruta donde están tus archivos
+carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing"
+
+# Cambiar a esa carpeta
+os.chdir(carpeta)
+
+# Buscar todos los archivos fits_s*.txt
+archivos = glob.glob("fits_s*.txt")
+archivos.sort()  # Ordenar
+
+print(f"Encontrados {len(archivos)} archivos")
+print(f"Primer archivo: {archivos[0] if archivos else 'Ninguno'}")
+print(f"Último archivo: {archivos[-1] if archivos else 'Ninguno'}")
+
+# Crear archivo de salida
+with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
+    # Escribir cabecera
+    salida.write(
+    "sigma_hit\t"
+    "X3_sigma1\tX3_err1\tX3_sigma2\tX3_err2\t"
+    "Z3_sigma1\tZ3_err1\tZ3_sigma2\tZ3_err2\t"
+    "X4_sigma1\tX4_err1\tX4_sigma2\tX4_err2\t"
+    "Z4_sigma1\tZ4_err1\tZ4_sigma2\tZ4_err2\n"
+    )
+    
+    for archivo in archivos:
+        print(f"Procesando: {archivo}")
+        
+        # Extraer el valor de sigma_hit del nombre del archivo
+        # fits_s0.050.txt -> 0.050
+        match = re.search(r"fits_s([\d\.]+)\.txt", archivo)
+        sigma_hit = match.group(1) if match else "desconocido"
+        
+        try:
+            # Leer el archivo
+            with open(archivo, "r", encoding="utf-8", errors="ignore") as f:
+                contenido = f.read()
+            
+            # Buscar sigma1 y sigma2 para cada caso usando expresiones regulares
+            # X3
+            pattern1 = r'sigma1 \(core\) = ([\d\.]+) \+\- ([\d\.]+)'
+            pattern2 = r'sigma2 \(cola\) = ([\d\.]+) \+\- ([\d\.]+)'
+            
+            x3_block = re.search(r'--- Residual X \(3 hits\) ---(.*?)---', contenido, re.DOTALL)
+            z3_block = re.search(r'--- Residual Z \(3 hits\) ---(.*?)---', contenido, re.DOTALL)
+            x4_block = re.search(r'--- Residual X \(4 hits\) ---(.*?)---', contenido, re.DOTALL)
+            z4_block = re.search(r'--- Residual Z \(4 hits\) ---(.*?)$', contenido, re.DOTALL)
+            
+            def extraer_sigmas(block):
+
+                if not block:
+                    return ["NaN"]*4
+
+                texto = block.group(1)
+
+                s1 = re.search(pattern1, texto)
+                s2 = re.search(pattern2, texto)
+
+                return [
+                    s1.group(1) if s1 else "NaN",
+                    s1.group(2) if s1 else "NaN",
+                    s2.group(1) if s2 else "NaN",
+                    s2.group(2) if s2 else "NaN"
+                ]
+            
+            x3_vals = extraer_sigmas(x3_block)
+            z3_vals = extraer_sigmas(z3_block)
+            x4_vals = extraer_sigmas(x4_block)
+            z4_vals = extraer_sigmas(z4_block)
+            
+            # Escribir los valores (usar 'NaN' si no se encuentra)
+            salida.write(f"{sigma_hit}\t")
+
+            for vals in [x3_vals, z3_vals, x4_vals, z4_vals]:
+                salida.write("\t".join(vals) + "\t")
+
+            salida.write("\n")
+            
+        except Exception as e:
+            print(f"Error con {archivo}: {e}")
+            salida.write(f"{sigma_hit}\tERROR\tERROR\tERROR\tERROR\tERROR\tERROR\tERROR\tERROR\n")
+
+print("\n¡PROCESO COMPLETADO!")
+print(f"Resultados guardados en: {carpeta}\\todos_los_sigmas.txt")
+print("\nLas columnas son:")
+print("sigma_hit | X3_sigma1 | X3_err1 | X3_sigma2 | X3_err2 | Z3_sigma1 | Z3_err1 | Z3_sigma2 | Z3_err2 | X4_sigma1 | X4_err1 | X4_sigma2 | X4_err2 | Z4_sigma1 | Z4_err1 | Z4_sigma2 | Z4_err2")

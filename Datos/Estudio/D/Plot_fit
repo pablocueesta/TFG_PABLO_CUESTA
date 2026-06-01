@@ -1,0 +1,185 @@
+from xml.parsers.expat import errors
+
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+
+# -------------------------
+# CARGAR DATOS
+# -------------------------
+data = np.loadtxt(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\todos_los_sigmas.txt", skiprows=1)
+
+D = data[:,0]
+
+X3_sg1 = data[:,1]
+X3_err1 = data[:,2]
+X3_sg2 = data[:,3]
+X3_err2 = data[:,4]
+
+Z3_sg1 = data[:,5]
+Z3_err1 = data[:,6]
+Z3_sg2 = data[:,7]
+Z3_err2 = data[:,8]
+
+X4_sg1 = data[:,9]
+X4_err1 = data[:,10]
+X4_sg2 = data[:,11]
+X4_err2 = data[:,12]
+
+Z4_sg1 = data[:,13]
+Z4_err1 = data[:,14]
+Z4_sg2 = data[:,15]
+Z4_err2 = data[:,16]
+
+# -------------------------
+# ORDENAR SIGMAS (core < cola)
+# -------------------------
+def ordenar_sigmas(sg1, sg2):
+    sg1_new = np.minimum(sg1, sg2)
+    sg2_new = np.maximum(sg1, sg2)
+    return sg1_new, sg2_new
+
+X3_sg1, X3_sg2 = ordenar_sigmas(X3_sg1, X3_sg2)
+Z3_sg1, Z3_sg2 = ordenar_sigmas(Z3_sg1, Z3_sg2)
+X4_sg1, X4_sg2 = ordenar_sigmas(X4_sg1, X4_sg2)
+Z4_sg1, Z4_sg2 = ordenar_sigmas(Z4_sg1, Z4_sg2)
+
+
+# FILTRAMOS SOLO LOS FITS FISICOS  
+def limpiar_datos(x, y, err):
+
+    mask = (
+        np.isfinite(x) &
+        np.isfinite(y) &
+        np.isfinite(err) &
+        (err > 0) &
+        (err/y < 0.5) &
+        (err < 100.0)
+    )
+
+    return x[mask], y[mask], err[mask]
+
+# -------------------------
+# FIT LINEAL
+# -------------------------
+def fit_lineal(x, y, errors):
+
+    x, y, errors = limpiar_datos(x, y, errors)
+
+    params, cov = np.polyfit(
+        x,
+        y,
+        1,
+        w=1/errors,
+        cov=True
+    )
+
+    a = params[0]
+    b = params[1]
+
+    err_a = np.sqrt(cov[0,0])
+    err_b = np.sqrt(cov[1,1])
+
+    return a, b, err_a, err_b
+
+# -------------------------
+# CARPETA SALIDA
+# -------------------------
+out_dir = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\plots_sigmas"
+os.makedirs(out_dir, exist_ok=True)
+
+# archivo donde guardar pendientes
+f_out = open(rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\pendientes.txt", "w")
+
+# -------------------------
+# FUNCIÓN PLOT + FIT
+# -------------------------
+def plot_y_fit(D, sg1, err1, sg2, err2, titulo, nombre):
+
+    plt.figure()
+
+    color_sg1 = 'blue'   # Color para sigma1
+    color_sg2 = 'red'    # Color para sigma2
+
+    D1, sg1, err1 = limpiar_datos(D, sg1, err1)
+    D2, sg2, err2 = limpiar_datos(D, sg2, err2)
+
+    # datos
+    plt.errorbar(D1, sg1, yerr=err1, fmt='o', capsize=3)
+    plt.errorbar(D2, sg2, yerr=err2, fmt='s', capsize=3)
+
+    # FIT σ1
+    a1, b1, ea1, eb1 = fit_lineal(D1, sg1, err1)
+    x_fit1 = np.linspace(min(D1), max(D1), 200)
+
+    plt.plot(x_fit1, a1*x_fit1 + b1,
+             label=f"σ1: a={a1:.3f}±{ea1:.3f}", color=color_sg1)
+
+    # FIT σ2
+    a2, b2, ea2, eb2 = fit_lineal(D2, sg2, err2)
+    x_fit2 = np.linspace(min(D2), max(D2), 200)
+
+    plt.plot(x_fit2, a2*x_fit2 + b2,
+             label=f"σ2: a={a2:.3f}±{ea2:.3f}", color=color_sg2)
+
+    # estética
+    plt.xlabel("D [cm]")
+    plt.ylabel("Resolución experimental [mm]")
+    plt.title(titulo)
+    plt.legend()
+    plt.grid()
+
+    # guardar plot
+    ruta = os.path.join(out_dir, f"{nombre}.png")
+    plt.savefig(ruta, dpi=300)
+    plt.close()
+
+    # guardar resultados en txt
+    f_out.write(f"\n--- {titulo} ---\n")
+    f_out.write(f"sigma1: a = {a1:.4f} +- {ea1:.4f}, b = {b1:.4f} +- {eb1:.4f}\n")
+    f_out.write(f"sigma2: a = {a2:.4f} +- {ea2:.4f}, b = {b2:.4f} +- {eb2:.4f}\n")
+
+    # print también
+    print(f"\n--- {titulo} ---")
+    print(f"sigma1: a = {a1:.4f} +- {ea1:.4f}")
+    print(f"sigma2: a = {a2:.4f} +- {ea2:.4f}")
+
+# -------------------------
+# GENERAR TODO
+# -------------------------
+
+plot_y_fit(
+    D,
+    X3_sg1, X3_err1,
+    X3_sg2, X3_err2,
+    "3 hits - X",
+    "3hits_X"
+)
+plot_y_fit(
+    D,
+    Z3_sg1, Z3_err1,
+    Z3_sg2, Z3_err2,
+    "3 hits - Z",
+    "3hits_Z"
+)
+
+plot_y_fit(
+    D,
+    X4_sg1, X4_err1,
+    X4_sg2, X4_err2,
+    "4 hits - X",
+    "4hits_X"
+)
+plot_y_fit(
+    D,
+    Z4_sg1, Z4_err1,
+    Z4_sg2, Z4_err2,
+    "4 hits - Z",
+    "4hits_Z"
+)
+
+f_out.close()
+
+print("\n✅ Pendientes guardadas en pendientes.txt")
+print("✅ Gráficas guardadas en carpeta plots_sigmas")
