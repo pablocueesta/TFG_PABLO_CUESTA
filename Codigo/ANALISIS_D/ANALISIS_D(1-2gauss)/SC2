@@ -16,21 +16,21 @@ print(f"Encontrados {len(archivos)} archivos")
 print(f"Primer archivo: {archivos[0] if archivos else 'Ninguno'}")
 print(f"Último archivo: {archivos[-1] if archivos else 'Ninguno'}")
 
-# CAMBIO: 3 hits solo sigma simple (2 cols por coordenada)
-# 4 hits doble gaussiana (4 cols por coordenada)
+# CAMBIO: añadida columna sigma_eff para X4 y Z4
 with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
 
     salida.write(
         "D\t"
         "X3_sigma\tX3_err\t"
         "Z3_sigma\tZ3_err\t"
-        "X4_sigma1\tX4_err1\tX4_sigma2\tX4_err2\t"
-        "Z4_sigma1\tZ4_err1\tZ4_sigma2\tZ4_err2\n"
+        "X4_sigma1\tX4_err1\tX4_sigma2\tX4_err2\tX4_sigma_eff\t"
+        "Z4_sigma1\tZ4_err1\tZ4_sigma2\tZ4_err2\tZ4_sigma_eff\n"
     )
 
     pat_sigma_simple = r'sigma = ([\d\.]+) \+\- ([\d\.]+)'
     pat_sigma1       = r'sigma1 \(core\) = ([\d\.]+) \+\- ([\d\.]+)'
     pat_sigma2       = r'sigma2 \(cola\) = ([\d\.]+) \+\- ([\d\.]+)'
+    pat_sigma_eff    = r'sigma_eff = ([\d\.]+)'
 
     def extraer_sigma_simple(bloque_match):
         if not bloque_match:
@@ -44,15 +44,17 @@ with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
 
     def extraer_sigma_doble(bloque_match):
         if not bloque_match:
-            return ["NaN"] * 4
+            return ["NaN"] * 5
         texto = bloque_match.group(1)
-        s1 = re.search(pat_sigma1, texto)
-        s2 = re.search(pat_sigma2, texto)
+        s1  = re.search(pat_sigma1,    texto)
+        s2  = re.search(pat_sigma2,    texto)
+        sef = re.search(pat_sigma_eff, texto)
         return [
-            s1.group(1) if s1 else "NaN",
-            s1.group(2) if s1 else "NaN",
-            s2.group(1) if s2 else "NaN",
-            s2.group(2) if s2 else "NaN"
+            s1.group(1)  if s1  else "NaN",
+            s1.group(2)  if s1  else "NaN",
+            s2.group(1)  if s2  else "NaN",
+            s2.group(2)  if s2  else "NaN",
+            sef.group(1) if sef else "NaN"
         ]
 
     for archivo in archivos:
@@ -83,11 +85,11 @@ with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
 
         except Exception as e:
             print(f"Error con {archivo}: {e}")
-            salida.write(f"{D_val}\t" + "\tNaN" * 12 + "\n")
+            salida.write(f"{D_val}\t" + "\tNaN" * 14 + "\n")
 
 print("\n¡PROCESO COMPLETADO!")
 print(f"Resultados en: {carpeta}\\todos_los_sigmas.txt")
 print("\nColumnas:")
 print("D | X3_sigma | X3_err | Z3_sigma | Z3_err |")
-print("X4_sigma1 | X4_err1 | X4_sigma2 | X4_err2 |")
-print("Z4_sigma1 | Z4_err1 | Z4_sigma2 | Z4_err2")
+print("X4_sigma1 | X4_err1 | X4_sigma2 | X4_err2 | X4_sigma_eff |")
+print("Z4_sigma1 | Z4_err1 | Z4_sigma2 | Z4_err2 | Z4_sigma_eff")

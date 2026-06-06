@@ -12,29 +12,31 @@ data = np.loadtxt(
 
 # columnas:
 # [0]  D
-# [1]  X3_sigma   [2]  X3_err
-# [3]  Z3_sigma   [4]  Z3_err
-# [5]  X4_sigma1  [6]  X4_err1  [7]  X4_sigma2  [8]  X4_err2
-# [9]  Z4_sigma1  [10] Z4_err1  [11] Z4_sigma2  [12] Z4_err2
+# [1]  X3_sigma    [2]  X3_err
+# [3]  Z3_sigma    [4]  Z3_err
+# [5]  X4_sigma1   [6]  X4_err1   [7]  X4_sigma2  [8]  X4_err2  [9]  X4_sigma_eff
+# [10] Z4_sigma1   [11] Z4_err1   [12] Z4_sigma2  [13] Z4_err2  [14] Z4_sigma_eff
 
 D = data[:,0]
 
-X3_sg   = data[:,1]
-X3_err  = data[:,2]
-Z3_sg   = data[:,3]
-Z3_err  = data[:,4]
+X3_sg     = data[:,1]
+X3_err    = data[:,2]
+Z3_sg     = data[:,3]
+Z3_err    = data[:,4]
 
-X4_sg1  = data[:,5]
-X4_err1 = data[:,6]
-X4_sg2  = data[:,7]
-X4_err2 = data[:,8]
+X4_sg1    = data[:,5]
+X4_err1   = data[:,6]
+X4_sg2    = data[:,7]
+X4_err2   = data[:,8]
+X4_sg_eff = data[:,9]
 
-Z4_sg1  = data[:,9]
-Z4_err1 = data[:,10]
-Z4_sg2  = data[:,11]
-Z4_err2 = data[:,12]
+Z4_sg1    = data[:,10]
+Z4_err1   = data[:,11]
+Z4_sg2    = data[:,12]
+Z4_err2   = data[:,13]
+Z4_sg_eff = data[:,14]
 
-# CAMBIO: ordenar sigma1 <= sigma2 para 4 hits (con errores)
+# ordenar sigma1 <= sigma2 para 4 hits
 def ordenar_sigmas(sg1, err1, sg2, err2):
     mask     = sg1 > sg2
     sg1_new  = sg1.copy();  err1_new = err1.copy()
@@ -47,7 +49,7 @@ X4_sg1, X4_err1, X4_sg2, X4_err2 = ordenar_sigmas(X4_sg1, X4_err1, X4_sg2, X4_er
 Z4_sg1, Z4_err1, Z4_sg2, Z4_err2 = ordenar_sigmas(Z4_sg1, Z4_err1, Z4_sg2, Z4_err2)
 
 # -------------------------
-# LIMPIAR DATOS
+# UTILIDADES
 # -------------------------
 def limpiar_datos(x, y, err=None):
     if err is not None:
@@ -60,9 +62,6 @@ def limpiar_datos(x, y, err=None):
         mask = np.isfinite(x) & np.isfinite(y) & (y > 0)
         return x[mask], y[mask]
 
-# -------------------------
-# FIT LINEAL
-# -------------------------
 def fit_lineal(x, y, errors):
     x, y, errors = limpiar_datos(x, y, errors)
     if len(x) < 3:
@@ -151,16 +150,152 @@ def plot_y_fit(D, sg1, err1, sg2, err2, titulo, nombre):
     print(f"Guardado: {nombre}.png")
 
 # -------------------------
+# CAMBIO: combinado 3hits + sigma1,sigma2 de 4 hits
+# -------------------------
+def plot_combinado(D, sg3, err3, sg1_4, err1_4, sg2_4, err2_4, titulo, nombre):
+
+    x3, y3, e3 = limpiar_datos(D, sg3,   err3)
+    x1, y1, e1 = limpiar_datos(D, sg1_4, err1_4)
+    x2, y2, e2 = limpiar_datos(D, sg2_4, err2_4)
+
+    plt.figure(figsize=(9,6))
+    plt.errorbar(x3, y3, yerr=e3, fmt='o', color='green', capsize=3,
+                 label='3 hits (gaussiana simple)')
+    plt.errorbar(x1, y1, yerr=e1, fmt='o', color='blue',  capsize=3,
+                 label='4 hits sigma1 (core)')
+    plt.errorbar(x2, y2, yerr=e2, fmt='s', color='red',   capsize=3,
+                 label='4 hits sigma2 (cola)')
+
+    f_out.write(f"\n--- {titulo} (combinado) ---\n")
+
+    for (x, y, e, color, etiqueta) in [
+        (x3, y3, e3, 'green', '3hits sigma'),
+        (x1, y1, e1, 'blue',  '4hits sigma1'),
+        (x2, y2, e2, 'red',   '4hits sigma2')
+    ]:
+        res = fit_lineal(x, y, e)
+        if res:
+            a, b, ea, eb = res
+            xf = np.linspace(min(x), max(x), 200)
+            plt.plot(xf, a*xf+b, color=color, linewidth=2,
+                     label=f'Fit {etiqueta}: a={a:.4f}+-{ea:.4f}')
+            f_out.write(f"{etiqueta}: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
+
+    plt.xlabel("D [cm]")
+    plt.ylabel("Resolucion experimental [mm]")
+    plt.title(titulo)
+    plt.legend()
+    plt.grid()
+    plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=300)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+# -------------------------
+# CAMBIO: sigma_eff de 4 hits vs sigma de 3 hits
+# -------------------------
+def plot_sigma_eff_vs_3hits(D, sg3, err3, sg_eff, titulo, nombre):
+
+    x3,   y3,   e3  = limpiar_datos(D, sg3,    err3)
+    xeff, yeff       = limpiar_datos(D, sg_eff)
+
+    plt.figure(figsize=(9,6))
+    plt.errorbar(x3,   y3,   yerr=e3, fmt='o', color='blue', capsize=3,
+                 label='3 hits sigma (gaussiana simple)')
+    plt.plot(xeff, yeff, 's', color='red', markersize=6,
+             label='4 hits sigma_eff')
+
+    f_out.write(f"\n--- {titulo} ---\n")
+
+    for (x, y, e, color, etiqueta) in [
+        (x3,   y3,   e3,                        'blue', '3hits sigma'),
+        (xeff, yeff, yeff * 0.01,  'red',  '4hits sigma_eff')
+    ]:
+        res = fit_lineal(x, y, e)
+        if res:
+            a, b, ea, eb = res
+            xf = np.linspace(min(x), max(x), 200)
+            plt.plot(xf, a*xf+b, color=color, linewidth=2,
+                     label=f'Fit {etiqueta}: a={a:.4f}+-{ea:.4f}')
+            f_out.write(f"{etiqueta}: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
+
+    plt.xlabel("D [cm]")
+    plt.ylabel("Resolucion experimental [mm]")
+    plt.title(titulo)
+    plt.legend()
+    plt.grid()
+    plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=300)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+# -------------------------
+# CAMBIO: sigma conjunta 3+4 hits con un solo fit
+# -------------------------
+def plot_sigma_conjunta(D, sg3, err3, sg_eff, titulo, nombre):
+
+    x3,   y3,   e3  = limpiar_datos(D, sg3,    err3)
+    xeff, yeff       = limpiar_datos(D, sg_eff)
+    eeff             = yeff * 0.01
+
+    x_all = np.concatenate([x3,   xeff])
+    y_all = np.concatenate([y3,   yeff])
+    e_all = np.concatenate([e3,   eeff])
+
+    orden = np.argsort(x_all)
+    x_all = x_all[orden];  y_all = y_all[orden];  e_all = e_all[orden]
+
+    plt.figure(figsize=(9,6))
+    plt.errorbar(x3,   y3,   yerr=e3,   fmt='o', color='blue', capsize=3,
+                 label='3 hits sigma')
+    plt.plot(xeff, yeff, 's', color='red', markersize=6,
+             label='4 hits sigma_eff')
+
+    res = fit_lineal(x_all, y_all, e_all)
+    if res:
+        a, b, ea, eb = res
+        xf = np.linspace(min(x_all), max(x_all), 200)
+        plt.plot(xf, a*xf+b, color='black', linewidth=2,
+                 label=f'Fit conjunto: a={a:.4f}+-{ea:.4f}')
+        f_out.write(f"\n--- {titulo} ---\n")
+        f_out.write(f"fit conjunto: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
+
+    plt.xlabel("D [cm]")
+    plt.ylabel("Resolucion experimental [mm]")
+    plt.title(titulo)
+    plt.legend()
+    plt.grid()
+    plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=300)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+# -------------------------
 # GENERAR GRAFICAS
 # -------------------------
 
-# 3 hits: gaussiana simple
+# 3 hits
 plot_3hits(D, X3_sg, X3_err, "3 hits - X", "3hits_X")
 plot_3hits(D, Z3_sg, Z3_err, "3 hits - Z", "3hits_Z")
 
-# 4 hits: sigma1 + sigma2
+# 4 hits sigma1 + sigma2
 plot_y_fit(D, X4_sg1, X4_err1, X4_sg2, X4_err2, "4 hits - X", "4hits_X")
 plot_y_fit(D, Z4_sg1, Z4_err1, Z4_sg2, Z4_err2, "4 hits - Z", "4hits_Z")
+
+# combinado: 3 hits + sigma1 y sigma2 de 4 hits
+plot_combinado(D, X3_sg, X3_err, X4_sg1, X4_err1, X4_sg2, X4_err2,
+               "Combinado - X", "combinado_X")
+plot_combinado(D, Z3_sg, Z3_err, Z4_sg1, Z4_err1, Z4_sg2, Z4_err2,
+               "Combinado - Z", "combinado_Z")
+
+# sigma_eff de 4 hits vs sigma de 3 hits
+plot_sigma_eff_vs_3hits(D, X3_sg, X3_err, X4_sg_eff,
+                        "sigma_eff 4hits vs sigma 3hits - X", "sigma_eff_vs_3hits_X")
+plot_sigma_eff_vs_3hits(D, Z3_sg, Z3_err, Z4_sg_eff,
+                        "sigma_eff 4hits vs sigma 3hits - Z", "sigma_eff_vs_3hits_Z")
+
+# sigma conjunta 3+4 hits
+plot_sigma_conjunta(D, X3_sg, X3_err, X4_sg_eff,
+                    "Sigma conjunta 3+4 hits - X", "sigma_conjunta_X")
+plot_sigma_conjunta(D, Z3_sg, Z3_err, Z4_sg_eff,
+                    "Sigma conjunta 3+4 hits - Z", "sigma_conjunta_Z")
 
 f_out.close()
 

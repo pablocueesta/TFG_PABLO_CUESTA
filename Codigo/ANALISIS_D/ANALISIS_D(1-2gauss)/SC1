@@ -6,7 +6,7 @@ from scipy.optimize import curve_fit
 sigma_hit = 0.085
 theta     = 0.00
 
-valores_D = [5.0, 10.0, 15.0, 20.0, 25.0, 30.0]
+valores_D = [5.0, 7.0, 10.0, 15.0, 20.0, 25.0, 30.0]
 
 def aplicar_percentil(data, p=95):
     low  = np.percentile(data, (100-p)/2)
@@ -121,7 +121,7 @@ def ejecutar_analisis_D(D):
     f_info.write(f"Eventos 4 hits tras cut: {len(resX4_cut)}\n")
 
     # --------------------------------------------------
-    # CAMBIO: análisis 3 hits con gaussiana simple
+    # 3 HITS: gaussiana simple
     # --------------------------------------------------
     def analizar_residuals_3hits(data, titulo):
 
@@ -163,14 +163,14 @@ def ejecutar_analisis_D(D):
         print(f"  {titulo} OK  sigma={sigma_g:.4f}")
 
     # --------------------------------------------------
-    # CAMBIO: análisis 4 hits con doble gaussiana
+    # 4 HITS: doble gaussiana + sigma_eff
+    # CAMBIO: añadido calculo y escritura de sigma_eff
     # --------------------------------------------------
     def analizar_residuals_4hits(data, titulo):
 
         hist, bins = np.histogram(data, bins=60)
         centers    = (bins[:-1] + bins[1:]) / 2
 
-        # fit simple
         p0 = [max(hist), 0, 0.1]
         try:
             params_gauss, cov_gauss = curve_fit(
@@ -183,7 +183,6 @@ def ejecutar_analisis_D(D):
 
         A_g, mu_g, sigma_g = params_gauss
 
-        # fit doble
         p0_double = [max(hist), 0.1, max(hist)/5, 0.3, 0]
         try:
             params_double, cov_double = curve_fit(
@@ -208,6 +207,9 @@ def ejecutar_analisis_D(D):
         err_sigma1 = errors[1]
         err_sigma2 = errors[3]
         err_mu     = errors[4]
+
+        # CAMBIO: calcular sigma_eff
+        sigma_eff = np.sqrt((A1*sigma1**2 + A2*sigma2**2) / (A1 + A2))
 
         plt.figure()
         plt.hist(data, bins=60, alpha=0.6, label="Datos")
@@ -235,8 +237,9 @@ def ejecutar_analisis_D(D):
         f_info.write(f"   sigma1 (core) = {sigma1:.4f} +- {err_sigma1:.4f}\n")
         f_info.write(f"   sigma2 (cola) = {sigma2:.4f} +- {err_sigma2:.4f}\n")
         f_info.write(f"   mu = {mu_d:.4f} +- {err_mu:.4f}\n")
+        f_info.write(f"sigma_eff = {sigma_eff:.4f}\n")   # CAMBIO
 
-        print(f"  {titulo} OK  sigma1={sigma1:.4f}  sigma2={sigma2:.4f}")
+        print(f"  {titulo} OK  sigma1={sigma1:.4f}  sigma2={sigma2:.4f}  sigma_eff={sigma_eff:.4f}")
 
     # --------------------------------------------------
     # EJECUTAR
@@ -250,9 +253,6 @@ def ejecutar_analisis_D(D):
     print(f"  Resultados guardados en: {salida_fit}")
 
 
-# --------------------------------------------------
-# BUCLE SOBRE TODOS LOS VALORES DE D
-# --------------------------------------------------
 for D in valores_D:
     try:
         ejecutar_analisis_D(D)

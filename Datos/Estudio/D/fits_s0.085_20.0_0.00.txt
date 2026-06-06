@@ -1,30 +1,32 @@
-Sigma ResX 3 hits: 0.1619 mm
-Sigma ResZ 3 hits: 0.1621 mm
-Sigma ResX 4 hits: 0.0542 mm
-Sigma ResZ 4 hits: 0.0539 mm
+Sigma ResX 3 hits: 0.1615 mm
+Sigma ResZ 3 hits: 0.1613 mm
+Sigma ResX 4 hits: 0.0543 mm
+Sigma ResZ 4 hits: 0.0543 mm
 Eventos 3 hits total: 35702
 Eventos 3 hits tras cut: 33916
 Eventos 4 hits total: 105690
 Eventos 4 hits tras cut: 100404
 
 --- Residual X (3 hits) ---
-Gauss simple: mu = -0.0005, sigma = 0.1248 +- 0.0009
+Gauss simple: mu = -0.0002, sigma = 0.1251 +- 0.0010
 
 --- Residual Z (3 hits) ---
-Gauss simple: mu = 0.0009, sigma = 0.1255 +- 0.0010
+Gauss simple: mu = 0.0007, sigma = 0.1259 +- 0.0009
 
 --- Residual X (4 hits) ---
-Gauss simple: mu = -0.0001, sigma = 0.0412
+Gauss simple: mu = -0.0003, sigma = 0.0412
 Doble Gauss:
-   mu = 0.0001
-   sigma1 (core) = 0.0123 +- 0.0004
-   sigma2 (cola) = 0.0612 +- 0.0010
-   mu = 0.0001 +- 0.0002
+   mu = -0.0002
+   sigma1 (core) = 0.0119 +- 0.0003
+   sigma2 (cola) = 0.0610 +- 0.0009
+   mu = -0.0002 +- 0.0002
+sigma_eff = 0.0417
 
 --- Residual Z (4 hits) ---
-Gauss simple: mu = -0.0003, sigma = 0.0407
+Gauss simple: mu = -0.0000, sigma = 0.0415
 Doble Gauss:
-   mu = -0.0001
-   sigma1 (core) = 0.0121 +- 0.0003
-   sigma2 (cola) = 0.0609 +- 0.0010
-   mu = -0.0001 +- 0.0002
+   mu = -0.0002
+   sigma1 (core) = 0.0118 +- 0.0004
+   sigma2 (cola) = 0.0611 +- 0.0010
+   mu = -0.0002 +- 0.0002
+sigma_eff = 0.0418
