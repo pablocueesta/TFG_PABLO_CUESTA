@@ -1,0 +1,524 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+# --------------------------------------------------
+# FUNCIÓN PERCENTIL
+# --------------------------------------------------
+
+def aplicar_percentil(data, p=95):
+
+    low = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100 - (100-p)/2)
+
+    return data[(data > low) & (data < high)]
+
+
+# --------------------------------------------------
+# FUNCIONES DE AJUSTE
+# --------------------------------------------------
+
+def gauss(x, A, mu, sigma):
+
+    return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
+
+
+def double_gauss(x, A1, sigma1, A2, sigma2, mu):
+
+    return (
+        A1 * np.exp(-(x - mu)**2 / (2 * sigma1**2))
+        +
+        A2 * np.exp(-(x - mu)**2 / (2 * sigma2**2))
+    )
+
+
+# --------------------------------------------------
+# FUNCIÓN PRINCIPAL
+# --------------------------------------------------
+
+def ejecutar_analisis(sigma_hit):
+
+    np.random.seed(42)
+
+    print(f"\n==============================")
+    print(f"Ejecutando sigma_hit = {sigma_hit:.3f}")
+    print(f"==============================")
+
+    archivo = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
+
+    salida = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing\hits_validos_s{sigma_hit:.3f}.txt"
+
+    salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing\fits_s{sigma_hit:.3f}.txt"
+
+    # --------------------------------------------------
+    # LEER DATOS
+    # --------------------------------------------------
+
+    df = pd.read_csv(archivo)
+
+    coords = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
+
+    # --------------------------------------------------
+    # SMEARING
+    # --------------------------------------------------
+
+    coords_smeared = coords.copy()
+
+    valid = coords[:,:,0] != -99999
+
+    coords_smeared[:,:,0][valid] += np.random.normal(
+        0,
+        sigma_hit,
+        np.sum(valid)
+    )
+
+    coords_smeared[:,:,2][valid] += np.random.normal(
+        0,
+        sigma_hit,
+        np.sum(valid)
+    )
+
+    coords = coords_smeared
+
+    # --------------------------------------------------
+    # EVENTOS VÁLIDOS
+    # --------------------------------------------------
+
+    mask = np.all(coords != -99999, axis=2)
+
+    hits = mask.sum(axis=1)
+
+    eventos3 = np.where(hits == 3)[0]
+    eventos4 = np.where(hits == 4)[0]
+
+    # --------------------------------------------------
+    # 3 HITS
+    # --------------------------------------------------
+
+    coords3 = coords[eventos3]
+
+    mask3 = mask[eventos3]
+
+    coords_validos = np.array([
+        ev[m] for ev,m in zip(coords3,mask3)
+    ])
+
+    coords_validos = np.array([
+        ev[np.argsort(ev[:,1])]
+        for ev in coords_validos
+    ])
+
+    x3 = coords_validos[:,:,0]
+    y3 = coords_validos[:,:,1]
+    z3 = coords_validos[:,:,2]
+
+    x_izq, x_mid, x_der = x3.T
+    y_izq, y_mid, y_der = y3.T
+    z_izq, z_mid, z_der = z3.T
+
+    # X
+
+    m_x = (x_izq - x_der)/(y_izq - y_der)
+
+    x_teo = m_x*y_mid + (x_izq - m_x*y_izq)
+
+    resX3 = x_mid - x_teo
+
+    resX3_cut = aplicar_percentil(resX3)
+
+    # Z
+
+    m_z = (z_izq - z_der)/(y_izq - y_der)
+
+    z_teo = m_z*y_mid + (z_izq - m_z*y_izq)
+
+    resZ3 = z_mid - z_teo
+
+    resZ3_cut = aplicar_percentil(resZ3)
+
+    # --------------------------------------------------
+    # 4 HITS
+    # --------------------------------------------------
+
+    combos = np.array([
+        [0,1,2],
+        [0,1,3],
+        [0,2,3],
+        [1,2,3]
+    ])
+
+    coords4 = coords[eventos4]
+
+    coords4 = np.array([
+        ev[np.argsort(ev[:,1])]
+        for ev in coords4
+    ])
+
+    coords4 = coords4[:,combos]
+
+    x4 = coords4[:,:,:,0]
+    y4 = coords4[:,:,:,1]
+    z4 = coords4[:,:,:,2]
+
+    # X
+
+    m_x = (x4[:,:,0]-x4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+
+    x_teo = m_x*y4[:,:,1] + (x4[:,:,0]-m_x*y4[:,:,0])
+
+    resX_all = x4[:,:,1] - x_teo
+
+    idx_min_X = np.argmin(np.abs(resX_all), axis=1)
+
+    resX4 = resX_all[np.arange(len(resX_all)), idx_min_X]
+
+    resX4_cut = aplicar_percentil(resX4)
+
+    # Z
+
+    m_z = (z4[:,:,0]-z4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+
+    z_teo = m_z*y4[:,:,1] + (z4[:,:,0]-m_z*y4[:,:,0])
+
+    resZ_all = z4[:,:,1] - z_teo
+
+    idx_min_Z = np.argmin(np.abs(resZ_all), axis=1)
+
+    resZ4 = resZ_all[np.arange(len(resZ_all)), idx_min_Z]
+
+    resZ4_cut = aplicar_percentil(resZ4)
+
+    # --------------------------------------------------
+    # ARCHIVO RESULTADOS
+    # --------------------------------------------------
+
+    f_info = open(salida_fit,"w", encoding="utf-8")
+
+    # --------------------------------------------------
+    # FUNCIÓN DE ANÁLISIS 3 HITS: solo gaussiana simple
+    # CAMBIO: para 3 hits no se usa doble gaussiana
+    # --------------------------------------------------
+
+    def analizar_residuals_3hits(data, titulo):
+
+        hist, bins = np.histogram(data, bins=60)
+
+        centers = (bins[:-1] + bins[1:]) / 2
+
+        p0 = [max(hist), 0, 0.1]
+
+        try:
+
+            params_gauss, cov_gauss = curve_fit(
+                gauss,
+                centers,
+                hist,
+                p0=p0,
+                bounds=([0,-0.1,0],[np.inf,0.1,np.inf]),
+                maxfev=10000
+            )
+
+        except RuntimeError:
+
+            print(f"Fit simple fallido en {titulo}")
+
+            return
+
+        A_g, mu_g, sigma_g = params_gauss
+
+        err_sigma_g = np.sqrt(np.diag(cov_gauss))[2]
+
+        # --------------------------------------------------
+        # PLOT
+        # --------------------------------------------------
+
+        plt.figure()
+
+        plt.hist(
+            data,
+            bins=60,
+            alpha=0.6,
+            label="Datos"
+        )
+
+        x_fit = np.linspace(
+            min(centers),
+            max(centers),
+            300
+        )
+
+        plt.plot(
+            x_fit,
+            gauss(x_fit, *params_gauss),
+            label=f"Gauss sigma={sigma_g:.3f}+-{err_sigma_g:.3f}",
+            linewidth=2
+        )
+
+        plt.title(titulo)
+
+        plt.xlabel("Residual [mm]")
+
+        plt.ylabel("Counts")
+
+        plt.legend()
+
+        plt.grid()
+
+        nombre_archivo = (
+            titulo
+            .replace(" ","_")
+            .replace("(","")
+            .replace(")","")
+        )
+
+        ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\First_Cambio_Smearing\{nombre_archivo}_{sigma_hit:.3f}.png"
+
+        plt.savefig(ruta)
+
+        plt.close()
+
+        # --------------------------------------------------
+        # GUARDAR RESULTADOS
+        # --------------------------------------------------
+
+        f_info.write(f"\n--- {titulo} ---\n")
+
+        f_info.write(
+            f"Gauss simple: "
+            f"mu = {mu_g:.4f}, "
+            f"sigma = {sigma_g:.4f} +- {err_sigma_g:.4f}\n"
+        )
+
+        print(f"{titulo} OK  sigma={sigma_g:.4f}")
+
+    # --------------------------------------------------
+    # FUNCIÓN DE ANÁLISIS 4 HITS: doble gaussiana
+    # CAMBIO: igual que el original pero solo para 4 hits
+    # --------------------------------------------------
+
+    def analizar_residuals_4hits(data, titulo):
+
+        hist, bins = np.histogram(data, bins=60)
+
+        centers = (bins[:-1] + bins[1:]) / 2
+
+        # -------------------------
+        # FIT SIMPLE
+        # -------------------------
+
+        p0 = [max(hist), 0, 0.1]
+
+        try:
+
+            params_gauss, cov_gauss = curve_fit(
+                gauss,
+                centers,
+                hist,
+                p0=p0,
+                bounds=([0,-0.1,0],[np.inf,0.1,np.inf]),
+                maxfev=10000
+            )
+
+        except RuntimeError:
+
+            print(f"Fit simple fallido en {titulo}")
+
+            return
+
+        A_g, mu_g, sigma_g = params_gauss
+
+        err_sigma_g = np.sqrt(np.diag(cov_gauss))[2]
+
+        # -------------------------
+        # FIT DOBLE
+        # -------------------------
+
+        p0_double = [
+            max(hist),
+            0.1,
+            max(hist)/5,
+            0.3,
+            0
+        ]
+
+        try:
+
+            params_double, cov_double = curve_fit(
+                double_gauss,
+                centers,
+                hist,
+                p0=p0_double,
+                bounds=(
+                    [0,0,0,0,-0.1],
+                    [np.inf,np.inf,np.inf,np.inf,0.1]
+                ),
+                maxfev=10000
+            )
+
+        except RuntimeError:
+
+            print(f"Fit doble fallido en {titulo}")
+
+            return
+
+        A1, sigma1, A2, sigma2, mu_d = params_double
+
+        # ordenar: sigma1 <= sigma2
+        if sigma1 > sigma2:
+            A1, A2         = A2, A1
+            sigma1, sigma2 = sigma2, sigma1
+
+        if sigma1 > 5 or sigma2 > 5:
+
+            print(f"Fit no fisico en {titulo}")
+
+            return
+
+        if sigma1 <= 0 or sigma2 <= 0:
+
+            print(f"Fit invalido en {titulo}")
+
+            return
+
+        errors = np.sqrt(np.diag(cov_double))
+
+        err_sigma1 = errors[1]
+        err_sigma2 = errors[3]
+
+        sigma_eff = np.sqrt(
+            (A1*sigma1**2 + A2*sigma2**2) / (A1 + A2)
+        )
+
+        corr = cov_double[1,3] / np.sqrt(
+            cov_double[1,1] * cov_double[3,3]
+        )
+
+        # --------------------------------------------------
+        # PLOT
+        # --------------------------------------------------
+
+        plt.figure()
+
+        plt.hist(
+            data,
+            bins=60,
+            alpha=0.6,
+            label="Datos"
+        )
+
+        x_fit = np.linspace(
+            min(centers),
+            max(centers),
+            300
+        )
+
+        plt.plot(
+            x_fit,
+            gauss(x_fit, *params_gauss),
+            label=f"Gauss sigma={sigma_g:.3f}",
+            linewidth=2
+        )
+
+        plt.plot(
+            x_fit,
+            double_gauss(x_fit, *params_double),
+            label=(
+                f"Doble Gauss\n"
+                f"sigma1={sigma1:.3f}+-{err_sigma1:.3f}\n"
+                f"sigma2={sigma2:.3f}+-{err_sigma2:.3f}"
+            ),
+            linewidth=2
+        )
+
+        plt.title(titulo)
+
+        plt.xlabel("Residual [mm]")
+
+        plt.ylabel("Counts")
+
+        plt.legend()
+
+        plt.grid()
+
+        nombre_archivo = (
+            titulo
+            .replace(" ","_")
+            .replace("(","")
+            .replace(")","")
+        )
+
+        ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\First_Cambio_Smearing\{nombre_archivo}_{sigma_hit:.3f}.png"
+
+        plt.savefig(ruta)
+
+        plt.close()
+
+        # --------------------------------------------------
+        # GUARDAR RESULTADOS
+        # --------------------------------------------------
+
+        f_info.write(f"\n--- {titulo} ---\n")
+
+        f_info.write(
+            f"Gauss simple: "
+            f"mu = {mu_g:.4f}, "
+            f"sigma = {sigma_g:.4f} +- {err_sigma_g:.4f}\n"
+        )
+
+        f_info.write("Doble Gauss:\n")
+
+        f_info.write(f"mu = {mu_d:.4f}\n")
+
+        f_info.write(
+            f"sigma1 (core) = "
+            f"{sigma1:.4f} +- {err_sigma1:.4f}\n"
+        )
+
+        f_info.write(
+            f"sigma2 (cola) = "
+            f"{sigma2:.4f} +- {err_sigma2:.4f}\n"
+        )
+
+        f_info.write(f"A1 = {A1:.4f}\n")
+
+        f_info.write(f"A2 = {A2:.4f}\n")
+
+        f_info.write(f"corr = {corr:.4f}\n")
+
+        f_info.write(f"sigma_eff = {sigma_eff:.4f}\n")
+
+        print(f"{titulo} OK  sigma1={sigma1:.4f}  sigma2={sigma2:.4f}")
+
+    # --------------------------------------------------
+    # EJECUTAR ANÁLISIS
+    # --------------------------------------------------
+
+    # CAMBIO: 3 hits usa solo gaussiana simple
+    analizar_residuals_3hits(resX3_cut, "Residual X (3 hits)")
+    analizar_residuals_3hits(resZ3_cut, "Residual Z (3 hits)")
+
+    # 4 hits sigue usando doble gaussiana
+    analizar_residuals_4hits(resX4_cut, "Residual X (4 hits)")
+    analizar_residuals_4hits(resZ4_cut, "Residual Z (4 hits)")
+
+    f_info.close()
+
+    print(f"Resultados guardados para sigma={sigma_hit:.3f}")
+
+
+# --------------------------------------------------
+# BARRIDO AUTOMÁTICO
+# --------------------------------------------------
+
+sigmas = np.arange(0.050, 0.205, 0.005)
+
+for sigma in sigmas:
+
+    try:
+
+        ejecutar_analisis(round(sigma,3))
+
+    except Exception as e:
+
+        print(f"Error con sigma={sigma:.3f}: {e}")

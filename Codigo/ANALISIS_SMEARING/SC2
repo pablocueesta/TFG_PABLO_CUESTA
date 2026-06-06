@@ -1,0 +1,102 @@
+import os
+import re
+import glob
+
+carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing"
+
+os.chdir(carpeta)
+
+archivos = glob.glob("fits_s*.txt")
+archivos.sort()
+
+print(f"Encontrados {len(archivos)} archivos")
+print(f"Primer archivo: {archivos[0] if archivos else 'Ninguno'}")
+print(f"Último archivo: {archivos[-1] if archivos else 'Ninguno'}")
+
+# CAMBIO: añadida columna sigma_eff para X4 y Z4
+with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
+
+    salida.write(
+        "sigma_hit\t"
+        "X3_sigma\tX3_err\t"
+        "Z3_sigma\tZ3_err\t"
+        "X4_sigma1\tX4_err1\tX4_sigma2\tX4_err2\tX4_sigma_eff\t"
+        "Z4_sigma1\tZ4_err1\tZ4_sigma2\tZ4_err2\tZ4_sigma_eff\n"
+    )
+
+    for archivo in archivos:
+
+        print(f"Procesando: {archivo}")
+
+        match = re.search(r"fits_s([\d\.]+)\.txt", archivo)
+        sigma_hit = match.group(1) if match else "desconocido"
+
+        try:
+
+            with open(archivo, "r", encoding="utf-8", errors="ignore") as f:
+                contenido = f.read()
+
+            pat_sigma_simple = r'sigma = ([\d\.]+) \+\- ([\d\.]+)'
+            pat_sigma1       = r'sigma1 \(core\) = ([\d\.]+) \+\- ([\d\.]+)'
+            pat_sigma2       = r'sigma2 \(cola\) = ([\d\.]+) \+\- ([\d\.]+)'
+            pat_sigma_eff    = r'sigma_eff = ([\d\.]+)'   # CAMBIO
+
+            def extraer_sigma_simple(bloque_match):
+                if not bloque_match:
+                    return ["NaN", "NaN"]
+                texto = bloque_match.group(1)
+                m = re.search(pat_sigma_simple, texto)
+                return [
+                    m.group(1) if m else "NaN",
+                    m.group(2) if m else "NaN"
+                ]
+
+            # CAMBIO: extrae sigma1, err1, sigma2, err2, sigma_eff
+            def extraer_sigma_doble(bloque_match):
+                if not bloque_match:
+                    return ["NaN"] * 5
+                texto = bloque_match.group(1)
+                s1  = re.search(pat_sigma1,    texto)
+                s2  = re.search(pat_sigma2,    texto)
+                sef = re.search(pat_sigma_eff, texto)
+                return [
+                    s1.group(1)  if s1  else "NaN",
+                    s1.group(2)  if s1  else "NaN",
+                    s2.group(1)  if s2  else "NaN",
+                    s2.group(2)  if s2  else "NaN",
+                    sef.group(1) if sef else "NaN"
+                ]
+
+            x3_block = re.search(
+                r'--- Residual X \(3 hits\) ---(.*?)---',
+                contenido, re.DOTALL)
+            z3_block = re.search(
+                r'--- Residual Z \(3 hits\) ---(.*?)---',
+                contenido, re.DOTALL)
+            x4_block = re.search(
+                r'--- Residual X \(4 hits\) ---(.*?)---',
+                contenido, re.DOTALL)
+            z4_block = re.search(
+                r'--- Residual Z \(4 hits\) ---(.*?)$',
+                contenido, re.DOTALL)
+
+            x3_vals = extraer_sigma_simple(x3_block)
+            z3_vals = extraer_sigma_simple(z3_block)
+            x4_vals = extraer_sigma_doble(x4_block)
+            z4_vals = extraer_sigma_doble(z4_block)
+
+            salida.write(f"{sigma_hit}\t")
+            for vals in [x3_vals, z3_vals, x4_vals, z4_vals]:
+                salida.write("\t".join(vals) + "\t")
+            salida.write("\n")
+
+        except Exception as e:
+            print(f"Error con {archivo}: {e}")
+            salida.write(f"{sigma_hit}\t" + "\tNaN" * 14 + "\n")
+
+print("\n¡PROCESO COMPLETADO!")
+print(f"Resultados en: {carpeta}\\todos_los_sigmas.txt")
+print("\nColumnas:")
+print("sigma_hit | X3_sigma | X3_err | Z3_sigma | Z3_err |")
+print("X4_sigma1 | X4_err1 | X4_sigma2 | X4_err2 | X4_sigma_eff |")
+print("Z4_sigma1 | Z4_err1 | Z4_sigma2 | Z4_err2 | Z4_sigma_eff")

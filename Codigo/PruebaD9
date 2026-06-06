@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 sigma_hit = 0.085
-D=25.00
+D=5.00
 theta=0.00
 
 def aplicar_percentil(data, p=95):

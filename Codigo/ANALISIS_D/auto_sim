@@ -1,0 +1,209 @@
+#!/bin/bash
+# =============================================================
+# auto_sim.sh
+# Uso: bash auto_sim.sh <D_en_cm> <eventos_objetivo> <eventos_por_sim>
+# Ejemplo: bash auto_sim.sh 13.0 500000 25000
+# Ejecutar dentro de tmux:
+#   tmux new -s sim_D13
+#   bash auto_sim.sh 13.0 500000 25000
+#   Desconectarse sin matar: Ctrl+B luego D
+#   Reconectarse: tmux attach -t sim_D13
+# =============================================================
+
+D_CM=$1
+EVENTOS_OBJ=$2
+EVENTOS_SIM=$3
+
+if [ -z "$D_CM" ] || [ -z "$EVENTOS_OBJ" ] || [ -z "$EVENTOS_SIM" ]; then
+    echo "Uso: bash auto_sim.sh <D_en_cm> <eventos_objetivo> <eventos_por_sim>"
+    echo "Ejemplo: bash auto_sim.sh 13.0 500000 25000"
+    exit 1
+fi
+
+# ---------------------------
+# RUTAS
+# ---------------------------
+HOME_DIR="/home/tfg_2025_pablo"
+EJECUTABLE="$HOME_DIR/G4TomoDet_TFG2025/build/G4TomoDet"
+SRC_DIR="$HOME_DIR/G4TomoDet_TFG2025/src"
+BUILD_DIR="$HOME_DIR/G4TomoDet_TFG2025/build"
+MACROS_DIR="$HOME_DIR/G4TomoDet_TFG2025/macros"
+MAC_FILE="$MACROS_DIR/muons.mac"
+SCRIPTS_DIR="$HOME_DIR/scripts"
+LOG_DIR="$HOME_DIR/logs_auto"
+
+mkdir -p "$LOG_DIR"
+
+D_TAG="D${D_CM//./_}"
+FINAL_CSV="$SCRIPTS_DIR/coordenadas_${D_TAG}_total.csv"
+
+echo "=============================================="
+echo "  Simulacion automatica para D = $D_CM cm"
+echo "  Objetivo: $EVENTOS_OBJ eventos"
+echo "  Eventos por sim: $EVENTOS_SIM"
+echo "  CSV final: $FINAL_CSV"
+echo "=============================================="
+
+# ---------------------------
+# PASO 1: cambiar D en DetectorConstruction.cc
+# ---------------------------
+CC_FILE="$SRC_DIR/DetectorConstruction.cc"
+
+echo ""
+echo "[PASO 1] Cambiando D = $D_CM cm en DetectorConstruction.cc ..."
+
+cp "$CC_FILE" "$CC_FILE.bak"
+sed -i "s/fGapBigChamber = [0-9.]* \*cm;/fGapBigChamber = $D_CM *cm;/" "$CC_FILE"
+
+if grep -q "fGapBigChamber = $D_CM \*cm;" "$CC_FILE"; then
+    echo "         OK: fGapBigChamber = $D_CM *cm;"
+else
+    echo "         ERROR: no se pudo cambiar D en DetectorConstruction.cc"
+    exit 1
+fi
+
+# ---------------------------
+# PASO 2: compilar
+# ---------------------------
+echo ""
+echo "[PASO 2] Compilando (make -j18) ..."
+
+cd "$BUILD_DIR"
+make -j18 > "$LOG_DIR/make_${D_TAG}.log" 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "         ERROR: compilacion fallida."
+    echo "         Ver log: $LOG_DIR/make_${D_TAG}.log"
+    exit 1
+fi
+echo "         OK: compilacion exitosa"
+
+# ---------------------------
+# PASO 3-4-5: bucle simulaciones
+# ---------------------------
+echo ""
+echo "[PASO 3] Iniciando bucle de simulaciones ..."
+
+SIM_NUM=0
+EVENTOS_TOTAL=0
+PRIMERA_SIM=true
+
+while [ "$EVENTOS_TOTAL" -lt "$EVENTOS_OBJ" ]; do
+
+    SIM_NUM=$((SIM_NUM + 1))
+
+    NOMBRE_BASE="sim_${D_TAG}_${SIM_NUM}"
+    ROOT_FILE="$HOME_DIR/${NOMBRE_BASE}.root"
+    CSV_FILE="$SCRIPTS_DIR/${NOMBRE_BASE}.csv"
+
+    echo ""
+    echo "  --- Sim $SIM_NUM | acumulados: $EVENTOS_TOTAL / $EVENTOS_OBJ ---"
+
+    # --- modificar muons.mac: setFileName, beamOn y seeds ---
+    SEED1=$(( (RANDOM * 31337 + SIM_NUM * 12345 + 1) % 900000000 + 1 ))
+    SEED2=$(( (RANDOM * 73819 + SIM_NUM * 67891 + 7) % 900000000 + 1 ))
+
+    sed -i "s|/TomoDet/analyse/setFileName .*|/TomoDet/analyse/setFileName ../../${NOMBRE_BASE}.root|" "$MAC_FILE"
+    sed -i "s|/run/beamOn [0-9]*|/run/beamOn $EVENTOS_SIM|" "$MAC_FILE"
+    sed -i "s|/random/setSeeds [0-9]* [0-9]*|/random/setSeeds $SEED1 $SEED2|" "$MAC_FILE"
+
+    echo "    muons.mac: ${NOMBRE_BASE}.root | beamOn $EVENTOS_SIM | seeds $SEED1 $SEED2"
+
+    # --- lanzar desde build (donde esta toyfile_model.root) con nohup sin & ---
+    # nohup evita el segfault, sin & espera a que termine antes de continuar
+    echo "    Lanzando simulacion ..."
+
+    cd "$BUILD_DIR"
+    nohup "$EJECUTABLE" "$MAC_FILE" > "$LOG_DIR/sim_${NOMBRE_BASE}.log" 2>&1
+
+    sleep 2
+
+    # --- comprobar .root ---
+    if [ ! -f "$ROOT_FILE" ]; then
+        echo "    AVISO: no se creo $ROOT_FILE, saltando"
+        tail -3 "$LOG_DIR/sim_${NOMBRE_BASE}.log"
+        continue
+    fi
+
+    ROOTSIZE=$(stat -c%s "$ROOT_FILE" 2>/dev/null || echo 0)
+    if [ "$ROOTSIZE" -lt 1000 ]; then
+        echo "    AVISO: $ROOT_FILE vacio ($ROOTSIZE bytes), saltando"
+        rm -f "$ROOT_FILE"
+        continue
+    fi
+
+    echo "    OK: $ROOT_FILE ($ROOTSIZE bytes)"
+
+    # --- crear extractor temporal con python ---
+    EXTRACTOR_BASE="$SCRIPTS_DIR/extraer_datos.C"
+    EXTRACTOR_TMP="$SCRIPTS_DIR/extraer_tmp_${SIM_NUM}.C"
+    FUNC_NAME="extraer_tmp_${SIM_NUM}"
+
+    python3 - << PYEOF
+import re
+
+with open("$EXTRACTOR_BASE", "r") as f:
+    content = f.read()
+
+content = re.sub(r'void extraer_datos\(\)', 'void ${FUNC_NAME}()', content)
+content = re.sub(r'TFile::Open\("[^"]*"\)', 'TFile::Open("$ROOT_FILE")', content)
+content = re.sub(r'ofstream out\("[^"]*"\)', 'ofstream out("${NOMBRE_BASE}.csv")', content)
+content = re.sub(r'cout << "Datos guardados en [^"]*"', 'cout << "Datos guardados en ${NOMBRE_BASE}.csv"', content)
+
+with open("$EXTRACTOR_TMP", "w") as f:
+    f.write(content)
+
+print("extractor OK")
+PYEOF
+
+    echo "    Convirtiendo .root a .csv ..."
+    cd "$SCRIPTS_DIR"
+    root -l -q "${EXTRACTOR_TMP}" > "$LOG_DIR/root_${NOMBRE_BASE}.log" 2>&1
+
+    rm -f "$EXTRACTOR_TMP"
+
+    if [ ! -f "$CSV_FILE" ]; then
+        echo "    AVISO: no se creo $CSV_FILE"
+        tail -3 "$LOG_DIR/root_${NOMBRE_BASE}.log"
+        rm -f "$ROOT_FILE"
+        continue
+    fi
+
+    echo "    OK: $CSV_FILE creado"
+
+    # --- contar eventos ---
+    LINEAS=$(wc -l < "$CSV_FILE")
+    EVENTOS_SIM_REAL=$(( (LINEAS - 1) / 4 ))
+    echo "    Eventos en esta sim: $EVENTOS_SIM_REAL"
+
+    # --- concatenar al csv final ---
+    if [ "$PRIMERA_SIM" = true ]; then
+        cp "$CSV_FILE" "$FINAL_CSV"
+        PRIMERA_SIM=false
+        echo "    CSV final creado: $FINAL_CSV"
+    else
+        tail -n +2 "$CSV_FILE" >> "$FINAL_CSV"
+        echo "    Concatenado a $FINAL_CSV"
+    fi
+
+    EVENTOS_TOTAL=$((EVENTOS_TOTAL + EVENTOS_SIM_REAL))
+    echo "    Total acumulado: $EVENTOS_TOTAL / $EVENTOS_OBJ"
+
+    # --- limpiar intermedios ---
+    rm -f "$ROOT_FILE"
+    rm -f "$CSV_FILE"
+
+done
+
+echo ""
+echo "=============================================="
+echo "  COMPLETADO"
+echo "  D = $D_CM cm"
+echo "  Simulaciones realizadas: $SIM_NUM"
+echo "  Eventos totales: $EVENTOS_TOTAL"
+echo "  CSV final: $FINAL_CSV"
+echo "=============================================="
+echo ""
+echo "Para copiar a tu ordenador (desde WSL local):"
+echo "  scp tfg_2025_pablo@sultan.unizar.es:$FINAL_CSV ~/"
+echo "  cp ~/${FINAL_CSV##*/} /mnt/c/Users/pablo/Downloads/"

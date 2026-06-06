@@ -1,17 +1,9 @@
 
 --- Residual X (3 hits) ---
 Gauss simple: mu = -0.0004, sigma = 0.1461 +- 0.0009
-Doble Gauss:
-mu = -0.0004
-sigma1 (core) = 0.1400 +- 0.0026
-sigma2 (cola) = 0.3273 +- 0.1147
 
 --- Residual Z (3 hits) ---
 Gauss simple: mu = -0.0000, sigma = 0.1470 +- 0.0009
-Doble Gauss:
-mu = -0.0001
-sigma1 (core) = 0.1383 +- 0.0030
-sigma2 (cola) = 0.2692 +- 0.0557
 
 --- Residual X (4 hits) ---
 Gauss simple: mu = -0.0001, sigma = 0.0437 +- 0.0016
@@ -19,6 +11,10 @@ Doble Gauss:
 mu = -0.0002
 sigma1 (core) = 0.0181 +- 0.0005
 sigma2 (cola) = 0.0675 +- 0.0012
+A1 = 3301.8653
+A2 = 2671.8817
+corr = 0.5899
+sigma_eff = 0.0471
 
 --- Residual Z (4 hits) ---
 Gauss simple: mu = 0.0001, sigma = 0.0430 +- 0.0016
@@ -26,3 +22,7 @@ Doble Gauss:
 mu = 0.0002
 sigma1 (core) = 0.0175 +- 0.0005
 sigma2 (cola) = 0.0674 +- 0.0013
+A1 = 3461.6868
+A2 = 2702.3977
+corr = 0.5747
+sigma_eff = 0.0465

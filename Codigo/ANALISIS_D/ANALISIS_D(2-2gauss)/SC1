@@ -1,0 +1,242 @@
+from email import errors
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+# --------------------------------------------------
+# CAMBIO: bucle sobre valores de D
+# los nombres de archivo coinciden con auto_sim.sh:
+# coordenadas_D5_0_total.csv, coordenadas_D10_0_total.csv, etc.
+# --------------------------------------------------
+
+sigma_hit = 0.085
+theta = 0.00
+
+# CAMBIO: lista de valores de D a analizar
+valores_D = [5.0, 10.0, 15.0, 20.0, 25.0, 30.0]
+
+def aplicar_percentil(data, p=95):
+    low = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100 - (100-p)/2)
+    return data[(data > low) & (data < high)]
+
+def gauss(x, A, mu, sigma):
+    return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
+
+def double_gauss(x, A1, sigma1, A2, sigma2, mu):
+    return (A1 * np.exp(-(x - mu)**2 / (2 * sigma1**2)) +
+            A2 * np.exp(-(x - mu)**2 / (2 * sigma2**2)))
+
+
+# --------------------------------------------------
+# CAMBIO: función principal que envuelve todo el análisis
+# para un valor de D dado
+# --------------------------------------------------
+
+def ejecutar_analisis_D(D):
+
+    # CAMBIO: nombre de archivo según auto_sim.sh
+    # D=5.0  -> coordenadas_D5_0_total.csv
+    # D=10.0 -> coordenadas_D10_0_total.csv
+    D_TAG = f"D{D:.1f}".replace(".", "_")  # 5.0 -> D5_0
+
+    archivo   = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\coordenadas_{D_TAG}_total.csv"
+    salida     = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\hits_validos_s{sigma_hit:.3f}_{D:.1f}_{theta:.2f}.txt"
+    salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\fits_s{sigma_hit:.3f}_{D:.1f}_{theta:.2f}.txt"
+
+    print(f"\n==============================")
+    print(f"Analizando D = {D:.1f} cm")
+    print(f"Archivo: {archivo}")
+    print(f"==============================")
+
+    df     = pd.read_csv(archivo)
+    coords = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
+
+    coords_smeared = coords.copy()
+    valid = coords[:,:,0] != -99999
+    coords_smeared[:,:,0][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords_smeared[:,:,2][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords = coords_smeared
+
+    mask     = np.all(coords != -99999, axis=2)
+    hits     = mask.sum(axis=1)
+    eventos3 = np.where(hits == 3)[0]
+    eventos4 = np.where(hits == 4)[0]
+
+    # -------------------
+    # 3 HITS
+    # -------------------
+    coords3 = coords[eventos3]
+    mask3   = mask[eventos3]
+
+    coords_validos = np.array([ev[m] for ev,m in zip(coords3,mask3)])
+    coords_validos = np.array([ev[np.argsort(ev[:,1])] for ev in coords_validos])
+
+    x3 = coords_validos[:,:,0]
+    y3 = coords_validos[:,:,1]
+    z3 = coords_validos[:,:,2]
+
+    x_izq, x_mid, x_der = x3.T
+    y_izq, y_mid, y_der = y3.T
+    z_izq, z_mid, z_der = z3.T
+
+    m_x   = (x_izq - x_der)/(y_izq - y_der)
+    x_teo = m_x*y_mid + (x_izq - m_x*y_izq)
+    resX3     = x_mid - x_teo
+    resX3_cut = aplicar_percentil(resX3)
+
+    m_z   = (z_izq - z_der)/(y_izq - y_der)
+    z_teo = m_z*y_mid + (z_izq - m_z*y_izq)
+    resZ3     = z_mid - z_teo
+    resZ3_cut = aplicar_percentil(resZ3)
+
+    # -------------------
+    # 4 HITS
+    # -------------------
+    combos  = np.array([[0,1,2],[0,1,3],[0,2,3],[1,2,3]])
+    coords4 = coords[eventos4]
+    coords4 = np.array([ev[np.argsort(ev[:,1])] for ev in coords4])
+    coords4 = coords4[:,combos]
+    x4,y4,z4 = coords4[:,:,:,0], coords4[:,:,:,1], coords4[:,:,:,2]
+
+    m_x      = (x4[:,:,0]-x4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    x_teo    = m_x*y4[:,:,1] + (x4[:,:,0]-m_x*y4[:,:,0])
+    resX_all = x4[:,:,1] - x_teo
+    resX4    = resX_all[np.arange(len(resX_all)), np.argmin(np.abs(resX_all), axis=1)]
+    resX4_cut = aplicar_percentil(resX4)
+
+    m_z      = (z4[:,:,0]-z4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    z_teo    = m_z*y4[:,:,1] + (z4[:,:,0]-m_z*y4[:,:,0])
+    resZ_all = z4[:,:,1] - z_teo
+    resZ4    = resZ_all[np.arange(len(resZ_all)), np.argmin(np.abs(resZ_all), axis=1)]
+    resZ4_cut = aplicar_percentil(resZ4)
+
+    # -------------------
+    # Guardar info básica
+    # -------------------
+    with open(salida,"w") as f:
+        f.write(f"Total eventos: {coords.shape[0]}\n")
+        f.write(f"Eventos con 3 hits: {len(eventos3)}\n")
+        f.write(f"Eventos con 4 hits: {len(eventos4)}\n")
+        f.write(f"Eventos con 3 o 4 hits: {len(eventos3)+len(eventos4)}\n")
+        f.write("-"*40+"\n")
+        for i, ev in enumerate(eventos3):
+            f.write(f"Evento {ev}: ResX={resX3[i]:.3f} ResZ={resZ3[i]:.3f}\n")
+        for i, ev in enumerate(eventos4):
+            f.write(f"Evento {ev}: ResX_min={resX4[i]:.3f} ResZ_min={resZ4[i]:.3f}\n")
+
+    print(f"Hits validos guardados en: {salida}")
+
+    # -------------------
+    # Histogramas rápidos
+    # -------------------
+    for data_hist, titulo_hist in [
+        (resX3_cut, "Residual X (3 hits)"),
+        (resZ3_cut, "Residual Z (3 hits)"),
+        (resX4_cut,     "Residual X (4 hits, min)"),
+        (resZ4_cut,     "Residual Z (4 hits, min)")
+    ]:
+        plt.figure()
+        plt.hist(data_hist, bins=50)
+        plt.title(titulo_hist)
+        plt.xlabel("Residual [mm]")
+        plt.ylabel("Counts")
+        plt.close()
+
+    f_info = open(salida_fit, "w")
+    f_info.write(f"Sigma ResX 3 hits: {np.std(resX3_cut):.4f} mm\n")
+    f_info.write(f"Sigma ResZ 3 hits: {np.std(resZ3_cut):.4f} mm\n")
+    f_info.write(f"Sigma ResX 4 hits: {np.std(resX4_cut):.4f} mm\n")
+    f_info.write(f"Sigma ResZ 4 hits: {np.std(resZ4_cut):.4f} mm\n")
+    f_info.write(f"Eventos 3 hits total: {len(resX3)}\n")
+    f_info.write(f"Eventos 3 hits tras cut: {len(resX3_cut)}\n")
+    f_info.write(f"Eventos 4 hits total: {len(resX4)}\n")
+    f_info.write(f"Eventos 4 hits tras cut: {len(resX4_cut)}\n")
+
+    # -------------------
+    # FUNCIÓN DE ANÁLISIS (igual que el original)
+    # -------------------
+    def analizar_residuals(data, titulo):
+
+        hist, bins = np.histogram(data, bins=60)
+        centers    = (bins[:-1] + bins[1:]) / 2
+
+        # fit simple
+        p0 = [max(hist), 0, 0.1]
+        params_gauss, _ = curve_fit(
+            gauss, centers, hist, p0=p0,
+            bounds=([0,-0.1,0],[np.inf,0.1,np.inf])
+        )
+        A_g, mu_g, sigma_g = params_gauss
+
+        # fit doble
+        p0_double = [max(hist), 0.1, max(hist)/5, 0.3, 0]
+        try:
+            params_double, cov_double = curve_fit(
+                double_gauss, centers, hist,
+                p0=p0_double,
+                bounds=(
+                    [0, 0.001, 0, 0.001, -0.05],
+                    [np.inf, 1.0, np.inf, 1.0, 0.05]
+                )
+            )
+        except RuntimeError:
+            print(f"Fit doble fallido en {titulo}")
+            return
+
+        A1, sigma1, A2, sigma2, mu_d = params_double
+        errors     = np.sqrt(np.diag(cov_double))
+        err_sigma1 = errors[1]
+        err_sigma2 = errors[3]
+        err_mu     = errors[4]
+
+        # plot
+        plt.figure()
+        plt.hist(data, bins=60, alpha=0.6, label="Datos")
+        x_fit = np.linspace(min(centers), max(centers), 300)
+        plt.plot(x_fit, gauss(x_fit, *params_gauss),
+                 label=f"Gauss: sigma={sigma_g:.3f}", linewidth=2)
+        plt.plot(x_fit, double_gauss(x_fit, *params_double),
+                 label=f"Doble Gauss:\nsigma1={sigma1:.3f}, sigma2={sigma2:.3f}",
+                 linewidth=2)
+        plt.title(titulo)
+        plt.xlabel("Residual [mm]")
+        plt.ylabel("Counts")
+        plt.legend()
+        plt.grid()
+
+        nombre_archivo = titulo.replace(" ","_").replace("(","").replace(")","")
+        ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\D\{nombre_archivo}_{sigma_hit:.3f}_{D:.1f}_{theta:.2f}.png"
+        plt.savefig(ruta)
+        plt.close()
+
+        f_info.write(f"\n--- {titulo} ---\n")
+        f_info.write(f"Gauss simple: mu = {mu_g:.4f}, sigma = {sigma_g:.4f}\n")
+        f_info.write(f"Doble Gauss:\n")
+        f_info.write(f"   mu = {mu_d:.4f}\n")
+        f_info.write(f"   sigma1 (core) = {sigma1:.4f} +- {err_sigma1:.4f}\n")
+        f_info.write(f"   sigma2 (cola) = {sigma2:.4f} +- {err_sigma2:.4f}\n")
+        f_info.write(f"   mu = {mu_d:.4f} +- {err_mu:.4f}\n")
+
+        print(f"  {titulo} OK")
+
+    analizar_residuals(resX3_cut, "Residual X (3 hits)")
+    analizar_residuals(resZ3_cut, "Residual Z (3 hits)")
+    analizar_residuals(resX4_cut, "Residual X (4 hits)")
+    analizar_residuals(resZ4_cut, "Residual Z (4 hits)")
+
+    f_info.close()
+    print(f"Resultados guardados en: {salida_fit}")
+
+
+# --------------------------------------------------
+# CAMBIO: bucle sobre todos los valores de D
+# --------------------------------------------------
+
+for D in valores_D:
+    try:
+        ejecutar_analisis_D(D)
+    except Exception as e:
+        print(f"Error con D={D:.1f}: {e}")

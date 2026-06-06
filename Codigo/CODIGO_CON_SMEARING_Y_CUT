@@ -95,14 +95,14 @@ import matplotlib.pyplot as plt
 # 3 HITS
 # -------------------
 plt.figure()
-plt.hist(resX3_cut, bins=50)
+plt.hist(np.log(resX3_cut), bins=50)
 plt.title("Residual X (3 hits)")
 plt.xlabel("ResX [mm]")
 plt.ylabel("Counts")
 plt.show()
 
 plt.figure()
-plt.hist(resZ3_cut, bins=50)
+plt.hist(np.log(resZ3_cut), bins=50)
 plt.title("Residual Z (3 hits)")
 plt.xlabel("ResZ [mm]")
 plt.ylabel("Counts")
@@ -112,24 +112,24 @@ plt.show()
 # 4 HITS
 # -------------------
 plt.figure()
-plt.hist(resX4, bins=50)
+plt.hist(np.log(resX4), bins=50)
 plt.title("Residual X (4 hits, min)")
 plt.xlabel("ResX [mm]")
 plt.ylabel("Counts")
 plt.show()
 
 plt.figure()
-plt.hist(resZ4, bins=50)
+plt.hist(np.log(resZ4), bins=50)
 plt.title("Residual Z (4 hits, min)")
 plt.xlabel("ResZ [mm]")
 plt.ylabel("Counts")
 plt.show()
 
-print("Sigma ResX 3 hits:", np.std(resX3_cut))
-print("Sigma ResZ 3 hits:", np.std(resZ3_cut))
+print("Sigma ResX 3 hits:", np.std(np.log(resX3_cut)))
+print("Sigma ResZ 3 hits:", np.std(np.log(resZ3_cut)))
 
-print("Sigma ResX 4 hits:", np.std(resX4))
-print("Sigma ResZ 4 hits:", np.std(resZ4))
+print("Sigma ResX 4 hits:", np.std(np.log(resX4)))
+print("Sigma ResZ 4 hits:", np.std(np.log(resZ4)))
 
 print("Eventos 3 hits total:", len(resX3))
 print("Eventos tras cut:", len(resX3_cut))

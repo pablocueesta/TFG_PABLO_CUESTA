@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 sigma_hit = 0.085 
-cut=0.5
+cut=0.5 #mm, para eliminar eventos con residuos grandes (outliers) que distorsionan el fit
 
 archivo = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
 
@@ -103,18 +103,22 @@ print("Hits validos guardados en:", salida)
 # 3 HITS
 # -------------------
 plt.figure()
-plt.hist(resX3_cut, bins=50)
+plt.hist(resX3_cut, bins=10)
+#plt.xlim(-50, 50)
+plt.yscale('log') # para ver mejor las colas
 plt.title("Residual X (3 hits)")
 plt.xlabel("ResX [mm]")
-plt.ylabel("Counts")
+plt.ylabel("log(Counts)")
 plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resX3_cut.png")
 plt.show()
 
 plt.figure()
-plt.hist(resZ3_cut, bins=50)
+plt.hist(resZ3_cut, bins=10)
+#plt.xlim(-50, 50)
+plt.yscale('log') # para ver mejor las colas
 plt.title("Residual Z (3 hits)")
 plt.xlabel("ResZ [mm]")
-plt.ylabel("Counts")
+plt.ylabel("log(Counts)")
 plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resZ3_cut.png")
 plt.show()
 
@@ -122,26 +126,30 @@ plt.show()
 # 4 HITS
 # -------------------
 plt.figure()
-plt.hist(resX4, bins=50)
+plt.hist(resX4_cut, bins=10)
+#plt.xlim(-50, 50)
+plt.yscale('log') # para ver mejor las colas
 plt.title("Residual X (4 hits, min)")
 plt.xlabel("ResX [mm]")
-plt.ylabel("Counts")
+plt.ylabel("log(Counts)")
 plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resX4_cut.png")
 plt.show()
 
 plt.figure()
-plt.hist(resZ4, bins=50)
+plt.hist(resZ4_cut, bins=10)
+#plt.xlim(-50, 50)
+plt.yscale('log') # para ver mejor las colas
 plt.title("Residual Z (4 hits, min)")
 plt.xlabel("ResZ [mm]")
-plt.ylabel("Counts")
+plt.ylabel("log(Counts)")
 plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resZ4_cut.png")
 plt.show()
 
 f_info = open(salida_fit,"w")
 f_info.write(f"Sigma ResX 3 hits: {np.std(resX3_cut):.4f} mm\n")
 f_info.write(f"Sigma ResZ 3 hits: {np.std(resZ3_cut):.4f} mm\n")
-f_info.write(f"Sigma ResX 4 hits: {np.std(resX4):.4f} mm\n")
-f_info.write(f"Sigma ResZ 4 hits: {np.std(resZ4):.4f} mm\n")
+f_info.write(f"Sigma ResX 4 hits: {np.std(resX4_cut):.4f} mm\n")
+f_info.write(f"Sigma ResZ 4 hits: {np.std(resZ4_cut):.4f} mm\n")
 f_info.write(f"Eventos 3 hits total: {len(resX3)}\n")
 f_info.write(f"Eventos 3 hits tras cut: {len(resX3_cut)}\n")
 f_info.write(f"Eventos 4 hits total: {len(resX4)}\n")
@@ -150,8 +158,8 @@ f_info.write(f"Eventos 4 hits tras cut: {len(resX4_cut)}\n")
 print("Sigma ResX 3 hits:", np.std(resX3_cut))
 print("Sigma ResZ 3 hits:", np.std(resZ3_cut))
 
-print("Sigma ResX 4 hits:", np.std(resX4))
-print("Sigma ResZ 4 hits:", np.std(resZ4))
+print("Sigma ResX 4 hits:", np.std(resX4_cut))
+print("Sigma ResZ 4 hits:", np.std(resZ4_cut))
 
 print("Eventos 3 hits total:", len(resX3))
 print("Eventos tras cut:", len(resX3_cut))
@@ -191,12 +199,18 @@ def analizar_residuals(data, titulo):
     params_double, _ = curve_fit(double_gauss, centers, hist, p0=p0_double)
     A1, sigma1, A2, sigma2, mu_d = params_double
 
+    # corregir intercambio
+    if sigma1 > sigma2:
+        A1, A2         = A2, A1
+        sigma1, sigma2 = sigma2, sigma1
+
     # -------------------
     # PLOT
     # -------------------
     plt.figure()
     plt.hist(data, bins=60, alpha=0.6, label="Datos")
-
+    #plt.xlim(-50, 50)
+    plt.yscale('log') # para ver mejor las colas
     x_fit = np.linspace(min(centers), max(centers), 300)
 
     plt.plot(x_fit, gauss(x_fit, *params_gauss),
@@ -207,7 +221,7 @@ def analizar_residuals(data, titulo):
 
     plt.title(titulo)
     plt.xlabel("Residual [mm]")
-    plt.ylabel("Counts")
+    plt.ylabel("log(Counts)")
     plt.legend()
     plt.grid()
     
@@ -246,3 +260,8 @@ analizar_residuals(resZ4_cut, "Residual Z (4 hits)")
 
 f_info.close()
 print("Resultados de fit guardados en:", salida_fit)
+
+
+print(f"Eventos antes del cut: {len(resX3)}")
+print(f"Eventos después del cut: {len(resX3_cut)}")
+print(f"Fracción eliminada: {1 - len(resX3_cut)/len(resX3):.4f}")

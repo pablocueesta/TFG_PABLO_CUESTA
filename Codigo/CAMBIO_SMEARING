@@ -230,9 +230,9 @@ def ejecutar_analisis(sigma_hit):
 
         p0_double = [
             max(hist),
-            0.1,
+            0.05,
             max(hist)/5,
-            0.3,
+            0.4,
             0
         ]
 
@@ -245,7 +245,7 @@ def ejecutar_analisis(sigma_hit):
                 p0=p0_double,
                 bounds=(
                     [0,0,0,0,-0.1],
-                    [np.inf,np.inf,np.inf,np.inf,0.1]
+                    [np.inf,0.5,np.inf,2.0,0.1]
                 ),
                 maxfev=10000
             )
@@ -257,6 +257,12 @@ def ejecutar_analisis(sigma_hit):
             return
 
         A1, sigma1, A2, sigma2, mu_d = params_double
+        
+        # Forzar que sigma1 sea siempre el core (menor)
+        if sigma1 > sigma2:
+            sigma1, sigma2 = sigma2, sigma1
+            A1, A2 = A2, A1
+            err_sigma1, err_sigma2 = err_sigma2, err_sigma1
 
         # descartar ajustes absurdos
 
@@ -272,6 +278,11 @@ def ejecutar_analisis(sigma_hit):
 
             return
 
+        # CAMBIO: descartar si el fit es inestable (error relativo > 50%)
+        if err_sigma1 / sigma1 > 0.5 or err_sigma2 / sigma2 > 0.5:
+            print(f"Fit inestable en {titulo} (errores relativos grandes), descartando")
+            return
+        
         errors = np.sqrt(np.diag(cov_double))
 
         err_sigma1 = errors[1]

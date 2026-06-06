@@ -1,0 +1,153 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+# -------------------------
+# CARGAR DATOS
+# -------------------------
+data = np.loadtxt(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\todos_los_sigmas.txt", skiprows=1)
+
+D = data[:,0]
+
+X3_sg1  = data[:,1]
+X3_err1 = data[:,2]
+X3_sg2  = data[:,3]
+X3_err2 = data[:,4]
+
+Z3_sg1  = data[:,5]
+Z3_err1 = data[:,6]
+Z3_sg2  = data[:,7]
+Z3_err2 = data[:,8]
+
+X4_sg1  = data[:,9]
+X4_err1 = data[:,10]
+X4_sg2  = data[:,11]
+X4_err2 = data[:,12]
+
+Z4_sg1  = data[:,13]
+Z4_err1 = data[:,14]
+Z4_sg2  = data[:,15]
+Z4_err2 = data[:,16]
+
+# -------------------------
+# ORDENAR SIGMAS (core < cola)
+# CAMBIO: ahora también intercambia los errores
+# -------------------------
+def ordenar_sigmas(sg1, err1, sg2, err2):
+    mask = sg1 > sg2  # donde sigma1 es mayor que sigma2 hay que intercambiar
+
+    sg1_new  = sg1.copy()
+    err1_new = err1.copy()
+    sg2_new  = sg2.copy()
+    err2_new = err2.copy()
+
+    sg1_new[mask]  = sg2[mask]
+    err1_new[mask] = err2[mask]
+    sg2_new[mask]  = sg1[mask]
+    err2_new[mask] = err1[mask]
+
+    return sg1_new, err1_new, sg2_new, err2_new
+
+X3_sg1, X3_err1, X3_sg2, X3_err2 = ordenar_sigmas(X3_sg1, X3_err1, X3_sg2, X3_err2)
+Z3_sg1, Z3_err1, Z3_sg2, Z3_err2 = ordenar_sigmas(Z3_sg1, Z3_err1, Z3_sg2, Z3_err2)
+X4_sg1, X4_err1, X4_sg2, X4_err2 = ordenar_sigmas(X4_sg1, X4_err1, X4_sg2, X4_err2)
+Z4_sg1, Z4_err1, Z4_sg2, Z4_err2 = ordenar_sigmas(Z4_sg1, Z4_err1, Z4_sg2, Z4_err2)
+
+# -------------------------
+# LIMPIAR DATOS
+# -------------------------
+def limpiar_datos(x, y, err):
+    mask = (
+        np.isfinite(x) &
+        np.isfinite(y) &
+        np.isfinite(err) &
+        (err > 0) &
+        (err/y < 1.0) &
+        (err < 10.0)
+    )
+    return x[mask], y[mask], err[mask]
+
+# -------------------------
+# FIT LINEAL
+# -------------------------
+def fit_lineal(x, y, errors):
+    x, y, errors = limpiar_datos(x, y, errors)
+
+    if len(x) < 3:
+        return None
+
+    params, cov = np.polyfit(x, y, 1, w=1/errors, cov=True)
+
+    a     = params[0]
+    b     = params[1]
+    err_a = np.sqrt(cov[0,0])
+    err_b = np.sqrt(cov[1,1])
+
+    return a, b, err_a, err_b
+
+# -------------------------
+# CARPETA SALIDA
+# -------------------------
+out_dir = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\plots_sigmas"
+os.makedirs(out_dir, exist_ok=True)
+
+f_out = open(
+    rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D\pendientes.txt",
+    "w", encoding="utf-8"
+)
+
+# -------------------------
+# FUNCIÓN PLOT + FIT
+# -------------------------
+def plot_y_fit(D, sg1, err1, sg2, err2, titulo, nombre):
+
+    D1, y1, e1 = limpiar_datos(D, sg1, err1)
+    D2, y2, e2 = limpiar_datos(D, sg2, err2)
+
+    plt.figure(figsize=(8,6))
+
+    plt.errorbar(D1, y1, yerr=e1, fmt='o', color='blue', capsize=3, label='sigma1 (core)')
+    plt.errorbar(D2, y2, yerr=e2, fmt='s', color='red',  capsize=3, label='sigma2 (cola)')
+
+    f_out.write(f"\n--- {titulo} ---\n")
+
+    res1 = fit_lineal(D1, y1, e1)
+    if res1:
+        a1, b1, ea1, eb1 = res1
+        xf = np.linspace(min(D1), max(D1), 200)
+        plt.plot(xf, a1*xf+b1, color='blue', linewidth=2,
+                 label=f'Fit sigma1: a={a1:.3f}+-{ea1:.3f}')
+        f_out.write(f"sigma1: a={a1:.4f}+-{ea1:.4f}, b={b1:.4f}+-{eb1:.4f}\n")
+        print(f"{titulo} | sigma1: a={a1:.4f}+-{ea1:.4f}")
+
+    res2 = fit_lineal(D2, y2, e2)
+    if res2:
+        a2, b2, ea2, eb2 = res2
+        xf = np.linspace(min(D2), max(D2), 200)
+        plt.plot(xf, a2*xf+b2, color='red', linewidth=2,
+                 label=f'Fit sigma2: a={a2:.3f}+-{ea2:.3f}')
+        f_out.write(f"sigma2: a={a2:.4f}+-{ea2:.4f}, b={b2:.4f}+-{eb2:.4f}\n")
+        print(f"{titulo} | sigma2: a={a2:.4f}+-{ea2:.4f}")
+
+    plt.xlabel("D [cm]")
+    plt.ylabel("Resolucion experimental [mm]")
+    plt.title(titulo)
+    plt.legend()
+    plt.grid()
+
+    ruta = os.path.join(out_dir, f"{nombre}.png")
+    plt.savefig(ruta, dpi=300)
+    plt.close()
+
+# -------------------------
+# GENERAR TODO
+# -------------------------
+plot_y_fit(D, X3_sg1, X3_err1, X3_sg2, X3_err2, "3 hits - X", "3hits_X")
+plot_y_fit(D, Z3_sg1, Z3_err1, Z3_sg2, Z3_err2, "3 hits - Z", "3hits_Z")
+plot_y_fit(D, X4_sg1, X4_err1, X4_sg2, X4_err2, "4 hits - X", "4hits_X")
+plot_y_fit(D, Z4_sg1, Z4_err1, Z4_sg2, Z4_err2, "4 hits - Z", "4hits_Z")
+
+f_out.close()
+
+print("\nPendientes guardadas en pendientes.txt")
+print("Graficas guardadas en plots_sigmas")

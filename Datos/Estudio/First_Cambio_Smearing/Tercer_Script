@@ -55,6 +55,7 @@ def ordenar_sigmas(sg1, err1, sg2, err2):
 
     return sg1_new, err1_new, sg2_new, err2_new
 
+"""
 X3_sg1, X3_err1, X3_sg2, X3_err2 = ordenar_sigmas(
     X3_sg1, X3_err1, X3_sg2, X3_err2
 )
@@ -70,6 +71,7 @@ X4_sg1, X4_err1, X4_sg2, X4_err2 = ordenar_sigmas(
 Z4_sg1, Z4_err1, Z4_sg2, Z4_err2 = ordenar_sigmas(
     Z4_sg1, Z4_err1, Z4_sg2, Z4_err2
 )
+"""
 
 # =========================
 # LIMPIAR DATOS
@@ -326,7 +328,79 @@ plot_y_fit(
     "4hits_Z"
 )
 
+# TERCER_SCRIPT - añadir función de plots separados al final, antes de f_out.close()
+
+# =========================
+# PLOTS SEPARADOS SIGMA1 Y SIGMA2
+# =========================
+
+def plot_separado(s_hit, sg, err, titulo, nombre, color):
+    """Plotea una sola sigma en función del smearing."""
+
+    x, y, e = limpiar_datos(s_hit, sg, err)
+
+    if len(x) < 3:
+        print(f"Pocos puntos válidos para {titulo}")
+        return
+
+    plt.figure(figsize=(8,6))
+
+    plt.errorbar(
+        x, y, yerr=e,
+        fmt='o',
+        color=color,
+        capsize=3,
+        label=titulo
+    )
+
+    # fit lineal sobre todos los puntos válidos
+    params, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
+    a, b = params
+    err_a = np.sqrt(cov[0,0])
+    err_b = np.sqrt(cov[1,1])
+
+    xfit = np.linspace(min(x), max(x), 200)
+
+    plt.plot(
+        xfit,
+        a*xfit + b,
+        color=color,
+        linewidth=2,
+        label=f'Fit: a={a:.3f}±{err_a:.3f}, b={b:.4f}±{err_b:.4f}'
+    )
+
+    plt.xlabel("Smearing [mm]")
+    plt.ylabel("Resolución experimental [mm]")
+    plt.title(titulo)
+    plt.grid()
+    plt.legend()
+
+    ruta = os.path.join(out_dir, f"{nombre}.png")
+    plt.savefig(ruta, dpi=300)
+    plt.close()
+
+    print(f"{titulo}: a={a:.4f}±{err_a:.4f}, b={b:.4f}±{err_b:.4f}")
+
+
+# Llamadas para sigma1 y sigma2 por separado
+plot_separado(s_hit, X3_sg1, X3_err1, "3 hits X - σ1 (core)", "3hits_X_sigma1", "blue")
+plot_separado(s_hit, X3_sg2, X3_err2, "3 hits X - σ2 (cola)", "3hits_X_sigma2", "red")
+
+plot_separado(s_hit, Z3_sg1, Z3_err1, "3 hits Z - σ1 (core)", "3hits_Z_sigma1", "blue")
+plot_separado(s_hit, Z3_sg2, Z3_err2, "3 hits Z - σ2 (cola)", "3hits_Z_sigma2", "red")
+
+plot_separado(s_hit, X4_sg1, X4_err1, "4 hits X - σ1 (core)", "4hits_X_sigma1", "blue")
+plot_separado(s_hit, X4_sg2, X4_err2, "4 hits X - σ2 (cola)", "4hits_X_sigma2", "red")
+
+plot_separado(s_hit, Z4_sg1, Z4_err1, "4 hits Z - σ1 (core)", "4hits_Z_sigma1", "blue")
+plot_separado(s_hit, Z4_sg2, Z4_err2, "4 hits Z - σ2 (cola)", "4hits_Z_sigma2", "red")
+
 f_out.close()
 
 print("\n✅ Pendientes guardadas en pendientes.txt")
 print("✅ Gráficas guardadas en plots_sigmas")
+
+print("X3 cruces =", np.sum(X3_sg1 > X3_sg2))
+print("Z3 cruces =", np.sum(Z3_sg1 > Z3_sg2))
+print("X4 cruces =", np.sum(X4_sg1 > X4_sg2))
+print("Z4 cruces =", np.sum(Z4_sg1 > Z4_sg2))

@@ -1,0 +1,182 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+sigma_hit = 0.085
+cut = 0.5
+
+archivo = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
+salida_fit = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\PreAnalisis\Cut\demo_random_vs_min.txt"
+
+np.random.seed(42)
+
+df     = pd.read_csv(archivo)
+coords = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
+
+coords_smeared = coords.copy()
+valid = coords[:,:,0] != -99999
+coords_smeared[:,:,0][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+coords_smeared[:,:,2][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+coords = coords_smeared
+
+mask     = np.all(coords != -99999, axis=2)
+hits     = mask.sum(axis=1)
+eventos4 = np.where(hits == 4)[0]
+
+# --------------------------------------------------
+# CALCULAR LOS 4 RESIDUALES POR EVENTO (igual que siempre)
+# --------------------------------------------------
+
+combos = np.array([[0,1,2],[0,1,3],[0,2,3],[1,2,3]])
+
+coords4 = coords[eventos4]
+coords4 = np.array([ev[np.argsort(ev[:,1])] for ev in coords4])
+coords4 = coords4[:,combos]
+
+x4, y4, z4 = coords4[:,:,:,0], coords4[:,:,:,1], coords4[:,:,:,2]
+
+m_x      = (x4[:,:,0]-x4[:,:,2]) / (y4[:,:,0]-y4[:,:,2])
+x_teo    = m_x*y4[:,:,1] + (x4[:,:,0]-m_x*y4[:,:,0])
+resX_all = x4[:,:,1] - x_teo   # shape (N_eventos, 4)
+
+# --------------------------------------------------
+# SELECCIÓN MÍNIMO (lo que hacías antes)
+# --------------------------------------------------
+
+idx_min  = np.argmin(np.abs(resX_all), axis=1)
+resX_min = resX_all[np.arange(len(resX_all)), idx_min]
+resX_min_cut = resX_min[np.abs(resX_min) < cut]
+
+# --------------------------------------------------
+# SELECCIÓN ALEATORIA (una combinación random por evento)
+# --------------------------------------------------
+
+idx_rand  = np.random.randint(0, 4, size=len(resX_all))
+resX_rand = resX_all[np.arange(len(resX_all)), idx_rand]
+resX_rand_cut = resX_rand[np.abs(resX_rand) < cut]
+
+# --------------------------------------------------
+# FUNCIONES DE FIT
+# --------------------------------------------------
+
+def gauss(x, A, mu, sigma):
+    return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
+
+def double_gauss(x, A1, sigma1, A2, sigma2, mu):
+    return (A1 * np.exp(-(x - mu)**2 / (2 * sigma1**2)) +
+            A2 * np.exp(-(x - mu)**2 / (2 * sigma2**2)))
+
+# --------------------------------------------------
+# FUNCIÓN DE ANÁLISIS
+# --------------------------------------------------
+
+def analizar(data, titulo, color):
+
+    hist, bins = np.histogram(data, bins=60)
+    centers    = (bins[:-1] + bins[1:]) / 2
+
+    # fit simple
+    try:
+        params_g, _ = curve_fit(
+            gauss, centers, hist,
+            p0=[max(hist), 0, 0.05],
+            bounds=([0,-0.1,0],[np.inf,0.1,np.inf]),
+            maxfev=10000
+        )
+        A_g, mu_g, sigma_g = params_g
+    except RuntimeError:
+        print(f"Fit simple fallido en {titulo}")
+        return
+
+    # fit doble
+    try:
+        params_d, _ = curve_fit(
+            double_gauss, centers, hist,
+            p0=[max(hist), 0.02, max(hist)/5, 0.08, 0],
+            bounds=([0,0,0,0,-0.1],[np.inf,np.inf,np.inf,np.inf,0.1]),
+            maxfev=10000
+        )
+        A1, sigma1, A2, sigma2, mu_d = params_d
+
+        if sigma1 > sigma2:
+            A1, A2         = A2, A1
+            sigma1, sigma2 = sigma2, sigma1
+
+    except RuntimeError:
+        print(f"Fit doble fallido en {titulo}")
+        params_d = None
+
+    # plot
+    plt.figure(figsize=(8,5))
+    plt.hist(data, bins=60, alpha=0.6, color=color, label="Datos")
+    plt.yscale('log')
+
+    x_fit = np.linspace(min(centers), max(centers), 300)
+
+    plt.plot(x_fit, gauss(x_fit, *params_g),
+             color='black', linewidth=2,
+             label=f"Gauss simple: sigma={sigma_g:.4f}")
+
+    if params_d is not None:
+        plt.plot(x_fit, double_gauss(x_fit, *params_d),
+                 color='red', linewidth=2, linestyle='--',
+                 label=f"Doble Gauss: sigma1={sigma1:.4f}, sigma2={sigma2:.4f}")
+
+    plt.title(titulo)
+    plt.xlabel("Residual X [mm]")
+    plt.ylabel("Counts (log)")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+
+    nombre = titulo.replace(" ","_").replace("(","").replace(")","")
+    ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\{nombre}.png"
+    plt.savefig(ruta, dpi=300)
+    plt.show()
+    plt.close()
+
+    print(f"\n--- {titulo} ---")
+    print(f"Gauss simple:  sigma = {sigma_g:.4f}")
+    if params_d is not None:
+        print(f"Doble Gauss:   sigma1 = {sigma1:.4f},  sigma2 = {sigma2:.4f}")
+        print(f"Ratio A1/A2 = {A1/A2:.2f}")
+
+    return sigma_g, (sigma1, sigma2) if params_d is not None else (None, None)
+
+# --------------------------------------------------
+# PLOT COMPARATIVO: mínimo vs aleatorio superpuestos
+# --------------------------------------------------
+
+fig, ax = plt.subplots(figsize=(9,5))
+
+ax.hist(resX_min_cut,  bins=60, alpha=0.5, color='blue',  label="Seleccion minimo")
+ax.hist(resX_rand_cut, bins=60, alpha=0.5, color='orange', label="Seleccion aleatoria")
+
+ax.set_yscale('log')
+ax.set_xlabel("Residual X [mm]")
+ax.set_ylabel("Counts (log)")
+ax.set_title("4 hits: minimo vs aleatorio — Residual X")
+ax.legend()
+ax.grid()
+plt.tight_layout()
+plt.savefig(
+    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\comparativo_min_vs_random.png",
+    dpi=300
+)
+plt.show()
+plt.close()
+
+# --------------------------------------------------
+# ANÁLISIS POR SEPARADO
+# --------------------------------------------------
+
+print("=" * 50)
+print("SELECCION MINIMO")
+print("=" * 50)
+analizar(resX_min_cut,  "4 hits seleccion minimo - ResX",   color='blue')
+
+print("=" * 50)
+print("SELECCION ALEATORIA")
+print("=" * 50)
+analizar(resX_rand_cut, "4 hits seleccion aleatoria - ResX", color='orange')
