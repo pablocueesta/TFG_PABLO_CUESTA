@@ -1,0 +1,120 @@
+import os
+import re
+import glob
+
+carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz"
+os.chdir(carpeta)
+
+archivos = glob.glob("fits_s*.txt")
+archivos.sort()
+
+print(f"Encontrados {len(archivos)} archivos")
+print(f"Primer archivo: {archivos[0] if archivos else 'Ninguno'}")
+print(f"Ultimo archivo: {archivos[-1] if archivos else 'Ninguno'}")
+
+with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
+
+    # Se añaden dos columnas al final: X_corte y Z_corte (mm)
+    salida.write(
+        "sigma_hit\t"
+        "X_gamma_s\tX_err_s\tX_chi2_s\t"
+        "X_gamma1\tX_err1\tX_gamma2\tX_err2\tX_chi2_dl\t"
+        "X_corte\t"
+        "Z_gamma_s\tZ_err_s\tZ_chi2_s\t"
+        "Z_gamma1\tZ_err1\tZ_gamma2\tZ_err2\tZ_chi2_dl\t"
+        "Z_corte\n"
+    )
+
+    pat_gamma_s = r'gamma = ([\d\.]+) \+\- ([\d\.]+)'
+    pat_chi2    = r'chi2/ndf = ([\d\.]+)'
+    pat_gamma1  = r'gamma1 \(core\) = ([\d\.]+) \+\- ([\d\.]+)'
+    pat_gamma2  = r'gamma2 \(cola\) = ([\d\.]+) \+\- ([\d\.]+)'
+    # Nuevo patrón para el corte propuesto
+    pat_corte   = r'Corte propuesto \(5·gamma\): ([\d\.]+) mm'
+
+    def extraer_bloque(contenido, titulo):
+        patron = rf'--- {re.escape(titulo)} ---(.*?)(?=\n---|$)'
+        m = re.search(patron, contenido, re.DOTALL)
+        return m.group(1) if m else None
+
+    def extraer_simple(bloque):
+        if not bloque:
+            return ["NaN", "NaN", "NaN"]
+        sub = re.search(r'Lorentz simple:(.*?)(?=Doble|Decision|$)', bloque, re.DOTALL)
+        if not sub:
+            return ["NaN", "NaN", "NaN"]
+        texto = sub.group(1)
+        g = re.search(pat_gamma_s, texto)
+        c = re.search(pat_chi2,    texto)
+        return [
+            g.group(1) if g else "NaN",
+            g.group(2) if g else "NaN",
+            c.group(1) if c else "NaN"
+        ]
+
+    def extraer_doble(bloque):
+        if not bloque:
+            return ["NaN"] * 5
+        sub = re.search(r'Doble Lorentz:(.*?)(?=Decision|$)', bloque, re.DOTALL)
+        if not sub:
+            return ["NaN"] * 5
+        texto = sub.group(1)
+        g1 = re.search(pat_gamma1, texto)
+        g2 = re.search(pat_gamma2, texto)
+        c  = re.search(pat_chi2,   texto)
+        return [
+            g1.group(1) if g1 else "NaN",
+            g1.group(2) if g1 else "NaN",
+            g2.group(1) if g2 else "NaN",
+            g2.group(2) if g2 else "NaN",
+            c.group(1)  if c  else "NaN"
+        ]
+
+    def extraer_corte(bloque):
+        """Extrae el corte propuesto (5·gamma) del bloque de texto."""
+        if not bloque:
+            return "NaN"
+        m = re.search(pat_corte, bloque)
+        return m.group(1) if m else "NaN"
+
+    for archivo in archivos:
+
+        print(f"Procesando: {archivo}")
+
+        match     = re.search(r"fits_s([\d\.]+)\.txt", archivo)
+        sigma_hit = match.group(1) if match else "desconocido"
+
+        try:
+            with open(archivo, "r", encoding="utf-8", errors="ignore") as f:
+                contenido = f.read()
+
+            bx = extraer_bloque(contenido, "Combinado X (3+4 hits)")
+            bz = extraer_bloque(contenido, "Combinado Z (3+4 hits)")
+
+            xs     = extraer_simple(bx)
+            xd     = extraer_doble(bx)
+            x_corte = extraer_corte(bx)
+
+            zs     = extraer_simple(bz)
+            zd     = extraer_doble(bz)
+            z_corte = extraer_corte(bz)
+
+            salida.write(f"{sigma_hit}\t")
+            salida.write("\t".join(xs) + "\t")
+            salida.write("\t".join(xd) + "\t")
+            salida.write(x_corte + "\t")
+            salida.write("\t".join(zs) + "\t")
+            salida.write("\t".join(zd) + "\t")
+            salida.write(z_corte + "\n")
+
+        except Exception as e:
+            print(f"Error con {archivo}: {e}")
+            salida.write(f"{sigma_hit}\t" + "\tNaN" * 18 + "\n")
+
+print("\nPROCESO COMPLETADO")
+print(f"Resultados en: {carpeta}\\todos_los_sigmas.txt")
+print("\nColumnas:")
+print("sigma_hit | X_gamma_s | X_err_s | X_chi2_s |")
+print("X_gamma1 | X_err1 | X_gamma2 | X_err2 | X_chi2_dl | X_corte |")
+print("Z_gamma_s | Z_err_s | Z_chi2_s |")
+print("Z_gamma1 | Z_err1 | Z_gamma2 | Z_err2 | Z_chi2_dl | Z_corte")

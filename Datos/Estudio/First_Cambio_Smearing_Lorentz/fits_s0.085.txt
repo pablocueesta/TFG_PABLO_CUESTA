@@ -1,0 +1,26 @@
+
+--- Residual X (3 hits) ---
+Gauss simple (ref): sigma = 0.1214 +- 0.0007
+Lorentz simple: mu = 0.0001, gamma = 0.1145 +- 0.0041
+
+--- Residual Z (3 hits) ---
+Gauss simple (ref): sigma = 0.1220 +- 0.0008
+Lorentz simple: mu = -0.0004, gamma = 0.1151 +- 0.0040
+
+--- Residual X (4 hits) ---
+Gauss simple (ref): sigma = 0.0362
+Lorentz simple: gamma = 0.0317
+Doble Lorentz:
+   mu = -0.0001
+   gamma1 (core) = 0.0112 +- 0.0010
+   gamma2 (cola) = 0.0414 +- 0.0012
+   gamma_eff = 0.0303
+
+--- Residual Z (4 hits) ---
+Gauss simple (ref): sigma = 0.0358
+Lorentz simple: gamma = 0.0313
+Doble Lorentz:
+   mu = 0.0001
+   gamma1 (core) = 0.0130 +- 0.0013
+   gamma2 (cola) = 0.0424 +- 0.0017
+   gamma_eff = 0.0304

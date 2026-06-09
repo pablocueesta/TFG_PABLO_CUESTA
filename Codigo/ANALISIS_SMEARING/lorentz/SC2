@@ -1,0 +1,85 @@
+import os
+import re
+import glob
+
+carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz"
+os.chdir(carpeta)
+
+archivos = glob.glob("fits_s*.txt")
+archivos.sort()
+
+print(f"Encontrados {len(archivos)} archivos")
+print(f"Primer archivo: {archivos[0] if archivos else 'Ninguno'}")
+print(f"Último archivo: {archivos[-1] if archivos else 'Ninguno'}")
+
+# 3 hits: Lorentz simple -> gamma, err
+# 4 hits: doble Lorentz -> gamma1, err1, gamma2, err2
+with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
+
+    salida.write(
+        "sigma_hit\t"
+        "X3_gamma\tX3_err\t"
+        "Z3_gamma\tZ3_err\t"
+        "X4_gamma1\tX4_err1\tX4_gamma2\tX4_err2\t"
+        "Z4_gamma1\tZ4_err1\tZ4_gamma2\tZ4_err2\n"
+    )
+
+    pat_gamma_simple = r'gamma = ([\d\.]+) \+\- ([\d\.]+)'
+    pat_gamma1       = r'gamma1 \(core\) = ([\d\.]+) \+\- ([\d\.]+)'
+    pat_gamma2       = r'gamma2 \(cola\) = ([\d\.]+) \+\- ([\d\.]+)'
+
+    def extraer_gamma_simple(bloque_match):
+        if not bloque_match:
+            return ["NaN", "NaN"]
+        texto = bloque_match.group(1)
+        m = re.search(pat_gamma_simple, texto)
+        return [
+            m.group(1) if m else "NaN",
+            m.group(2) if m else "NaN"
+        ]
+
+    def extraer_gamma_doble(bloque_match):
+        if not bloque_match:
+            return ["NaN"] * 4
+        texto = bloque_match.group(1)
+        g1 = re.search(pat_gamma1, texto)
+        g2 = re.search(pat_gamma2, texto)
+        return [
+            g1.group(1) if g1 else "NaN",
+            g1.group(2) if g1 else "NaN",
+            g2.group(1) if g2 else "NaN",
+            g2.group(2) if g2 else "NaN"
+        ]
+
+    for archivo in archivos:
+
+        print(f"Procesando: {archivo}")
+
+        match     = re.search(r"fits_s([\d\.]+)\.txt", archivo)
+        sigma_hit = match.group(1) if match else "desconocido"
+
+        try:
+            with open(archivo, "r", encoding="utf-8", errors="ignore") as f:
+                contenido = f.read()
+
+            x3_block = re.search(r'--- Residual X \(3 hits\) ---(.*?)---', contenido, re.DOTALL)
+            z3_block = re.search(r'--- Residual Z \(3 hits\) ---(.*?)---', contenido, re.DOTALL)
+            x4_block = re.search(r'--- Residual X \(4 hits\) ---(.*?)---', contenido, re.DOTALL)
+            z4_block = re.search(r'--- Residual Z \(4 hits\) ---(.*?)$',   contenido, re.DOTALL)
+
+            x3_vals = extraer_gamma_simple(x3_block)
+            z3_vals = extraer_gamma_simple(z3_block)
+            x4_vals = extraer_gamma_doble(x4_block)
+            z4_vals = extraer_gamma_doble(z4_block)
+
+            salida.write(f"{sigma_hit}\t")
+            for vals in [x3_vals, z3_vals, x4_vals, z4_vals]:
+                salida.write("\t".join(vals) + "\t")
+            salida.write("\n")
+
+        except Exception as e:
+            print(f"Error con {archivo}: {e}")
+            salida.write(f"{sigma_hit}\t" + "\tNaN" * 12 + "\n")
+
+print("\n¡PROCESO COMPLETADO!")
+print(f"Resultados en: {carpeta}\\todos_los_sigmas.txt")

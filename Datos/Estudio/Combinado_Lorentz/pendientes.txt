@@ -1,0 +1,8 @@
+
+--- Combinado X (3+4 hits) — Lorentz simple vs doble ---
+gamma1: a=-2.6053+-0.1898, b=0.7078+-0.0302
+gamma2: a=-1.9338+-0.1128, b=0.6439+-0.0133
+
+--- Combinado Z (3+4 hits) — Lorentz simple vs doble ---
+gamma1: a=-0.0430+-0.1778, b=0.2684+-0.0187
+gamma2: a=1.4837+-0.0558, b=0.0654+-0.0065

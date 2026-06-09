@@ -1,0 +1,323 @@
+"""
+SC4 — Análisis de datos experimentales
+=======================================
+Para cada uno de los 6 archivos .txt de datos reales:
+  1. Lee la columna de residuales (truncados físicamente en ±10 mm).
+  2. Muestra estadísticas básicas.
+  3. Genera histograma en escala lineal con fit Lorentz simple y doble.
+  4. Genera histograma en escala logarítmica con los mismos fits.
+  5. Marca en ambos plots el corte propuesto = ±5·gamma del mejor fit.
+  6. Guarda un resumen en un archivo .txt.
+
+Ajusta las rutas y el nombre de la columna según tu estructura de datos.
+"""
+
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+# --------------------------------------------------
+# CONFIGURACIÓN — ajusta estas rutas
+# --------------------------------------------------
+
+# Carpeta con los 6 archivos experimentales
+CARPETA_DATOS = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Experimentales"
+
+# Carpeta de salida para plots y resumen
+CARPETA_SALIDA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Experimentales"
+
+# Nombre del archivo de resumen
+ARCHIVO_RESUMEN = os.path.join(CARPETA_SALIDA, "resumen_experimental.txt")
+
+# Columna que contiene los residuales en cada archivo .txt
+# Si los archivos tienen encabezado, pon el nombre de la columna (str).
+# Si no tienen encabezado, pon el índice de columna (int), p.ej. 0.
+COLUMNA_RESIDUAL = 0   # <-- cambia si hace falta
+
+# Separador de columnas en los .txt
+SEPARADOR = None   # None = cualquier espacio en blanco; usa ',' para CSV
+
+# Límite físico del detector (mm) — los datos ya vienen truncados aquí
+LIMITE_FISICO = 10.0
+
+# Número de bins para los histogramas
+N_BINS = 100
+
+# --------------------------------------------------
+# FUNCIONES DE AJUSTE
+# --------------------------------------------------
+
+def lorentz(x, A, mu, gamma):
+    return A / (1 + ((x - mu) / gamma)**2)
+
+def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
+    return (
+        A1 / (1 + ((x - mu) / gamma1)**2)
+        + A2 / (1 + ((x - mu) / gamma2)**2)
+    )
+
+def chi2_reducido(y_data, y_fit, n_params):
+    mask = y_data > 0
+    residuos = y_data[mask] - y_fit[mask]
+    chi2 = np.sum(residuos**2 / y_data[mask])
+    ndf  = np.sum(mask) - n_params
+    if ndf <= 0:
+        return np.nan
+    return chi2 / ndf
+
+# --------------------------------------------------
+# FUNCIÓN DE ANÁLISIS POR ARCHIVO
+# --------------------------------------------------
+
+def analizar_archivo(ruta_archivo, f_resumen):
+
+    nombre = os.path.basename(ruta_archivo)
+    print(f"\n{'='*50}")
+    print(f"Procesando: {nombre}")
+    print(f"{'='*50}")
+
+    # --- Leer datos ---
+    try:
+        raw = np.loadtxt(ruta_archivo, delimiter=SEPARADOR)
+        if raw.ndim == 1:
+            data = raw
+        else:
+            if isinstance(COLUMNA_RESIDUAL, int):
+                data = raw[:, COLUMNA_RESIDUAL]
+            else:
+                raise ValueError("Para seleccionar columna por nombre usa pandas.")
+    except Exception as e:
+        print(f"  ERROR leyendo {nombre}: {e}")
+        f_resumen.write(f"\n--- {nombre} ---\nERROR: {e}\n")
+        return
+
+    # Eliminar NaN e infinitos
+    data = data[np.isfinite(data)]
+
+    # Aplicar límite físico (por si acaso hubiera valores fuera)
+    data = data[np.abs(data) <= LIMITE_FISICO]
+
+    N = len(data)
+    print(f"  N eventos: {N}")
+
+    # --- Estadísticas ---
+    media  = np.mean(data)
+    mediana = np.median(data)
+    std    = np.std(data)
+    p95    = np.percentile(np.abs(data), 95)
+    p99    = np.percentile(np.abs(data), 99)
+
+    print(f"  Media={media:.4f}  Mediana={mediana:.4f}  Std={std:.4f}")
+    print(f"  |residual|: p95={p95:.3f} mm  p99={p99:.3f} mm")
+
+    f_resumen.write(f"\n--- {nombre} ---\n")
+    f_resumen.write(f"N eventos: {N}\n")
+    f_resumen.write(f"Media = {media:.4f} mm\n")
+    f_resumen.write(f"Mediana = {mediana:.4f} mm\n")
+    f_resumen.write(f"Std = {std:.4f} mm\n")
+    f_resumen.write(f"|residual| p95 = {p95:.3f} mm\n")
+    f_resumen.write(f"|residual| p99 = {p99:.3f} mm\n")
+
+    # --- Histograma ---
+    hist, bins = np.histogram(data, bins=N_BINS, range=(-LIMITE_FISICO, LIMITE_FISICO))
+    centers    = (bins[:-1] + bins[1:]) / 2
+    width      = bins[1] - bins[0]
+
+    gamma0 = std * 0.5
+
+    # ---- Fit Lorentz simple ----
+    simple_ok = False
+    try:
+        params_s, cov_s = curve_fit(
+            lorentz, centers, hist,
+            p0=[max(hist), 0.0, gamma0],
+            bounds=([0, -1.0, 0.01], [np.inf, 1.0, LIMITE_FISICO]),
+            maxfev=20000
+        )
+        A_s, mu_s, gamma_s = [float(p) for p in params_s]
+        err_gamma_s = float(np.sqrt(np.diag(cov_s))[2])
+        simple_ok = True
+        print(f"  Lorentz simple: gamma={gamma_s:.4f}+-{err_gamma_s:.4f}")
+    except RuntimeError:
+        print(f"  Fit Lorentz simple fallido")
+        gamma_s = err_gamma_s = np.nan
+
+    if simple_ok:
+        y_fit_s = lorentz(centers, A_s, mu_s, gamma_s)
+        chi2_s  = chi2_reducido(hist, y_fit_s, 3)
+    else:
+        chi2_s = np.nan
+
+    # ---- Fit doble Lorentz ----
+    double_ok = False
+    try:
+        p0_dl = [max(hist), gamma0*0.3, max(hist)/5, gamma0*2.0, 0.0]
+        params_dl, cov_dl = curve_fit(
+            double_lorentz, centers, hist,
+            p0=p0_dl,
+            bounds=(
+                [0, 0.01, 0, 0.01, -1.0],
+                [np.inf, LIMITE_FISICO, np.inf, LIMITE_FISICO, 1.0]
+            ),
+            maxfev=20000
+        )
+        A1, gamma1, A2, gamma2, mu_dl = [float(p) for p in params_dl]
+        errors     = np.sqrt(np.diag(cov_dl))
+        err_gamma1 = float(errors[1])
+        err_gamma2 = float(errors[3])
+
+        # Ordenar core < cola
+        if gamma1 > gamma2:
+            A1, A2             = A2, A1
+            gamma1, gamma2     = gamma2, gamma1
+            err_gamma1, err_gamma2 = err_gamma2, err_gamma1
+
+        # Sanidad física
+        if 0 < gamma1 < LIMITE_FISICO and 0 < gamma2 < LIMITE_FISICO:
+            double_ok = True
+            print(f"  Doble Lorentz: gamma1={gamma1:.4f}  gamma2={gamma2:.4f}")
+        else:
+            print(f"  Fit doble Lorentz no físico")
+    except RuntimeError:
+        print(f"  Fit doble Lorentz fallido")
+
+    if double_ok:
+        y_fit_dl  = double_lorentz(centers, A1, gamma1, A2, gamma2, mu_dl)
+        chi2_dl   = chi2_reducido(hist, y_fit_dl, 5)
+        gamma_eff = (A1*gamma1 + A2*gamma2) / (A1 + A2)
+    else:
+        chi2_dl = gamma_eff = np.nan
+
+    # ---- Corte propuesto ----
+    if double_ok:
+        gamma_para_corte = gamma_eff
+        label_corte      = "gamma_eff (doble Lorentz)"
+    elif simple_ok:
+        gamma_para_corte = gamma_s
+        label_corte      = "gamma_s (Lorentz simple)"
+    else:
+        gamma_para_corte = np.nan
+        label_corte      = "no disponible"
+
+    corte = 5.0 * gamma_para_corte if np.isfinite(gamma_para_corte) else np.nan
+    print(f"  Corte propuesto (5·gamma): {corte:.3f} mm  [{label_corte}]")
+
+    if np.isfinite(corte):
+        frac_dentro = np.sum(np.abs(data) < corte) / N * 100
+        print(f"  Fraccion dentro del corte: {frac_dentro:.1f}%")
+    else:
+        frac_dentro = np.nan
+
+    # ---- Guardar resultados ----
+    if simple_ok:
+        f_resumen.write(f"Lorentz simple: mu={mu_s:.4f}  gamma={gamma_s:.4f}+-{err_gamma_s:.4f}  chi2/ndf={chi2_s:.4f}\n")
+    else:
+        f_resumen.write("Lorentz simple: fallido\n")
+
+    if double_ok:
+        f_resumen.write(f"Doble Lorentz: mu={mu_dl:.4f}  gamma1={gamma1:.4f}+-{err_gamma1:.4f}  gamma2={gamma2:.4f}+-{err_gamma2:.4f}  gamma_eff={gamma_eff:.4f}  chi2/ndf={chi2_dl:.4f}\n")
+        if chi2_dl < chi2_s * 0.9:
+            f_resumen.write("Decision: DOBLE LORENTZ MEJOR (chi2 mejora >10%)\n")
+        else:
+            f_resumen.write("Decision: LORENTZ SIMPLE SUFICIENTE\n")
+    else:
+        f_resumen.write("Doble Lorentz: fallido\n")
+
+    f_resumen.write(f"Corte propuesto (5·gamma): {corte:.4f} mm  [{label_corte}]\n")
+    if np.isfinite(frac_dentro):
+        f_resumen.write(f"   Fraccion dentro del corte: {frac_dentro:.1f}%\n")
+
+    # --------------------------------------------------
+    # PLOTS
+    # --------------------------------------------------
+
+    nombre_base = os.path.splitext(nombre)[0]
+    x_fit = np.linspace(-LIMITE_FISICO, LIMITE_FISICO, 800)
+
+    def _dibujar_fits_y_corte(ax, log=False):
+        """Dibuja fits y línea de corte sobre el eje ax."""
+        if simple_ok:
+            ax.plot(x_fit, lorentz(x_fit, A_s, mu_s, gamma_s),
+                    color='orange', linewidth=2,
+                    label=f"Lorentz simple: γ={gamma_s:.3f}±{err_gamma_s:.3f}  χ²/ndf={chi2_s:.2f}")
+        if double_ok:
+            ax.plot(x_fit, double_lorentz(x_fit, A1, gamma1, A2, gamma2, mu_dl),
+                    color='red', linewidth=2,
+                    label=f"Doble Lorentz  χ²/ndf={chi2_dl:.2f}")
+            ax.plot(x_fit, lorentz(x_fit, A1, mu_dl, gamma1),
+                    linestyle='--', color='blue', linewidth=1.5,
+                    label=f"Core: γ1={gamma1:.3f}±{err_gamma1:.3f}")
+            ax.plot(x_fit, lorentz(x_fit, A2, mu_dl, gamma2),
+                    linestyle='--', color='green', linewidth=1.5,
+                    label=f"Cola: γ2={gamma2:.3f}±{err_gamma2:.3f}")
+        if np.isfinite(corte):
+            ax.axvline( corte, color='magenta', linestyle=':', linewidth=2,
+                        label=f"Corte ±5·{label_corte} = ±{corte:.3f} mm  ({frac_dentro:.0f}% datos)")
+            ax.axvline(-corte, color='magenta', linestyle=':', linewidth=2)
+
+    # ---- Plot lineal ----
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bar(centers, hist, width=width, alpha=0.6, color='steelblue',
+           label=f"Datos experimentales  N={N:,}")
+    _dibujar_fits_y_corte(ax, log=False)
+    ax.set_title(f"{nombre} — escala lineal")
+    ax.set_xlabel("Residual [mm]")
+    ax.set_ylabel("Counts")
+    ax.legend(fontsize=8)
+    ax.grid(linestyle='--', alpha=0.5)
+    fig.tight_layout()
+    fig.savefig(os.path.join(CARPETA_SALIDA, f"{nombre_base}_lineal.png"), dpi=150)
+    plt.close(fig)
+
+    # ---- Plot logarítmico ----
+    fig, ax = plt.subplots(figsize=(10, 6))
+    mask_pos = hist > 0
+    ax.bar(centers[mask_pos], hist[mask_pos], width=width, alpha=0.6, color='steelblue',
+           label=f"Datos experimentales  N={N:,}")
+    _dibujar_fits_y_corte(ax, log=True)
+    ax.set_yscale('log')
+    ax.set_title(f"{nombre} — escala logarítmica")
+    ax.set_xlabel("Residual [mm]")
+    ax.set_ylabel("Counts (log)")
+    ax.legend(fontsize=8)
+    ax.grid(which='both', linestyle='--', alpha=0.5)
+    fig.tight_layout()
+    fig.savefig(os.path.join(CARPETA_SALIDA, f"{nombre_base}_log.png"), dpi=150)
+    plt.close(fig)
+
+    print(f"  Plots guardados: {nombre_base}_lineal.png  y  {nombre_base}_log.png")
+
+
+# --------------------------------------------------
+# MAIN: recorre los 6 archivos .txt
+# --------------------------------------------------
+
+if __name__ == "__main__":
+
+    os.makedirs(CARPETA_SALIDA, exist_ok=True)
+
+    archivos_txt = sorted([
+        os.path.join(CARPETA_DATOS, f)
+        for f in os.listdir(CARPETA_DATOS)
+        if f.endswith(".txt")
+    ])
+
+    print(f"Archivos encontrados: {len(archivos_txt)}")
+    for a in archivos_txt:
+        print(f"  {os.path.basename(a)}")
+
+    with open(ARCHIVO_RESUMEN, "w", encoding="utf-8") as f_resumen:
+        f_resumen.write("RESUMEN ANÁLISIS EXPERIMENTAL\n")
+        f_resumen.write("=" * 50 + "\n")
+
+        for ruta in archivos_txt:
+            try:
+                analizar_archivo(ruta, f_resumen)
+            except Exception as e:
+                print(f"Error inesperado con {ruta}: {e}")
+                f_resumen.write(f"\n--- {os.path.basename(ruta)} ---\nError inesperado: {e}\n")
+
+    print(f"\n{'='*50}")
+    print(f"Resumen guardado en: {ARCHIVO_RESUMEN}")
+    print(f"Plots en: {CARPETA_SALIDA}")

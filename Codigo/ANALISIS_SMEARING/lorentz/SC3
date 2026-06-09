@@ -1,0 +1,150 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+# -------------------------
+# CARGAR DATOS
+# -------------------------
+data = np.loadtxt(
+    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\todos_los_sigmas.txt",
+    skiprows=1
+)
+
+# columnas:
+# [0]  sigma_hit
+# [1]  X3_gamma   [2]  X3_err
+# [3]  Z3_gamma   [4]  Z3_err
+# [5]  X4_gamma1  [6]  X4_err1  [7]  X4_gamma2  [8]  X4_err2
+# [9]  Z4_gamma1  [10] Z4_err1  [11] Z4_gamma2  [12] Z4_err2
+
+s_hit = data[:,0]
+
+X3_g    = data[:,1];  X3_err  = data[:,2]
+Z3_g    = data[:,3];  Z3_err  = data[:,4]
+
+X4_g1   = data[:,5];  X4_err1 = data[:,6]
+X4_g2   = data[:,7];  X4_err2 = data[:,8]
+Z4_g1   = data[:,9];  Z4_err1 = data[:,10]
+Z4_g2   = data[:,11]; Z4_err2 = data[:,12]
+
+# ordenar gamma1 <= gamma2 para 4 hits
+def ordenar_gammas(g1, e1, g2, e2):
+    mask    = g1 > g2
+    g1n     = g1.copy(); e1n = e1.copy()
+    g2n     = g2.copy(); e2n = e2.copy()
+    g1n[mask] = g2[mask]; e1n[mask] = e2[mask]
+    g2n[mask] = g1[mask]; e2n[mask] = e1[mask]
+    return g1n, e1n, g2n, e2n
+
+X4_g1, X4_err1, X4_g2, X4_err2 = ordenar_gammas(X4_g1, X4_err1, X4_g2, X4_err2)
+Z4_g1, Z4_err1, Z4_g2, Z4_err2 = ordenar_gammas(Z4_g1, Z4_err1, Z4_g2, Z4_err2)
+
+# -------------------------
+# UTILIDADES
+# -------------------------
+def limpiar_datos(x, y, err):
+    mask = (
+        np.isfinite(x) & np.isfinite(y) & np.isfinite(err) &
+        (err > 0) & (y > 0) & (y < 1.0) & (err < 0.5)
+    )
+    return x[mask], y[mask], err[mask]
+
+def fit_lineal(x, y, errors):
+    x, y, errors = limpiar_datos(x, y, errors)
+    if len(x) < 3:
+        return None
+    params, cov = np.polyfit(x, y, 1, w=1/errors, cov=True)
+    return params[0], params[1], np.sqrt(cov[0,0]), np.sqrt(cov[1,1])
+
+# -------------------------
+# CARPETA SALIDA
+# -------------------------
+out_dir = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\plots_sigmas"
+os.makedirs(out_dir, exist_ok=True)
+
+f_out = open(
+    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\pendientes.txt",
+    "w", encoding="utf-8"
+)
+
+# -------------------------
+# PLOT 3 HITS: Lorentziana simple
+# -------------------------
+def plot_3hits(s_hit, g, err, titulo, nombre):
+    x, y, e = limpiar_datos(s_hit, g, err)
+    if len(x) < 3:
+        return
+
+    plt.figure(figsize=(8,6))
+    plt.errorbar(x, y, yerr=e, fmt='o', color='blue', capsize=3,
+                 label='gamma (Lorentz simple)')
+
+    res = fit_lineal(x, y, e)
+    if res:
+        a, b, ea, eb = res
+        xf = np.linspace(min(x), max(x), 200)
+        plt.plot(xf, a*xf+b, color='blue', linewidth=2,
+                 label=f'Fit: a={a:.3f}+-{ea:.3f}, b={b:.4f}+-{eb:.4f}')
+        f_out.write(f"\n--- {titulo} ---\n")
+        f_out.write(f"gamma: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
+        print(f"{titulo}: a={a:.4f}+-{ea:.4f}")
+
+    plt.xlabel("Smearing [mm]")
+    plt.ylabel("gamma experimental [mm]")
+    plt.title(titulo)
+    plt.grid()
+    plt.legend()
+    plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=300)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+# -------------------------
+# PLOT 4 HITS: gamma1 + gamma2
+# -------------------------
+def plot_y_fit(s_hit, g1, e1, g2, e2, titulo, nombre):
+    x1, y1, err1 = limpiar_datos(s_hit, g1, e1)
+    x2, y2, err2 = limpiar_datos(s_hit, g2, e2)
+
+    plt.figure(figsize=(8,6))
+    plt.errorbar(x1, y1, yerr=err1, fmt='o', color='blue', capsize=3, label='gamma1 (core)')
+    plt.errorbar(x2, y2, yerr=err2, fmt='s', color='red',  capsize=3, label='gamma2 (cola)')
+
+    f_out.write(f"\n--- {titulo} ---\n")
+
+    res1 = fit_lineal(x1, y1, err1)
+    if res1:
+        a1, b1, ea1, eb1 = res1
+        xf = np.linspace(min(x1), max(x1), 200)
+        plt.plot(xf, a1*xf+b1, color='blue', linewidth=2,
+                 label=f'Fit gamma1: a={a1:.3f}+-{ea1:.3f}')
+        f_out.write(f"gamma1: a={a1:.4f}+-{ea1:.4f}, b={b1:.4f}+-{eb1:.4f}\n")
+
+    res2 = fit_lineal(x2, y2, err2)
+    if res2:
+        a2, b2, ea2, eb2 = res2
+        xf = np.linspace(min(x2), max(x2), 200)
+        plt.plot(xf, a2*xf+b2, color='red', linewidth=2,
+                 label=f'Fit gamma2: a={a2:.3f}+-{ea2:.3f}')
+        f_out.write(f"gamma2: a={a2:.4f}+-{ea2:.4f}, b={b2:.4f}+-{eb2:.4f}\n")
+
+    plt.xlabel("Smearing [mm]")
+    plt.ylabel("gamma experimental [mm]")
+    plt.title(titulo)
+    plt.grid()
+    plt.legend()
+    plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=300)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+# -------------------------
+# GENERAR GRAFICAS
+# -------------------------
+plot_3hits(s_hit, X3_g, X3_err, "3 hits - X (Lorentz)", "3hits_X")
+plot_3hits(s_hit, Z3_g, Z3_err, "3 hits - Z (Lorentz)", "3hits_Z")
+
+plot_y_fit(s_hit, X4_g1, X4_err1, X4_g2, X4_err2, "4 hits - X (Lorentz)", "4hits_X")
+plot_y_fit(s_hit, Z4_g1, Z4_err1, Z4_g2, Z4_err2, "4 hits - Z (Lorentz)", "4hits_Z")
+
+f_out.close()
+print("\nPendientes guardadas en pendientes.txt")
+print("Graficas guardadas en plots_sigmas")
