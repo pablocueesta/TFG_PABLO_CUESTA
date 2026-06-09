@@ -30,7 +30,7 @@ with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
     pat_gamma1  = r'gamma1 \(core\) = ([\d\.]+) \+\- ([\d\.]+)'
     pat_gamma2  = r'gamma2 \(cola\) = ([\d\.]+) \+\- ([\d\.]+)'
     # Nuevo patrón para el corte propuesto
-    pat_corte   = r'Corte propuesto \(5·gamma\): ([\d\.]+) mm'
+    pat_corte   = r'Corte propuesto \(5\*gamma\): ([\d\.]+) mm'
 
     def extraer_bloque(contenido, titulo):
         patron = rf'--- {re.escape(titulo)} ---(.*?)(?=\n---|$)'

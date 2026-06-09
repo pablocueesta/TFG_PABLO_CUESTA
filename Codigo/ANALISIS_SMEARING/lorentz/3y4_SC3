@@ -138,6 +138,7 @@ def plot_comparacion(s_hit, gs, es, g1, e1, g2, e2, chi2s, chi2dl, corte, titulo
 
     ax3.set_xlabel("Smearing [mm]")
     ax3.set_ylabel("Corte propuesto [mm]")
+    #ax3.set_ylim(0.1, 0.4)
     ax3.set_title("Ventana de ajuste propuesta (5·gamma) vs smearing")
     ax3.legend(fontsize=8)
     ax3.grid()

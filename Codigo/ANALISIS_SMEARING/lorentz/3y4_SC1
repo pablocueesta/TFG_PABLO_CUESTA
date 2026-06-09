@@ -223,7 +223,7 @@ def ejecutar_analisis(sigma_hit):
         # CORTE PROPUESTO: 5·gamma del mejor fit
         # -------------------------
 
-        if double_ok and simple_ok and chi2_dl < chi2_s * 0.9:
+        if double_ok and simple_ok and chi2_dl < chi2_s * 0.9: 
             gamma_para_corte = gamma_eff
             label_corte      = "gamma_eff (doble Lorentz)"
         elif simple_ok:
