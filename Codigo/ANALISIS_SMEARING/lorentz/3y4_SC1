@@ -4,6 +4,15 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 # --------------------------------------------------
+# FUNCIÓN PERCENTIL
+# --------------------------------------------------
+
+def aplicar_percentil(data, p=95):
+    low  = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100 - (100-p)/2)
+    return data[(data > low) & (data < high)]
+
+# --------------------------------------------------
 # FUNCIONES DE AJUSTE
 # --------------------------------------------------
 
@@ -60,7 +69,7 @@ def ejecutar_analisis(sigma_hit):
     eventos4 = np.where(hits == 4)[0]
 
     # --------------------------------------------------
-    # 3 HITS — sin aplicar_percentil
+    # 3 HITS
     # --------------------------------------------------
 
     coords3 = coords[eventos3]
@@ -79,14 +88,16 @@ def ejecutar_analisis(sigma_hit):
 
     m_x   = (x_izq - x_der)/(y_izq - y_der)
     x_teo = m_x*y_mid + (x_izq - m_x*y_izq)
-    resX3 = x_mid - x_teo          # sin percentil
+    resX3_full = x_mid - x_teo          # todos los datos
+    resX3_cut  = aplicar_percentil(resX3_full)  # para el fit
 
     m_z   = (z_izq - z_der)/(y_izq - y_der)
     z_teo = m_z*y_mid + (z_izq - m_z*y_izq)
-    resZ3 = z_mid - z_teo          # sin percentil
+    resZ3_full = z_mid - z_teo
+    resZ3_cut  = aplicar_percentil(resZ3_full)
 
     # --------------------------------------------------
-    # 4 HITS — sin aplicar_percentil
+    # 4 HITS
     # --------------------------------------------------
 
     combos  = np.array([[0,1,2],[0,1,3],[0,2,3],[1,2,3]])
@@ -99,35 +110,25 @@ def ejecutar_analisis(sigma_hit):
     m_x      = (x4[:,:,0]-x4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
     x_teo    = m_x*y4[:,:,1] + (x4[:,:,0]-m_x*y4[:,:,0])
     resX_all = x4[:,:,1] - x_teo
-    resX4    = resX_all[np.arange(len(resX_all)), np.argmin(np.abs(resX_all), axis=1)]
-    # sin percentil
+    resX4_full = resX_all[np.arange(len(resX_all)), np.argmin(np.abs(resX_all), axis=1)]
+    resX4_cut  = aplicar_percentil(resX4_full)
 
     m_z      = (z4[:,:,0]-z4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
     z_teo    = m_z*y4[:,:,1] + (z4[:,:,0]-m_z*y4[:,:,0])
     resZ_all = z4[:,:,1] - z_teo
-    resZ4    = resZ_all[np.arange(len(resZ_all)), np.argmin(np.abs(resZ_all), axis=1)]
-    # sin percentil
+    resZ4_full = resZ_all[np.arange(len(resZ_all)), np.argmin(np.abs(resZ_all), axis=1)]
+    resZ4_cut  = aplicar_percentil(resZ4_full)
 
     # --------------------------------------------------
-    # FILTRO DE SANIDAD FISICA
-    # Los datos experimentales estan truncados en +-10mm
-    # (limite fisico del detector). Aplicamos el mismo
-    # limite a la simulacion para ser consistentes.
+    # COMBINAR:
+    # _cut  → para el fit (percentil 95%, igual que antes)
+    # _full → para calcular fraccion real dentro del corte
     # --------------------------------------------------
 
-    LIMITE_FISICO = 10.0  # mm
-
-    resX3 = resX3[np.abs(resX3) < LIMITE_FISICO]
-    resZ3 = resZ3[np.abs(resZ3) < LIMITE_FISICO]
-    resX4 = resX4[np.abs(resX4) < LIMITE_FISICO]
-    resZ4 = resZ4[np.abs(resZ4) < LIMITE_FISICO]
-
-    # --------------------------------------------------
-    # COMBINAR 3 + 4 HITS — sin percentil, con limite fisico
-    # --------------------------------------------------
-
-    resX_comb = np.concatenate([resX3, resX4])
-    resZ_comb = np.concatenate([resZ3, resZ4])
+    resX_comb_cut  = aplicar_percentil(np.concatenate([resX3_cut,  resX4_cut]))
+    resZ_comb_cut  = aplicar_percentil(np.concatenate([resZ3_cut,  resZ4_cut]))
+    resX_comb_full = np.concatenate([resX3_full, resX4_full])
+    resZ_comb_full = np.concatenate([resZ3_full, resZ4_full])
 
     # --------------------------------------------------
     # ARCHIVO RESULTADOS
@@ -137,14 +138,16 @@ def ejecutar_analisis(sigma_hit):
 
     # --------------------------------------------------
     # FUNCIÓN DE ANÁLISIS COMBINADO
+    # data_fit  → datos con percentil (para el fit)
+    # data_full → datos completos (para fraccion real)
     # --------------------------------------------------
 
-    def analizar_combinado(data, titulo):
+    def analizar_combinado(data_fit, data_full, titulo):
 
-        hist, bins = np.histogram(data, bins=60)
+        hist, bins = np.histogram(data_fit, bins=60)
         centers    = (bins[:-1] + bins[1:]) / 2
 
-        gamma0 = np.std(data) * 0.5
+        gamma0 = np.std(data_fit) * 0.5
 
         # -------------------------
         # FIT LORENTZIANA SIMPLE
@@ -155,7 +158,7 @@ def ejecutar_analisis(sigma_hit):
             params_s, cov_s = curve_fit(
                 lorentz, centers, hist,
                 p0=[max(hist), 0, gamma0],
-                bounds=([0, -0.5, 0], [np.inf, 0.5, np.inf]),
+                bounds=([0, -0.1, 0], [np.inf, 0.1, np.inf]),
                 maxfev=10000
             )
             A_s, mu_s, gamma_s = [float(p) for p in params_s]
@@ -184,8 +187,8 @@ def ejecutar_analisis(sigma_hit):
                 double_lorentz, centers, hist,
                 p0=p0_dl,
                 bounds=(
-                    [0, 0,      0, 0,      -0.5],
-                    [np.inf, np.inf, np.inf, np.inf,  0.5]
+                    [0, 0,      0, 0,      -0.1],
+                    [np.inf, np.inf, np.inf, np.inf,  0.1]
                 ),
                 maxfev=10000
             )
@@ -232,10 +235,10 @@ def ejecutar_analisis(sigma_hit):
 
         corte = 5.0 * gamma_para_corte if np.isfinite(gamma_para_corte) else np.nan
 
-        # fraccion sobre el 100% de los datos
+        # fraccion sobre el 100% de los datos (data_full)
         if np.isfinite(corte):
-            n_dentro    = np.sum(np.abs(data) < corte)
-            frac_dentro = n_dentro / len(data) * 100
+            n_dentro    = np.sum(np.abs(data_full) < corte)
+            frac_dentro = n_dentro / len(data_full) * 100
         else:
             frac_dentro = np.nan
 
@@ -253,8 +256,8 @@ def ejecutar_analisis(sigma_hit):
         # -------------------------
 
         plt.figure(figsize=(9, 6))
-        plt.hist(data, bins=60, alpha=0.6, color='steelblue',
-                 label=f"Datos combinados (3+4 hits)  N={len(data)}")
+        plt.hist(data_fit, bins=60, alpha=0.6, color='steelblue',
+                 label=f"Datos combinados (3+4 hits, p95)  N={len(data_fit)}")
 
         if simple_ok:
             plt.plot(x_fit, lorentz(x_fit, A_s, mu_s, gamma_s),
@@ -274,7 +277,7 @@ def ejecutar_analisis(sigma_hit):
 
         if np.isfinite(corte):
             plt.axvline( corte, color='magenta', linestyle=':', linewidth=1.5,
-                         label=f"Corte +-{corte:.3f} mm ({frac_dentro:.1f}% datos)")
+                         label=f"Corte +-{corte:.3f} mm ({frac_dentro:.1f}% de todos los datos)")
             plt.axvline(-corte, color='magenta', linestyle=':', linewidth=1.5)
 
         plt.title(titulo)
@@ -291,14 +294,14 @@ def ejecutar_analisis(sigma_hit):
 
         fig, ax = plt.subplots(figsize=(9, 6))
 
-        hist_log, bins_log = np.histogram(data, bins=60)
+        hist_log, bins_log = np.histogram(data_fit, bins=60)
         centers_log = (bins_log[:-1] + bins_log[1:]) / 2
         width_log   = bins_log[1] - bins_log[0]
         mask_pos    = hist_log > 0
 
         ax.bar(centers_log[mask_pos], hist_log[mask_pos],
                width=width_log, alpha=0.6, color='steelblue',
-               label=f"Datos combinados (3+4 hits)  N={len(data)}")
+               label=f"Datos combinados (3+4 hits, p95)  N={len(data_fit)}")
 
         if simple_ok:
             ax.plot(x_fit, lorentz(x_fit, A_s, mu_s, gamma_s),
@@ -318,7 +321,7 @@ def ejecutar_analisis(sigma_hit):
 
         if np.isfinite(corte):
             ax.axvline( corte, color='magenta', linestyle=':', linewidth=2,
-                        label=f"Corte +-{corte:.3f} mm ({frac_dentro:.1f}% datos)")
+                        label=f"Corte +-{corte:.3f} mm ({frac_dentro:.1f}% de todos los datos)")
             ax.axvline(-corte, color='magenta', linestyle=':', linewidth=2)
 
         ax.set_yscale('log')
@@ -335,7 +338,8 @@ def ejecutar_analisis(sigma_hit):
         # -------------------------
 
         f_info.write(f"\n--- {titulo} ---\n")
-        f_info.write(f"N eventos combinados: {len(data)}\n")
+        f_info.write(f"N eventos para fit (p95): {len(data_fit)}\n")
+        f_info.write(f"N eventos totales: {len(data_full)}\n")
 
         if simple_ok:
             f_info.write(f"Lorentz simple:\n")
@@ -367,14 +371,14 @@ def ejecutar_analisis(sigma_hit):
 
         f_info.write(f"Corte propuesto (5*gamma): {corte:.4f} mm  [{label_corte}]\n")
         if np.isfinite(frac_dentro):
-            f_info.write(f"   Fraccion dentro del corte: {frac_dentro:.1f}%\n")
+            f_info.write(f"   Fraccion dentro del corte (sobre todos los datos): {frac_dentro:.1f}%\n")
 
     # --------------------------------------------------
     # EJECUTAR
     # --------------------------------------------------
 
-    analizar_combinado(resX_comb, "Combinado X (3+4 hits)")
-    analizar_combinado(resZ_comb, "Combinado Z (3+4 hits)")
+    analizar_combinado(resX_comb_cut, resX_comb_full, "Combinado X (3+4 hits)")
+    analizar_combinado(resZ_comb_cut, resZ_comb_full, "Combinado Z (3+4 hits)")
 
     f_info.close()
     print(f"Resultados guardados para sigma={sigma_hit:.3f}")

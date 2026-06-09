@@ -1,32 +1,34 @@
 
 --- Combinado X (3+4 hits) ---
-N eventos combinados: 160893
+N eventos para fit (p95): 146067
+N eventos totales: 161849
 Lorentz simple:
-   mu = -0.0118
-   gamma = 0.0003 +- 0.0000
-   chi2/ndf = 4299.3057
+   mu = -0.0001
+   gamma = 0.0355 +- 0.0009
+   chi2/ndf = 45.4177
 Doble Lorentz:
-   mu = -0.0455
-   gamma1 (core) = 0.1092 +- 19.3847
-   gamma2 (cola) = 0.1096 +- 130.5833
-   gamma_eff = 0.1092
-   chi2/ndf = 9359.6913
+   mu = -0.0000
+   gamma1 (core) = 0.0115 +- 0.0012
+   gamma2 (cola) = 0.0487 +- 0.0019
+   gamma_eff = 0.0333
+   chi2/ndf = 46.7558
 Decision: LORENTZ SIMPLE SUFICIENTE
-Corte propuesto (5*gamma): 0.0016 mm  [gamma_s (Lorentz simple)]
-   Fraccion dentro del corte: 3.4%
+Corte propuesto (5*gamma): 0.1776 mm  [gamma_s (Lorentz simple)]
+   Fraccion dentro del corte (sobre todos los datos): 93.6%
 
 --- Combinado Z (3+4 hits) ---
-N eventos combinados: 160879
+N eventos para fit (p95): 146067
+N eventos totales: 161849
 Lorentz simple:
-   mu = -0.0003
-   gamma = 0.0003 +- 0.0000
-   chi2/ndf = 8652.9997
+   mu = 0.0000
+   gamma = 0.0353 +- 0.0008
+   chi2/ndf = 44.1418
 Doble Lorentz:
-   mu = -0.0009
-   gamma1 (core) = 0.1356 +- 3909.5645
-   gamma2 (cola) = 0.1361 +- 92.8669
-   gamma_eff = 0.1361
-   chi2/ndf = 22637.4774
+   mu = 0.0001
+   gamma1 (core) = 0.0140 +- 0.0016
+   gamma2 (cola) = 0.0507 +- 0.0027
+   gamma_eff = 0.0340
+   chi2/ndf = 46.8978
 Decision: LORENTZ SIMPLE SUFICIENTE
-Corte propuesto (5*gamma): 0.0014 mm  [gamma_s (Lorentz simple)]
-   Fraccion dentro del corte: 2.9%
+Corte propuesto (5*gamma): 0.1765 mm  [gamma_s (Lorentz simple)]
+   Fraccion dentro del corte (sobre todos los datos): 93.4%
