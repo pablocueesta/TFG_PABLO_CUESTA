@@ -1,0 +1,371 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+# --------------------------------------------------
+# FUNCIÓN PERCENTIL
+# --------------------------------------------------
+
+def aplicar_percentil(data, p=95):
+    low  = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100 - (100-p)/2)
+    return data[(data > low) & (data < high)]
+
+# --------------------------------------------------
+# FUNCIONES DE AJUSTE
+# --------------------------------------------------
+
+def lorentz(x, A, mu, gamma):
+    return A / (1 + ((x - mu) / gamma)**2)
+
+def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
+    return (
+        A1 / (1 + ((x - mu) / gamma1)**2)
+        + A2 / (1 + ((x - mu) / gamma2)**2)
+    )
+
+def chi2_reducido(y_data, y_fit, n_params):
+    mask = y_data > 0
+    residuos = y_data[mask] - y_fit[mask]
+    chi2 = np.sum(residuos**2 / y_data[mask])
+    ndf  = np.sum(mask) - n_params
+    if ndf <= 0:
+        return np.nan
+    return chi2 / ndf
+
+
+# --------------------------------------------------
+# FUNCIÓN PRINCIPAL
+# --------------------------------------------------
+
+def ejecutar_analisis(sigma_hit):
+
+    np.random.seed(42)
+
+    print(f"\n==============================")
+    print(f"Ejecutando sigma_hit = {sigma_hit:.3f}")
+    print(f"==============================")
+
+    archivo    = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
+    salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz\fits_s{sigma_hit:.3f}.txt"
+
+    df     = pd.read_csv(archivo)
+    coords = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
+
+    coords_smeared = coords.copy()
+    valid = coords[:,:,0] != -99999
+    coords_smeared[:,:,0][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords_smeared[:,:,2][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords = coords_smeared
+
+    mask     = np.all(coords != -99999, axis=2)
+    hits     = mask.sum(axis=1)
+    eventos3 = np.where(hits == 3)[0]
+    eventos4 = np.where(hits == 4)[0]
+
+    # 3 HITS
+    coords3 = coords[eventos3]
+    mask3   = mask[eventos3]
+    coords_validos = np.array([ev[m] for ev,m in zip(coords3,mask3)])
+    coords_validos = np.array([ev[np.argsort(ev[:,1])] for ev in coords_validos])
+    x3 = coords_validos[:,:,0]; y3 = coords_validos[:,:,1]; z3 = coords_validos[:,:,2]
+    x_izq, x_mid, x_der = x3.T; y_izq, y_mid, y_der = y3.T; z_izq, z_mid, z_der = z3.T
+
+    m_x        = (x_izq - x_der)/(y_izq - y_der)
+    x_teo      = m_x*y_mid + (x_izq - m_x*y_izq)
+    resX3_full = x_mid - x_teo
+
+    m_z        = (z_izq - z_der)/(y_izq - y_der)
+    z_teo      = m_z*y_mid + (z_izq - m_z*y_izq)
+    resZ3_full = z_mid - z_teo
+
+    # 4 HITS
+    combos  = np.array([[0,1,2],[0,1,3],[0,2,3],[1,2,3]])
+    coords4 = coords[eventos4]
+    coords4 = np.array([ev[np.argsort(ev[:,1])] for ev in coords4])
+    coords4 = coords4[:,combos]
+    x4,y4,z4 = coords4[:,:,:,0], coords4[:,:,:,1], coords4[:,:,:,2]
+
+    m_x      = (x4[:,:,0]-x4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    x_teo    = m_x*y4[:,:,1] + (x4[:,:,0]-m_x*y4[:,:,0])
+    resX_all = x4[:,:,1] - x_teo
+    resX4_full = resX_all[np.arange(len(resX_all)), np.argmin(np.abs(resX_all), axis=1)]
+
+    m_z      = (z4[:,:,0]-z4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    z_teo    = m_z*y4[:,:,1] + (z4[:,:,0]-m_z*y4[:,:,0])
+    resZ_all = z4[:,:,1] - z_teo
+    resZ4_full = resZ_all[np.arange(len(resZ_all)), np.argmin(np.abs(resZ_all), axis=1)]
+
+    # --------------------------------------------------
+    # COMBINAR:
+    # _full → todos los datos (sin percentil)
+    # _cut  → con percentil 95% (para comparacion)
+    # El fit se hace sobre _full con pesos Poisson
+    # --------------------------------------------------
+
+    resX_comb_full = np.concatenate([resX3_full, resX4_full])
+    resZ_comb_full = np.concatenate([resZ3_full, resZ4_full])
+
+    # version con percentil para comparacion visual (no para fit)
+    resX_comb_cut = aplicar_percentil(
+        np.concatenate([aplicar_percentil(resX3_full),
+                        aplicar_percentil(resX4_full)]))
+    resZ_comb_cut = aplicar_percentil(
+        np.concatenate([aplicar_percentil(resZ3_full),
+                        aplicar_percentil(resZ4_full)]))
+
+    f_info = open(salida_fit, "w", encoding="utf-8")
+
+    def analizar_combinado(data_full, data_cut, titulo):
+
+        # histograma sobre todos los datos
+        hist, bins = np.histogram(data_full, bins=100)
+        centers    = (bins[:-1] + bins[1:]) / 2
+
+        gamma0 = np.std(data_cut) * 0.5  # estimacion inicial robusta desde datos cortados
+
+        # CAMBIO: errores de Poisson para el fit
+        # bins con 0 cuentas tienen error 1 (minimo) para no dividir por cero
+        errores_poisson = np.sqrt(np.where(hist > 0, hist, 1))
+
+        # -------------------------
+        # FIT LORENTZIANA SIMPLE con pesos Poisson
+        # -------------------------
+
+        simple_ok = False
+        try:
+            params_s, cov_s = curve_fit(
+                lorentz, centers, hist,
+                p0=[max(hist), 0, gamma0],
+                sigma=errores_poisson,          # CAMBIO
+                absolute_sigma=True,            # CAMBIO
+                bounds=([0, -0.5, 0], [np.inf, 0.5, np.inf]),
+                maxfev=20000
+            )
+            A_s, mu_s, gamma_s = [float(p) for p in params_s]
+            err_gamma_s = float(np.sqrt(np.diag(cov_s))[2])
+            simple_ok = True
+        except RuntimeError:
+            print(f"  Fit Lorentz simple fallido en {titulo}")
+            gamma_s     = np.nan
+            err_gamma_s = np.nan
+
+        if simple_ok:
+            y_fit_s = lorentz(centers, A_s, mu_s, gamma_s)
+            chi2_s  = chi2_reducido(hist, y_fit_s, n_params=3)
+        else:
+            chi2_s = np.nan
+
+        # -------------------------
+        # FIT DOBLE LORENTZIANA con pesos Poisson
+        # -------------------------
+
+        p0_dl     = [max(hist), gamma0*0.3, max(hist)/5, gamma0*1.5, 0]
+        double_ok = False
+
+        try:
+            params_dl, cov_dl = curve_fit(
+                double_lorentz, centers, hist,
+                p0=p0_dl,
+                sigma=errores_poisson,          # CAMBIO
+                absolute_sigma=True,            # CAMBIO
+                bounds=(
+                    [0, 0,      0, 0,      -0.5],
+                    [np.inf, np.inf, np.inf, np.inf,  0.5]
+                ),
+                maxfev=20000
+            )
+
+            A1, gamma1, A2, gamma2, mu_dl = [float(p) for p in params_dl]
+            errors     = np.sqrt(np.diag(cov_dl))
+            err_gamma1 = float(errors[1])
+            err_gamma2 = float(errors[3])
+
+            if gamma1 > gamma2:
+                A1, A2             = A2, A1
+                gamma1, gamma2     = gamma2, gamma1
+                err_gamma1, err_gamma2 = err_gamma2, err_gamma1
+
+            if gamma1 > 0 and gamma2 > 0 and gamma1 < 5 and gamma2 < 5:
+                double_ok = True
+            else:
+                print(f"  Fit doble Lorentz no fisico en {titulo}")
+
+        except RuntimeError:
+            print(f"  Fit doble Lorentz fallido en {titulo}")
+
+        if double_ok:
+            y_fit_dl  = double_lorentz(centers, A1, gamma1, A2, gamma2, mu_dl)
+            chi2_dl   = chi2_reducido(hist, y_fit_dl, n_params=5)
+            gamma_eff = (A1*gamma1 + A2*gamma2) / (A1 + A2)
+        else:
+            chi2_dl   = np.nan
+            gamma_eff = np.nan
+
+        # -------------------------
+        # CORTE PROPUESTO: 5·gamma del mejor fit
+        # -------------------------
+
+        if double_ok and simple_ok and chi2_dl < chi2_s * 0.9:
+            gamma_para_corte = gamma_eff
+            label_corte      = "gamma_eff (doble Lorentz)"
+        elif simple_ok:
+            gamma_para_corte = gamma_s
+            label_corte      = "gamma_s (Lorentz simple)"
+        else:
+            gamma_para_corte = np.nan
+            label_corte      = "no disponible"
+
+        corte = 5.0 * gamma_para_corte if np.isfinite(gamma_para_corte) else np.nan
+
+        # fraccion sobre el 100% de los datos
+        if np.isfinite(corte):
+            n_dentro    = np.sum(np.abs(data_full) < corte)
+            frac_dentro = n_dentro / len(data_full) * 100
+        else:
+            frac_dentro = np.nan
+
+        nombre_archivo = titulo.replace(" ","_").replace("(","").replace(")","").replace("+","y")
+        base_ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Combinado_Lorentz\{nombre_archivo}_{sigma_hit:.3f}"
+
+        x_fit_range = np.linspace(
+            np.percentile(data_full, 0.1),
+            np.percentile(data_full, 99.9),
+            400
+        )
+
+        # -------------------------
+        # PLOT LINEAL — zoom en el pico
+        # -------------------------
+
+        plt.figure(figsize=(9, 6))
+        plt.hist(data_full, bins=100, alpha=0.6, color='steelblue',
+                 label=f"Todos los datos (3+4 hits)  N={len(data_full)}")
+
+        if simple_ok:
+            plt.plot(x_fit_range, lorentz(x_fit_range, A_s, mu_s, gamma_s),
+                     color='orange', linewidth=2,
+                     label=f"Lorentz simple: gamma={gamma_s:.3f}+-{err_gamma_s:.3f}  chi2/ndf={chi2_s:.2f}")
+        if double_ok:
+            plt.plot(x_fit_range, double_lorentz(x_fit_range, A1, gamma1, A2, gamma2, mu_dl),
+                     color='red', linewidth=2,
+                     label=f"Doble Lorentz  chi2/ndf={chi2_dl:.2f}")
+            plt.plot(x_fit_range, lorentz(x_fit_range, A1, mu_dl, gamma1),
+                     '--', color='blue', linewidth=1.5,
+                     label=f"Core: gamma1={gamma1:.3f}+-{err_gamma1:.3f}")
+            plt.plot(x_fit_range, lorentz(x_fit_range, A2, mu_dl, gamma2),
+                     '--', color='green', linewidth=1.5,
+                     label=f"Cola: gamma2={gamma2:.3f}+-{err_gamma2:.3f}")
+
+        if np.isfinite(corte):
+            plt.axvline( corte, color='magenta', linestyle=':', linewidth=1.5,
+                         label=f"Corte +-{corte:.3f} mm ({frac_dentro:.1f}% datos)")
+            plt.axvline(-corte, color='magenta', linestyle=':', linewidth=1.5)
+            # CAMBIO: zoom al rango del corte para que se vea bien
+            plt.xlim(-corte * 2, corte * 2)
+
+        plt.title(titulo)
+        plt.xlabel("Residual [mm]")
+        plt.ylabel("Counts")
+        plt.legend(fontsize=8)
+        plt.grid()
+        plt.savefig(base_ruta + "_lineal.png", dpi=150)
+        plt.close()
+
+        # -------------------------
+        # PLOT LOGARITMICO — rango completo
+        # -------------------------
+
+        fig, ax = plt.subplots(figsize=(9, 6))
+        hist_log, bins_log = np.histogram(data_full, bins=100)
+        centers_log = (bins_log[:-1] + bins_log[1:]) / 2
+        width_log   = bins_log[1] - bins_log[0]
+        mask_pos    = hist_log > 0
+
+        ax.bar(centers_log[mask_pos], hist_log[mask_pos],
+               width=width_log, alpha=0.6, color='steelblue',
+               label=f"Todos los datos (3+4 hits)  N={len(data_full)}")
+
+        x_fit_log = np.linspace(centers_log[mask_pos][0], centers_log[mask_pos][-1], 600)
+
+        if simple_ok:
+            ax.plot(x_fit_log, lorentz(x_fit_log, A_s, mu_s, gamma_s),
+                    color='orange', linewidth=2,
+                    label=f"Lorentz simple: gamma={gamma_s:.3f}  chi2/ndf={chi2_s:.2f}")
+        if double_ok:
+            ax.plot(x_fit_log, double_lorentz(x_fit_log, A1, gamma1, A2, gamma2, mu_dl),
+                    color='red', linewidth=2,
+                    label=f"Doble Lorentz  chi2/ndf={chi2_dl:.2f}")
+            ax.plot(x_fit_log, lorentz(x_fit_log, A1, mu_dl, gamma1),
+                    '--', color='blue', linewidth=1.5, label=f"Core: gamma1={gamma1:.3f}")
+            ax.plot(x_fit_log, lorentz(x_fit_log, A2, mu_dl, gamma2),
+                    '--', color='green', linewidth=1.5, label=f"Cola: gamma2={gamma2:.3f}")
+
+        if np.isfinite(corte):
+            ax.axvline( corte, color='magenta', linestyle=':', linewidth=2,
+                        label=f"Corte +-{corte:.3f} mm ({frac_dentro:.1f}% datos)")
+            ax.axvline(-corte, color='magenta', linestyle=':', linewidth=2)
+
+        ax.set_yscale('log')
+        ax.set_title(titulo + " [escala logaritmica — rango completo]")
+        ax.set_xlabel("Residual [mm]")
+        ax.set_ylabel("Counts (log)")
+        ax.legend(fontsize=8)
+        ax.grid(which='both', linestyle='--', alpha=0.5)
+        fig.savefig(base_ruta + "_log.png", dpi=150)
+        plt.close(fig)
+
+        # -------------------------
+        # GUARDAR RESULTADOS
+        # -------------------------
+
+        f_info.write(f"\n--- {titulo} ---\n")
+        f_info.write(f"N eventos totales: {len(data_full)}\n")
+
+        if simple_ok:
+            f_info.write(f"Lorentz simple:\n")
+            f_info.write(f"   mu = {mu_s:.4f}\n")
+            f_info.write(f"   gamma = {gamma_s:.4f} +- {err_gamma_s:.4f}\n")
+            f_info.write(f"   chi2/ndf = {chi2_s:.4f}\n")
+        else:
+            f_info.write(f"Lorentz simple: fallido\n")
+
+        if double_ok:
+            f_info.write(f"Doble Lorentz:\n")
+            f_info.write(f"   mu = {mu_dl:.4f}\n")
+            f_info.write(f"   gamma1 (core) = {gamma1:.4f} +- {err_gamma1:.4f}\n")
+            f_info.write(f"   gamma2 (cola) = {gamma2:.4f} +- {err_gamma2:.4f}\n")
+            f_info.write(f"   gamma_eff = {gamma_eff:.4f}\n")
+            f_info.write(f"   chi2/ndf = {chi2_dl:.4f}\n")
+        else:
+            f_info.write(f"Doble Lorentz: fallido\n")
+
+        if simple_ok and double_ok:
+            if chi2_dl < chi2_s * 0.9:
+                decision = "DOBLE LORENTZ MEJOR (chi2 mejora >10%)"
+            else:
+                decision = "LORENTZ SIMPLE SUFICIENTE"
+            f_info.write(f"Decision: {decision}\n")
+            print(f"  {titulo}: chi2_s={chi2_s:.2f}  chi2_dl={chi2_dl:.2f}  -> {decision}")
+        else:
+            print(f"  {titulo}: gamma_s={gamma_s:.4f}")
+
+        f_info.write(f"Corte propuesto (5*gamma): {corte:.4f} mm  [{label_corte}]\n")
+        if np.isfinite(frac_dentro):
+            f_info.write(f"   Fraccion dentro del corte (sobre todos los datos): {frac_dentro:.1f}%\n")
+
+    analizar_combinado(resX_comb_full, resX_comb_cut, "Combinado X (3+4 hits)")
+    analizar_combinado(resZ_comb_full, resZ_comb_cut, "Combinado Z (3+4 hits)")
+
+    f_info.close()
+    print(f"Resultados guardados para sigma={sigma_hit:.3f}")
+
+
+sigmas = np.arange(0.050, 0.205, 0.005)
+
+for sigma in sigmas:
+    try:
+        ejecutar_analisis(round(sigma, 3))
+    except Exception as e:
+        print(f"Error con sigma={sigma:.3f}: {e}")

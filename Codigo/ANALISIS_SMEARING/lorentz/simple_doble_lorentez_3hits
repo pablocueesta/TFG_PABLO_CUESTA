@@ -1,0 +1,237 @@
+"""
+DEMO_DOBLE_LORENTZ_3HITS.py
+===================================================
+Demuestra que la doble Lorentziana para 3 hits es degenerada,
+igual que demostramos con la doble Gaussiana.
+
+Para cada smearing calcula:
+  - Lorentziana simple: gamma_s
+  - Doble Lorentziana forzada: gamma1, gamma2, A1, A2
+  - Correlacion entre gamma1 y gamma2 en la covarianza
+  - gamma_eff = (A1*gamma1 + A2*gamma2) / (A1 + A2)
+  - Comparacion gamma_eff vs gamma_s
+
+Si el diagnostico es el mismo que con Gaussianas:
+  - corr cercana a 1
+  - ratio A1/A2 extremo (>>1 o <<1)
+  - gamma_eff ≈ gamma_s  (la doble no aporta nada)
+=> la distribucion de 3 hits es unimodal y la doble Lorentziana
+   esta sobreajustando con grados de libertad sin informacion fisica.
+"""
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+# --------------------------------------------------
+# RUTAS
+# --------------------------------------------------
+
+archivo    = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
+salida_txt = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\diagnostico_doble_lorentz_3hits.txt"
+salida_png = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\First_Cambio_Smearing_Lorentz\diagnostico_doble_lorentz_3hits.png"
+
+# --------------------------------------------------
+# FUNCIONES
+# --------------------------------------------------
+
+def aplicar_percentil(data, p=95):
+    low  = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100 - (100-p)/2)
+    return data[(data > low) & (data < high)]
+
+def lorentz(x, A, mu, gamma):
+    return A / (1 + ((x - mu) / gamma)**2)
+
+def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
+    return (A1 / (1 + ((x - mu) / gamma1)**2)
+            + A2 / (1 + ((x - mu) / gamma2)**2))
+
+# --------------------------------------------------
+# BARRIDO
+# --------------------------------------------------
+
+sigmas = np.arange(0.050, 0.205, 0.005)
+
+resultados = []   # lista de dicts con los diagnosticos
+
+df     = pd.read_csv(archivo)
+coords_base = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
+
+for sigma_hit in sigmas:
+
+    np.random.seed(42)
+
+    coords = coords_base.copy()
+    valid  = coords[:,:,0] != -99999
+    coords[:,:,0][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords[:,:,2][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+
+    mask     = np.all(coords != -99999, axis=2)
+    hits     = mask.sum(axis=1)
+    eventos3 = np.where(hits == 3)[0]
+
+    coords3 = coords[eventos3]
+    mask3   = mask[eventos3]
+
+    coords_validos = np.array([ev[m] for ev,m in zip(coords3,mask3)])
+    coords_validos = np.array([ev[np.argsort(ev[:,1])] for ev in coords_validos])
+
+    x3 = coords_validos[:,:,0]
+    y3 = coords_validos[:,:,1]
+
+    x_izq, x_mid, x_der = x3.T
+    y_izq, y_mid, y_der = y3.T
+
+    m_x   = (x_izq - x_der)/(y_izq - y_der)
+    x_teo = m_x*y_mid + (x_izq - m_x*y_izq)
+    resX3 = aplicar_percentil(x_mid - x_teo)
+
+    hist, bins = np.histogram(resX3, bins=60)
+    centers    = (bins[:-1] + bins[1:]) / 2
+    gamma0     = np.std(resX3) * 0.5
+
+    row = {'sigma_hit': sigma_hit}
+
+    # ---- Lorentziana simple ----
+    try:
+        ps, covs = curve_fit(
+            lorentz, centers, hist,
+            p0=[max(hist), 0, gamma0],
+            bounds=([0,-0.1,0],[np.inf,0.1,np.inf]),
+            maxfev=10000)
+        A_s, mu_s, gamma_s = [float(p) for p in ps]
+        row['gamma_s']     = gamma_s
+        row['err_gamma_s'] = float(np.sqrt(np.diag(covs))[2])
+    except RuntimeError:
+        row['gamma_s'] = row['err_gamma_s'] = np.nan
+
+    # ---- Doble Lorentziana forzada ----
+    try:
+        pd0 = [max(hist), gamma0*0.5, max(hist)/5, gamma0*2.0, 0]
+        pdl, covdl = curve_fit(
+            double_lorentz, centers, hist,
+            p0=pd0,
+            bounds=([0,0,0,0,-0.1],[np.inf,np.inf,np.inf,np.inf,0.1]),
+            maxfev=10000)
+
+        A1, g1, A2, g2, mu_dl = [float(p) for p in pdl]
+
+        # correlacion entre gamma1 y gamma2 en la covarianza
+        var1 = covdl[1,1]; var2 = covdl[3,3]; cov12 = covdl[1,3]
+        corr = cov12 / np.sqrt(var1 * var2) if var1 > 0 and var2 > 0 else np.nan
+
+        # ordenar core < cola
+        if g1 > g2:
+            A1, A2 = A2, A1
+            g1, g2 = g2, g1
+
+        gamma_eff = (A1*g1 + A2*g2) / (A1 + A2) if (A1+A2) > 0 else np.nan
+
+        row['gamma1']     = g1
+        row['gamma2']     = g2
+        row['A1']         = A1
+        row['A2']         = A2
+        row['ratio_A1A2'] = A1/A2 if A2 > 0 else np.nan
+        row['corr']       = corr
+        row['gamma_eff']  = gamma_eff
+
+    except RuntimeError:
+        for k in ['gamma1','gamma2','A1','A2','ratio_A1A2','corr','gamma_eff']:
+            row[k] = np.nan
+
+    resultados.append(row)
+    print(f"sigma={sigma_hit:.3f}  gamma_s={row.get('gamma_s',np.nan):.4f}"
+          f"  gamma_eff={row.get('gamma_eff',np.nan):.4f}"
+          f"  corr={row.get('corr',np.nan):.3f}"
+          f"  A1/A2={row.get('ratio_A1A2',np.nan):.1f}")
+
+# --------------------------------------------------
+# GUARDAR TABLA
+# --------------------------------------------------
+
+with open(salida_txt, 'w', encoding='utf-8') as f:
+    f.write("sigma_hit\tgamma_s\terr_gamma_s\tgamma1\tgamma2\tA1\tA2\tratio_A1A2\tcorr\tgamma_eff\n")
+    for r in resultados:
+        f.write(
+            f"{r['sigma_hit']:.3f}\t"
+            f"{r.get('gamma_s',np.nan):.4f}\t"
+            f"{r.get('err_gamma_s',np.nan):.4f}\t"
+            f"{r.get('gamma1',np.nan):.4f}\t"
+            f"{r.get('gamma2',np.nan):.4f}\t"
+            f"{r.get('A1',np.nan):.1f}\t"
+            f"{r.get('A2',np.nan):.1f}\t"
+            f"{r.get('ratio_A1A2',np.nan):.2f}\t"
+            f"{r.get('corr',np.nan):.4f}\t"
+            f"{r.get('gamma_eff',np.nan):.4f}\n"
+        )
+
+print(f"\nTabla guardada en: {salida_txt}")
+
+# --------------------------------------------------
+# PLOTS DE DIAGNOSTICO (4 paneles)
+# --------------------------------------------------
+
+s  = np.array([r['sigma_hit']   for r in resultados])
+gs = np.array([r.get('gamma_s', np.nan)    for r in resultados])
+g1 = np.array([r.get('gamma1',  np.nan)    for r in resultados])
+g2 = np.array([r.get('gamma2',  np.nan)    for r in resultados])
+ge = np.array([r.get('gamma_eff',np.nan)   for r in resultados])
+cr = np.array([r.get('corr',    np.nan)    for r in resultados])
+ra = np.array([r.get('ratio_A1A2',np.nan)  for r in resultados])
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 9))
+fig.suptitle("Diagnostico doble Lorentziana para 3 hits\n"
+             "(analogia con el diagnostico de doble Gaussiana)", fontsize=12)
+
+# panel 1: gamma1, gamma2, gamma_s vs smearing
+ax = axes[0,0]
+ax.plot(s, gs, 'o-', color='blue',   label='gamma simple')
+ax.plot(s, g1, 's-', color='green',  label='gamma1 (core doble)')
+ax.plot(s, g2, '^-', color='red',    label='gamma2 (cola doble)')
+ax.plot(s, ge, 'D-', color='orange', label='gamma_eff doble', linestyle='--')
+ax.set_xlabel("smearing [mm]"); ax.set_ylabel("gamma [mm]")
+ax.set_title("gamma vs smearing")
+ax.legend(fontsize=8); ax.grid()
+
+# panel 2: correlacion gamma1-gamma2 vs smearing
+ax = axes[0,1]
+ax.plot(s, cr, 'o-', color='purple')
+ax.axhline(0.94, color='red', linestyle='--', linewidth=1,
+           label='corr~0.94 (nivel Gaussianas 3 hits)')
+ax.axhline(0.59, color='green', linestyle='--', linewidth=1,
+           label='corr~0.59 (nivel Gaussianas 4 hits)')
+ax.set_xlabel("smearing [mm]"); ax.set_ylabel("correlacion(gamma1, gamma2)")
+ax.set_ylim(-1.1, 1.1)
+ax.set_title("Correlacion en covarianza del fit doble")
+ax.legend(fontsize=8); ax.grid()
+
+# panel 3: ratio A1/A2 vs smearing
+ax = axes[1,0]
+ax.semilogy(s, np.abs(ra), 'o-', color='brown')
+ax.axhline(1.0, color='gray', linestyle='--', linewidth=1, label='ratio = 1 (componentes iguales)')
+ax.set_xlabel("smearing [mm]"); ax.set_ylabel("|A1/A2| (escala log)")
+ax.set_title("Ratio de amplitudes A1/A2")
+ax.legend(fontsize=8); ax.grid()
+
+# panel 4: gamma_eff vs gamma_simple (deberian ser iguales si doble no aporta)
+ax = axes[1,1]
+mask_ok = np.isfinite(gs) & np.isfinite(ge)
+ax.scatter(gs[mask_ok], ge[mask_ok], c=s[mask_ok], cmap='viridis', s=40)
+lim_min = min(np.nanmin(gs), np.nanmin(ge))
+lim_max = max(np.nanmax(gs), np.nanmax(ge))
+ax.plot([lim_min, lim_max], [lim_min, lim_max], 'r--', linewidth=1.5,
+        label='gamma_eff = gamma_s (doble no aporta)')
+ax.set_xlabel("gamma_s (Lorentz simple) [mm]")
+ax.set_ylabel("gamma_eff (doble Lorentz) [mm]")
+ax.set_title("gamma_eff vs gamma_simple")
+ax.legend(fontsize=8); ax.grid()
+sm = plt.cm.ScalarMappable(cmap='viridis',
+                            norm=plt.Normalize(s.min(), s.max()))
+plt.colorbar(sm, ax=ax, label='smearing [mm]')
+
+plt.tight_layout()
+plt.savefig(salida_png, dpi=200)
+plt.close()
+print(f"Plot guardado en: {salida_png}")

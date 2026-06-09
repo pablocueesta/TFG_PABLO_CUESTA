@@ -389,6 +389,7 @@ def ejecutar_analisis(sigma_hit):
 # --------------------------------------------------
 
 sigmas = np.arange(0.050, 0.205, 0.005)
+#sigmas = np.concatenate([[0.0], np.arange(0.050, 0.205, 0.005)])
 
 for sigma in sigmas:
     try:

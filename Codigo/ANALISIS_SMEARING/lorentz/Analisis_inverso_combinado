@@ -1,0 +1,362 @@
+"""
+SC_RESOLUCION_EXPERIMENTAL.py
+=====================================================================
+Para cada uno de los 6 archivos de datos experimentales:
+  1. Ajusta Lorentziana simple y doble Lorentziana.
+  2. Extrae gamma_exp (anchura experimental).
+  3. Lee la tabla gamma vs sigma_hit de la simulacion (todos_los_sigmas.txt
+     del analisis Lorentz por separado, que tiene X_gamma_s y Z_gamma_s
+     para 3 hits y X4_gamma1, X4_gamma2... para 4 hits).
+  4. Interpola inversamente para encontrar sigma_hit que reproduce gamma_exp.
+  5. Genera plots:
+     - Curva gamma_sim vs sigma_hit con punto experimental marcado.
+     - Histograma experimental con fits superpuestos.
+  6. Guarda el resultado en resolucion_experimental_combinado.txt.
+
+La logica es:
+  gamma_exp = a * sigma_hit + b  (la curva simulada es lineal)
+  => sigma_hit = (gamma_exp - b) / a
+
+Si el archivo es resx_* usa las columnas X, si es resy_* usa las columnas Z.
+Si es fermi o einstein (angulo 0) compara con 3 hits (gaussiana simple
+equivalente) y 4 hits (gamma1 y gamma2).
+Si es fert (angulo ~30 grados en Y) el analisis en X se ve afectado por
+la rotacion; se indica en el resumen pero se calcula igual.
+"""
+
+import os
+import re
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+# --------------------------------------------------
+# RUTAS — ajusta si es necesario
+# --------------------------------------------------
+
+CARPETA_DATOS = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Experimentales"
+
+# tabla gamma vs sigma_hit del analisis COMBINADO (3+4 hits juntos)
+# columnas: sigma_hit | X3_gamma | X3_err | Z3_gamma | Z3_err |
+#           X4_gamma1 | X4_err1 | X4_gamma2 | X4_err2 |
+#           Z4_gamma1 | Z4_err1 | Z4_gamma2 | Z4_err2
+TABLA_SIM = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz\todos_los_sigmas.txt"
+
+CARPETA_SALIDA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Resolucion_Experimental"
+ARCHIVO_RESUMEN = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\resolucion_experimental_combinado.txt"
+
+os.makedirs(CARPETA_SALIDA, exist_ok=True)
+
+N_BINS      = 100
+LIMITE      = 10.0   # mm, truncado fisico del detector
+
+# --------------------------------------------------
+# FUNCIONES DE AJUSTE
+# --------------------------------------------------
+
+def lorentz(x, A, mu, gamma):
+    return A / (1 + ((x - mu) / gamma)**2)
+
+def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
+    return (A1 / (1 + ((x - mu) / gamma1)**2)
+            + A2 / (1 + ((x - mu) / gamma2)**2))
+
+def chi2_reducido(y_data, y_fit, n_params):
+    mask = y_data > 0
+    r    = y_data[mask] - y_fit[mask]
+    chi2 = np.sum(r**2 / y_data[mask])
+    ndf  = np.sum(mask) - n_params
+    return np.nan if ndf <= 0 else chi2 / ndf
+
+# --------------------------------------------------
+# LEER TABLA DE SIMULACION
+# --------------------------------------------------
+
+sim = np.loadtxt(TABLA_SIM, skiprows=1)
+
+# columnas segun TERCER_SCRIPT_LORENTZ
+s_hit_sim  = sim[:,0]
+
+# combinado: gamma simple X y Z del ajuste conjunto 3+4 hits
+X3_g_sim   = sim[:,1];  X3_e_sim  = sim[:,2]   # gamma simple combinado X
+Z3_g_sim   = sim[:,10]; Z3_e_sim  = sim[:,11]  # gamma simple combinado Z
+# gamma1 y gamma2 del combinado (para referencia)
+X4_g1_sim  = sim[:,4];  X4_e1_sim = sim[:,5]
+X4_g2_sim  = sim[:,6];  X4_e2_sim = sim[:,7]
+Z4_g1_sim  = sim[:,13]; Z4_e1_sim = sim[:,14]
+Z4_g2_sim  = sim[:,15]; Z4_e2_sim = sim[:,16]
+
+def fit_lineal_sim(x, y, e):
+    """Ajuste lineal ponderado sobre la curva simulada."""
+    mask = np.isfinite(x) & np.isfinite(y) & np.isfinite(e) & (e > 0) & (y > 0)
+    x, y, e = x[mask], y[mask], e[mask]
+    if len(x) < 3:
+        return None
+    params, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
+    return params[0], params[1], np.sqrt(cov[0,0]), np.sqrt(cov[1,1])
+
+def sigma_hit_desde_gamma(gamma_exp, err_gamma_exp, a, b, err_a, err_b):
+    """
+    Inversion de gamma = a * sigma_hit + b
+    => sigma_hit = (gamma_exp - b) / a
+    Propagacion de errores:
+      err_sigma_hit = sqrt( (err_gamma/a)^2 + (err_b/a)^2 + ((gamma-b)*err_a/a^2)^2 )
+    """
+    if a <= 0 or not np.isfinite(gamma_exp):
+        return np.nan, np.nan
+    sigma_hit_est = (gamma_exp - b) / a
+    err = np.sqrt(
+        (err_gamma_exp / a)**2
+        + (err_b / a)**2
+        + ((gamma_exp - b) * err_a / a**2)**2
+    )
+    return sigma_hit_est, err
+
+# --------------------------------------------------
+# ANALISIS DE CADA ARCHIVO
+# --------------------------------------------------
+
+archivos = {
+    'resx_einstein': os.path.join(CARPETA_DATOS, 'resx_einstein.txt'),
+    'resy_einstein': os.path.join(CARPETA_DATOS, 'resy_einstein.txt'),
+    'resx_fermi':    os.path.join(CARPETA_DATOS, 'resx_fermi.txt'),
+    'resy_fermi':    os.path.join(CARPETA_DATOS, 'resy_fermi.txt'),
+    'resx_fert':     os.path.join(CARPETA_DATOS, 'resx_fert.txt'),
+    'resy_fert':     os.path.join(CARPETA_DATOS, 'resy_fert.txt'),
+}
+
+with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
+
+    f_res.write("ESTIMACION DE RESOLUCION INTRINSECA\n")
+    f_res.write("="*60 + "\n")
+    f_res.write("Metodo: interpolacion inversa gamma_exp -> sigma_hit\n")
+    f_res.write("        usando curva lineal de la simulacion Lorentz\n\n")
+
+    for nombre, ruta in archivos.items():
+
+        print(f"\n{'='*50}")
+        print(f"Procesando: {nombre}")
+
+        # identificar coordenada y detector
+        coord   = 'X' if nombre.startswith('resx') else 'Z'
+        det     = re.search(r'_(einstein|fermi|fert)', nombre).group(1)
+        angulo  = 30 if det == 'fert' else 0
+        nota    = " [NOTA: angulo ~30 deg en Y afecta coord X]" if (det == 'fert' and coord == 'X') else ""
+
+        # leer datos
+        data = np.loadtxt(ruta)
+        data = data[np.isfinite(data)]
+        data = data[np.abs(data) <= LIMITE]
+        N    = len(data)
+        print(f"  N={N}  std={data.std():.4f} mm  mediana={np.median(data):.4f} mm")
+
+        # histograma
+        hist, bins = np.histogram(data, bins=N_BINS, range=(-LIMITE, LIMITE))
+        centers    = (bins[:-1] + bins[1:]) / 2
+        width      = bins[1] - bins[0]
+        gamma0     = data.std() * 0.5
+
+        # ---- fit Lorentz simple ----
+        simple_ok = False
+        try:
+            ps, covs = curve_fit(
+                lorentz, centers, hist,
+                p0=[max(hist), np.median(data), gamma0],
+                bounds=([0, -2.0, 0.01], [np.inf, 2.0, LIMITE]),
+                maxfev=20000)
+            A_s, mu_s, gamma_s = [float(p) for p in ps]
+            err_gs = float(np.sqrt(np.diag(covs))[2])
+            chi2_s = chi2_reducido(hist, lorentz(centers, A_s, mu_s, gamma_s), 3)
+            simple_ok = True
+            print(f"  Lorentz simple: gamma={gamma_s:.4f}+-{err_gs:.4f}  chi2/ndf={chi2_s:.2f}")
+        except RuntimeError:
+            print(f"  Fit Lorentz simple fallido")
+            gamma_s = err_gs = chi2_s = np.nan
+
+        # ---- fit doble Lorentz ----
+        double_ok = False
+        try:
+            pd0 = [max(hist), gamma0*0.3, max(hist)/5, gamma0*2.0, float(np.median(data))]
+            pdl, covdl = curve_fit(
+                double_lorentz, centers, hist,
+                p0=pd0,
+                bounds=([0,0.01,0,0.01,-2.0],[np.inf,LIMITE,np.inf,LIMITE,2.0]),
+                maxfev=20000)
+            A1,g1,A2,g2,mu_dl = [float(p) for p in pdl]
+            errs = np.sqrt(np.diag(covdl))
+            eg1, eg2 = float(errs[1]), float(errs[3])
+            if g1 > g2:
+                A1,A2 = A2,A1; g1,g2 = g2,g1; eg1,eg2 = eg2,eg1
+            if 0 < g1 < LIMITE and 0 < g2 < LIMITE:
+                double_ok = True
+                chi2_dl   = chi2_reducido(hist, double_lorentz(centers,A1,g1,A2,g2,mu_dl), 5)
+                gamma_eff = (A1*g1 + A2*g2) / (A1 + A2)
+                print(f"  Doble Lorentz: gamma1={g1:.4f}  gamma2={g2:.4f}  gamma_eff={gamma_eff:.4f}  chi2/ndf={chi2_dl:.2f}")
+        except RuntimeError:
+            print(f"  Fit doble Lorentz fallido")
+
+        # ---- seleccionar curva simulada segun coord ----
+        # Para 3 hits usamos gamma simple de la sim
+        # Para 4 hits usamos gamma1 (core) y gamma2 (cola) de la sim
+        if coord == 'X':
+            g3_s, e3_s     = X3_g_sim, X3_e_sim
+            g4_1, e4_1     = X4_g1_sim, X4_e1_sim
+            g4_2, e4_2     = X4_g2_sim, X4_e2_sim
+        else:
+            g3_s, e3_s     = Z3_g_sim, Z3_e_sim
+            g4_1, e4_1     = Z4_g1_sim, Z4_e1_sim
+            g4_2, e4_2     = Z4_g2_sim, Z4_e2_sim
+
+        # fits lineales de las curvas simuladas
+        res3  = fit_lineal_sim(s_hit_sim, g3_s, e3_s)
+        res41 = fit_lineal_sim(s_hit_sim, g4_1, e4_1)
+        res42 = fit_lineal_sim(s_hit_sim, g4_2, e4_2)
+
+        # ---- estimacion de sigma_hit ----
+        resultados = {}
+
+        # desde gamma simple experimental vs curva 3 hits sim
+        if simple_ok and res3:
+            a3, b3, ea3, eb3 = res3
+            sh, esh = sigma_hit_desde_gamma(gamma_s, err_gs, a3, b3, ea3, eb3)
+            resultados['gamma_simple vs curva_3hits'] = (gamma_s, err_gs, sh, esh)
+            print(f"  -> sigma_hit (3hits simple): {sh:.4f} +- {esh:.4f} mm")
+
+        # desde gamma_eff experimental vs curva 3 hits sim (si hay doble)
+        if double_ok and res3:
+            a3, b3, ea3, eb3 = res3
+            sh, esh = sigma_hit_desde_gamma(gamma_eff, eg1, a3, b3, ea3, eb3)
+            resultados['gamma_eff vs curva_3hits'] = (gamma_eff, eg1, sh, esh)
+            print(f"  -> sigma_hit (eff vs 3hits):  {sh:.4f} +- {esh:.4f} mm")
+
+        # desde gamma1 experimental vs curva gamma1 4 hits sim
+        if double_ok and res41:
+            a41, b41, ea41, eb41 = res41
+            sh, esh = sigma_hit_desde_gamma(g1, eg1, a41, b41, ea41, eb41)
+            resultados['gamma1 vs curva_4hits_core'] = (g1, eg1, sh, esh)
+            print(f"  -> sigma_hit (core 4hits):    {sh:.4f} +- {esh:.4f} mm")
+
+        # desde gamma2 experimental vs curva gamma2 4 hits sim
+        if double_ok and res42:
+            a42, b42, ea42, eb42 = res42
+            sh, esh = sigma_hit_desde_gamma(g2, eg2, a42, b42, ea42, eb42)
+            resultados['gamma2 vs curva_4hits_cola'] = (g2, eg2, sh, esh)
+            print(f"  -> sigma_hit (cola 4hits):    {sh:.4f} +- {esh:.4f} mm")
+
+        # ---- PLOT 1: curva simulada + punto experimental ----
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+        fig.suptitle(f"{nombre}{nota}", fontsize=11)
+
+        # panel izquierdo: solo curva de 3 hits (comparacion fisicamente valida)
+        ax = axes[0]
+        mask3_ok = np.isfinite(g3_s) & (g3_s > 0)
+        ax.errorbar(s_hit_sim[mask3_ok], g3_s[mask3_ok], yerr=e3_s[mask3_ok],
+                    fmt='o', color='blue', capsize=2, markersize=4,
+                    label='gamma simulada combinado (3+4 hits)')
+
+        # calcular sigma_hit max para extender el eje
+        sh_max = 0.25
+        if simple_ok and 'gamma_simple vs curva_3hits' in resultados:
+            sh_est_tmp = resultados['gamma_simple vs curva_3hits'][2]
+            if np.isfinite(sh_est_tmp) and sh_est_tmp > 0:
+                sh_max = max(sh_max, sh_est_tmp * 1.4)
+
+        if res3:
+            a3, b3, ea3, eb3 = res3
+            xf = np.linspace(0, sh_max, 300)
+            ax.plot(xf, a3*xf+b3, color='blue', linewidth=2,
+                    label=f'Fit lineal sim: a={a3:.3f}, b={b3:.4f}')
+
+        # gamma_simple experimental
+        if simple_ok:
+            ax.axhline(gamma_s, color='orange', linestyle='--', linewidth=2,
+                       label=f'gamma_exp simple = {gamma_s:.4f} mm')
+            if 'gamma_simple vs curva_3hits' in resultados:
+                sh_est, esh_est = resultados['gamma_simple vs curva_3hits'][2:]
+                if np.isfinite(sh_est) and sh_est > 0:
+                    ax.axvline(sh_est, color='orange', linestyle=':', linewidth=2,
+                               label=f'sigma_hit = {sh_est:.4f}+-{esh_est:.4f} mm')
+                    ax.plot(sh_est, gamma_s, 'o', color='red',
+                            markersize=12, zorder=5, label='Punto resolucion (simple)')
+
+        # gamma_eff experimental (de la doble Lorentz)
+        if double_ok and 'gamma_eff vs curva_3hits' in resultados:
+            ax.axhline(gamma_eff, color='green', linestyle='--', linewidth=1.5,
+                       label=f'gamma_eff doble = {gamma_eff:.4f} mm')
+            sh_eff, esh_eff = resultados['gamma_eff vs curva_3hits'][2:]
+            if np.isfinite(sh_eff) and sh_eff > 0:
+                ax.axvline(sh_eff, color='green', linestyle=':', linewidth=1.5,
+                           label=f'sigma_hit (eff) = {sh_eff:.4f}+-{esh_eff:.4f} mm')
+                ax.plot(sh_eff, gamma_eff, 's', color='darkgreen',
+                        markersize=10, zorder=5, label='Punto resolucion (eff)')
+
+        ax.set_xlim(left=0, right=sh_max)
+        ax.set_ylim(bottom=0)
+        ax.set_xlabel("sigma_hit [mm]")
+        ax.set_ylabel("gamma [mm]")
+        ax.set_title("Interpolacion inversa: gamma_exp -> sigma_hit\n(curva combinada 3+4 hits simulada)")
+        ax.legend(fontsize=8)
+        ax.grid()
+
+        # ---- PLOT 2: histograma experimental con fits ----
+        ax2 = axes[1]
+        mask_pos = hist > 0
+        ax2.bar(centers[mask_pos], hist[mask_pos], width=width,
+                alpha=0.6, color='steelblue', label=f"Datos exp  N={N:,}")
+
+        x_fit = np.linspace(-LIMITE, LIMITE, 800)
+        if simple_ok:
+            ax2.plot(x_fit, lorentz(x_fit, A_s, mu_s, gamma_s),
+                     color='orange', linewidth=2,
+                     label=f"Lorentz simple: gamma={gamma_s:.3f}")
+        if double_ok:
+            ax2.plot(x_fit, double_lorentz(x_fit, A1, g1, A2, g2, mu_dl),
+                     color='red', linewidth=2,
+                     label=f"Doble Lorentz: g1={g1:.3f}, g2={g2:.3f}")
+            ax2.plot(x_fit, lorentz(x_fit, A1, mu_dl, g1),
+                     '--', color='blue', linewidth=1.5, label=f"Core: g1={g1:.3f}")
+            ax2.plot(x_fit, lorentz(x_fit, A2, mu_dl, g2),
+                     '--', color='green', linewidth=1.5, label=f"Cola: g2={g2:.3f}")
+
+        ax2.set_yscale('log')
+        ax2.set_xlabel("Residual [mm]")
+        ax2.set_ylabel("Counts (log)")
+        ax2.set_title("Distribucion experimental [log]")
+        ax2.legend(fontsize=7)
+        ax2.grid(which='both', linestyle='--', alpha=0.5)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(CARPETA_SALIDA, f"{nombre}_resolucion_combinado.png"), dpi=150)
+        plt.close()
+        print(f"  Plot guardado: {nombre}_resolucion_combinado.png")
+
+        # ---- escribir resumen ----
+        f_res.write(f"\n{'='*50}\n")
+        f_res.write(f"Detector: {det.upper()}  Coord: {coord}  Angulo: {angulo} deg{nota}\n")
+        f_res.write(f"N eventos: {N}\n")
+        f_res.write(f"Std: {data.std():.4f} mm  Mediana: {np.median(data):.4f} mm\n\n")
+
+        if simple_ok:
+            f_res.write(f"Lorentz simple:  gamma = {gamma_s:.4f} +- {err_gs:.4f} mm"
+                        f"  chi2/ndf = {chi2_s:.2f}\n")
+        else:
+            f_res.write("Lorentz simple: fallido\n")
+
+        if double_ok:
+            f_res.write(f"Doble Lorentz:   gamma1 = {g1:.4f} +- {eg1:.4f} mm"
+                        f"  gamma2 = {g2:.4f} +- {eg2:.4f} mm"
+                        f"  gamma_eff = {gamma_eff:.4f} mm"
+                        f"  chi2/ndf = {chi2_dl:.2f}\n")
+        else:
+            f_res.write("Doble Lorentz: fallido\n")
+
+        f_res.write("\nEstimacion sigma_hit:\n")
+        for metodo, (g_exp, eg_exp, sh, esh) in resultados.items():
+            if np.isfinite(sh):
+                f_res.write(f"  [{metodo}]: gamma_exp={g_exp:.4f}+-{eg_exp:.4f}"
+                            f"  =>  sigma_hit = {sh:.4f} +- {esh:.4f} mm\n")
+            else:
+                f_res.write(f"  [{metodo}]: no se pudo estimar (fuera del rango simulado)\n")
+
+print(f"\nResumen guardado en: {ARCHIVO_RESUMEN}")
+print(f"Plots en: {CARPETA_SALIDA}")
