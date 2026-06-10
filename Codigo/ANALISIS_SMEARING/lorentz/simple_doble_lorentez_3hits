@@ -1,24 +1,3 @@
-"""
-DEMO_DOBLE_LORENTZ_3HITS.py
-===================================================
-Demuestra que la doble Lorentziana para 3 hits es degenerada,
-igual que demostramos con la doble Gaussiana.
-
-Para cada smearing calcula:
-  - Lorentziana simple: gamma_s
-  - Doble Lorentziana forzada: gamma1, gamma2, A1, A2
-  - Correlacion entre gamma1 y gamma2 en la covarianza
-  - gamma_eff = (A1*gamma1 + A2*gamma2) / (A1 + A2)
-  - Comparacion gamma_eff vs gamma_s
-
-Si el diagnostico es el mismo que con Gaussianas:
-  - corr cercana a 1
-  - ratio A1/A2 extremo (>>1 o <<1)
-  - gamma_eff ≈ gamma_s  (la doble no aporta nada)
-=> la distribucion de 3 hits es unimodal y la doble Lorentziana
-   esta sobreajustando con grados de libertad sin informacion fisica.
-"""
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

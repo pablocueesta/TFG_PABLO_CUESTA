@@ -1,29 +1,3 @@
-"""
-SC_RESOLUCION_EXPERIMENTAL.py
-=====================================================================
-Para cada uno de los 6 archivos de datos experimentales:
-  1. Ajusta Lorentziana simple y doble Lorentziana.
-  2. Extrae gamma_exp (anchura experimental).
-  3. Lee la tabla gamma vs sigma_hit de la simulacion (todos_los_sigmas.txt
-     del analisis Lorentz por separado, que tiene X_gamma_s y Z_gamma_s
-     para 3 hits y X4_gamma1, X4_gamma2... para 4 hits).
-  4. Interpola inversamente para encontrar sigma_hit que reproduce gamma_exp.
-  5. Genera plots:
-     - Curva gamma_sim vs sigma_hit con punto experimental marcado.
-     - Histograma experimental con fits superpuestos.
-  6. Guarda el resultado en resolucion_experimental_combinado.txt.
-
-La logica es:
-  gamma_exp = a * sigma_hit + b  (la curva simulada es lineal)
-  => sigma_hit = (gamma_exp - b) / a
-
-Si el archivo es resx_* usa las columnas X, si es resy_* usa las columnas Z.
-Si es fermi o einstein (angulo 0) compara con 3 hits (gaussiana simple
-equivalente) y 4 hits (gamma1 y gamma2).
-Si es fert (angulo ~30 grados en Y) el analisis en X se ve afectado por
-la rotacion; se indica en el resumen pero se calcula igual.
-"""
-
 import os
 import re
 import numpy as np
