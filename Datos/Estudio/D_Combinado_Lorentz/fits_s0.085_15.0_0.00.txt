@@ -1,23 +1,23 @@
 D=15.0 cm  sigma_hit=0.085 mm
 
 --- Combinado X (3+4 hits) ---
-N fit(p95): 148301  N total: 156107
-Corte p95:   [-0.1546,0.1518] mm (90.2% datos totales)
-Corte 3sigma:[-12.0052,11.9788] mm (99.4% datos totales)
-Lorentz simple: mu=-0.0002 gamma=0.0392+-0.0010 chi2/ndf=36.6506
+N para fit (p95): 148301  N total: 156107
+Corte p95:   [-0.2246, 0.2161] mm (95.0% datos totales)
+Corte 3sigma:[-12.0052, 11.9788] mm (99.4% datos totales)
+Lorentz simple: mu=-0.0002 gamma=0.0390+-0.0004 chi2/ndf=5.2429
 Doble Lorentz: mu=-0.0001
-   gamma1 (core)=0.0134+-0.0010
-   gamma2 (cola)=0.0567+-0.0018
-   gamma_eff=0.0368  chi2/ndf=22.7923
+   gamma1 (core)=0.0129+-0.0005
+   gamma2 (cola)=0.0566+-0.0009
+   gamma_eff=0.0364  chi2/ndf=3.7142
 Decision: DOBLE MEJOR
 
 --- Combinado Z (3+4 hits) ---
-N fit(p95): 148301  N total: 156107
-Corte p95:   [-0.1542,0.1545] mm (90.2% datos totales)
-Corte 3sigma:[-11.6321,11.5981] mm (99.4% datos totales)
-Lorentz simple: mu=-0.0000 gamma=0.0393+-0.0011 chi2/ndf=37.3945
+N para fit (p95): 148301  N total: 156107
+Corte p95:   [-0.2235, 0.2229] mm (95.0% datos totales)
+Corte 3sigma:[-11.6321, 11.5981] mm (99.4% datos totales)
+Lorentz simple: mu=-0.0000 gamma=0.0391+-0.0004 chi2/ndf=5.5155
 Doble Lorentz: mu=0.0000
-   gamma1 (core)=0.0118+-0.0009
-   gamma2 (cola)=0.0556+-0.0016
-   gamma_eff=0.0361  chi2/ndf=22.2359
+   gamma1 (core)=0.0107+-0.0004
+   gamma2 (cola)=0.0549+-0.0008
+   gamma_eff=0.0354  chi2/ndf=3.6894
 Decision: DOBLE MEJOR
