@@ -70,10 +70,10 @@ def ejecutar_analisis(sigma_hit):
     resX4_cut = aplicar_percentil(resX4); resZ4_cut = aplicar_percentil(resZ4)
 
     # cortes p95 (sobre datos ya cortados) y 3sigma (sobre datos completos)
-    cp95_X3 = (np.percentile(resX3_cut,2.5), np.percentile(resX3_cut,97.5))
-    cp95_Z3 = (np.percentile(resZ3_cut,2.5), np.percentile(resZ3_cut,97.5))
-    cp95_X4 = (np.percentile(resX4_cut,2.5), np.percentile(resX4_cut,97.5))
-    cp95_Z4 = (np.percentile(resZ4_cut,2.5), np.percentile(resZ4_cut,97.5))
+    cp95_X3 = (np.percentile(resX3,2.5), np.percentile(resX3,97.5))
+    cp95_Z3 = (np.percentile(resZ3,2.5), np.percentile(resZ3,97.5))
+    cp95_X4 = (np.percentile(resX4,2.5), np.percentile(resX4,97.5))
+    cp95_Z4 = (np.percentile(resZ4,2.5), np.percentile(resZ4,97.5))
     c3s_X3 = (np.mean(resX3)-3*np.std(resX3), np.mean(resX3)+3*np.std(resX3))
     c3s_Z3 = (np.mean(resZ3)-3*np.std(resZ3), np.mean(resZ3)+3*np.std(resZ3))
     c3s_X4 = (np.mean(resX4)-3*np.std(resX4), np.mean(resX4)+3*np.std(resX4))
@@ -263,6 +263,6 @@ def ejecutar_analisis(sigma_hit):
 sigmas = np.arange(0.050, 0.205, 0.005)
 for sigma in sigmas:
     try:
-        ejecutar_analisis(round(sigma, 3))
+        ejecutar_analisis(round(sigma, 3)) 
     except Exception as e:
         print(f"Error con sigma={sigma:.3f}: {e}")

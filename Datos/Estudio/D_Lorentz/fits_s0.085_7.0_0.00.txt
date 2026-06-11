@@ -1,23 +1,21 @@
-D = 7.0 cm  sigma_hit = 0.085 mm
-Eventos 3 hits: 41232  Eventos 4 hits: 139326
 
 --- Residual X (3 hits) ---
 N total: 41232  N tras p95: 39170
-Corte p95: [-0.2409, 0.2348] mm
+Corte p95: [-0.3806, 0.3595] mm
 Corte 3sigma: [-16.0034, 15.9608] mm
 Gauss simple (ref): sigma = 0.1168 +- 0.0008
-Lorentz simple: mu = 0.0001, gamma = 0.1133 +- 0.0040  chi2/ndf = 105.7309
+Lorentz simple: mu = 0.0001, gamma = 0.1133 +- 0.0040
 
 --- Residual Z (3 hits) ---
 N total: 41232  N tras p95: 39170
-Corte p95: [-0.2406, 0.2423] mm
+Corte p95: [-0.3738, 0.3758] mm
 Corte 3sigma: [-16.4082, 16.3974] mm
 Gauss simple (ref): sigma = 0.1158 +- 0.0007
-Lorentz simple: mu = -0.0007, gamma = 0.1125 +- 0.0039  chi2/ndf = 105.6480
+Lorentz simple: mu = -0.0007, gamma = 0.1125 +- 0.0039
 
 --- Residual X (4 hits) ---
 N total: 139326  N tras p95: 132358
-Corte p95: [-0.0828, 0.0830] mm
+Corte p95: [-0.1098, 0.1092] mm
 Corte 3sigma: [-2.6185, 2.6168] mm
 Gauss simple (ref): sigma = 0.0329
 Lorentz simple: gamma = 0.0300
@@ -25,11 +23,11 @@ Doble Lorentz:
    mu = -0.0000
    gamma1 (core) = 0.0047 +- 0.0020
    gamma2 (cola) = 0.0313 +- 0.0005
-   gamma_eff = 0.0287  chi2/ndf = 12.3948
+   gamma_eff = 0.0287
 
 --- Residual Z (4 hits) ---
 N total: 139326  N tras p95: 132358
-Corte p95: [-0.0830, 0.0844] mm
+Corte p95: [-0.1095, 0.1105] mm
 Corte 3sigma: [-2.5496, 2.5514] mm
 Gauss simple (ref): sigma = 0.0329
 Lorentz simple: gamma = 0.0301
@@ -37,4 +35,4 @@ Doble Lorentz:
    mu = 0.0001
    gamma1 (core) = 0.0041 +- 0.0019
    gamma2 (cola) = 0.0312 +- 0.0005
-   gamma_eff = 0.0287  chi2/ndf = 10.7110
+   gamma_eff = 0.0287

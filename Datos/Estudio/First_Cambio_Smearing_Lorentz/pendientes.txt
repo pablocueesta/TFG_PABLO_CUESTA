@@ -1,18 +1,18 @@
 
 --- 3 hits - X (Lorentz) ---
 gamma: a=1.1800+-0.0043, b=0.0161+-0.0001
-p95_semiancho: a=1.9648, b=0.1108
+p95_semiancho: a=1.3710, b=0.4385
 
 --- 3 hits - Z (Lorentz) ---
 gamma: a=1.1855+-0.0058, b=0.0161+-0.0003
-p95_semiancho: a=1.9402, b=0.1151
+p95_semiancho: a=1.4333, b=0.4275
 
 --- 4 hits - X (Lorentz) ---
 gamma1: a=0.0975+-0.0032, b=0.0028+-0.0003
 gamma2: a=0.3625+-0.0062, b=0.0122+-0.0005
-p95_semiancho: a=0.8791, b=0.0266
+p95_semiancho: a=1.0350, b=0.0460
 
 --- 4 hits - Z (Lorentz) ---
 gamma1: a=0.1010+-0.0042, b=0.0030+-0.0005
 gamma2: a=0.3645+-0.0064, b=0.0123+-0.0005
-p95_semiancho: a=0.8795, b=0.0274
+p95_semiancho: a=1.0426, b=0.0469

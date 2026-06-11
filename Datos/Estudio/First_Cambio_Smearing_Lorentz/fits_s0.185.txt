@@ -1,21 +1,21 @@
 
 --- Residual X (3 hits) ---
 N total: 38910  N tras p95: 36964
-Corte p95: [-0.4754, 0.4801] mm
+Corte p95: [-0.7124, 0.6985] mm
 Corte 3sigma: [-19.1490, 19.0822] mm
 Gauss simple (ref): sigma = 0.2442 +- 0.0015
 Lorentz simple: mu = -0.0018, gamma = 0.2395 +- 0.0082
 
 --- Residual Z (3 hits) ---
 N total: 38910  N tras p95: 36964
-Corte p95: [-0.4718, 0.4848] mm
+Corte p95: [-0.6815, 0.7287] mm
 Corte 3sigma: [-19.5917, 19.6983] mm
 Gauss simple (ref): sigma = 0.2459 +- 0.0015
 Lorentz simple: mu = -0.0006, gamma = 0.2413 +- 0.0082
 
 --- Residual X (4 hits) ---
 N total: 122939  N tras p95: 116791
-Corte p95: [-0.1899, 0.1901] mm
+Corte p95: [-0.2381, 0.2399] mm
 Corte 3sigma: [-2.5723, 2.5660] mm
 Gauss simple (ref): sigma = 0.0726
 Lorentz simple: gamma = 0.0638
@@ -27,7 +27,7 @@ Doble Lorentz:
 
 --- Residual Z (4 hits) ---
 N total: 122939  N tras p95: 116791
-Corte p95: [-0.1912, 0.1902] mm
+Corte p95: [-0.2408, 0.2412] mm
 Corte 3sigma: [-2.4981, 2.5034] mm
 Gauss simple (ref): sigma = 0.0719
 Lorentz simple: gamma = 0.0632
