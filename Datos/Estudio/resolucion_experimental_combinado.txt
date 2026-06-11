@@ -13,10 +13,10 @@ Lorentz simple:  gamma = 0.2965 +- 0.0057 mm  chi2/ndf = 4148.78
 Doble Lorentz:   gamma1 = 0.2222 +- 0.0031 mm  gamma2 = 1.2241 +- 0.0516 mm  gamma_eff = 0.3247 mm  chi2/ndf = 194.98
 
 Estimacion sigma_hit:
-  [gamma_simple vs curva_3hits]: gamma_exp=0.2965+-0.0057  =>  sigma_hit = 0.7651 +- 0.0150 mm
-  [gamma_eff vs curva_3hits]: gamma_exp=0.3247+-0.0031  =>  sigma_hit = 0.8393 +- 0.0082 mm
-  [gamma1 vs curva_4hits_core]: gamma_exp=0.2222+-0.0031  =>  sigma_hit = 1.8980 +- 0.0432 mm
-  [gamma2 vs curva_4hits_cola]: gamma_exp=1.2241+-0.0516  =>  sigma_hit = 2.7900 +- 0.1211 mm
+  [gamma_simple vs curva_3hits]: gamma_exp=0.2965+-0.0057  =>  sigma_hit = 0.7543 +- 0.0148 mm
+  [gamma_eff vs curva_3hits]: gamma_exp=0.3247+-0.0031  =>  sigma_hit = 0.8275 +- 0.0081 mm
+  [gamma1 vs curva_4hits_core]: gamma_exp=0.2222+-0.0031  =>  sigma_hit = 1.7433 +- 0.0538 mm
+  [gamma2 vs curva_4hits_cola]: gamma_exp=1.2241+-0.0516  =>  sigma_hit = 2.3312 +- 0.0994 mm
 
 ==================================================
 Detector: EINSTEIN  Coord: Z  Angulo: 0 deg
@@ -27,10 +27,10 @@ Lorentz simple:  gamma = 0.3489 +- 0.0073 mm  chi2/ndf = 3643.52
 Doble Lorentz:   gamma1 = 0.2245 +- 0.0031 mm  gamma2 = 1.0125 +- 0.0238 mm  gamma_eff = 0.3676 mm  chi2/ndf = 170.45
 
 Estimacion sigma_hit:
-  [gamma_simple vs curva_3hits]: gamma_exp=0.3489+-0.0073  =>  sigma_hit = 0.9130 +- 0.0195 mm
-  [gamma_eff vs curva_3hits]: gamma_exp=0.3676+-0.0031  =>  sigma_hit = 0.9627 +- 0.0085 mm
-  [gamma1 vs curva_4hits_core]: gamma_exp=0.2245+-0.0031  =>  sigma_hit = 1.7848 +- 0.0371 mm
-  [gamma2 vs curva_4hits_cola]: gamma_exp=1.0125+-0.0238  =>  sigma_hit = 2.2799 +- 0.0589 mm
+  [gamma_simple vs curva_3hits]: gamma_exp=0.3489+-0.0073  =>  sigma_hit = 0.1746 +- 0.0053 mm
+  [gamma_eff vs curva_3hits]: gamma_exp=0.3676+-0.0031  =>  sigma_hit = 0.1871 +- 0.0030 mm
+  [gamma1 vs curva_4hits_core]: no se pudo estimar (fuera del rango simulado)
+  [gamma2 vs curva_4hits_cola]: gamma_exp=1.0125+-0.0238  =>  sigma_hit = 193.9833 +- 9.2881 mm
 
 ==================================================
 Detector: FERMI  Coord: X  Angulo: 0 deg
@@ -41,10 +41,10 @@ Lorentz simple:  gamma = 0.4478 +- 0.0100 mm  chi2/ndf = 2285.30
 Doble Lorentz:   gamma1 = 0.2330 +- 0.0019 mm  gamma2 = 0.9609 +- 0.0073 mm  gamma_eff = 0.4504 mm  chi2/ndf = 15.30
 
 Estimacion sigma_hit:
-  [gamma_simple vs curva_3hits]: gamma_exp=0.4478+-0.0100  =>  sigma_hit = 1.1622 +- 0.0262 mm
-  [gamma_eff vs curva_3hits]: gamma_exp=0.4504+-0.0019  =>  sigma_hit = 1.1691 +- 0.0053 mm
-  [gamma1 vs curva_4hits_core]: gamma_exp=0.2330+-0.0019  =>  sigma_hit = 1.9916 +- 0.0393 mm
-  [gamma2 vs curva_4hits_cola]: gamma_exp=0.9609+-0.0073  =>  sigma_hit = 2.1829 +- 0.0241 mm
+  [gamma_simple vs curva_3hits]: gamma_exp=0.4478+-0.0100  =>  sigma_hit = 1.1458 +- 0.0259 mm
+  [gamma_eff vs curva_3hits]: gamma_exp=0.4504+-0.0019  =>  sigma_hit = 1.1526 +- 0.0053 mm
+  [gamma1 vs curva_4hits_core]: gamma_exp=0.2330+-0.0019  =>  sigma_hit = 1.8290 +- 0.0525 mm
+  [gamma2 vs curva_4hits_cola]: gamma_exp=0.9609+-0.0073  =>  sigma_hit = 1.8268 +- 0.0161 mm
 
 ==================================================
 Detector: FERMI  Coord: Z  Angulo: 0 deg
@@ -55,10 +55,10 @@ Lorentz simple:  gamma = 0.5002 +- 0.0124 mm  chi2/ndf = 2431.42
 Doble Lorentz:   gamma1 = 0.2507 +- 0.0041 mm  gamma2 = 1.0978 +- 0.0174 mm  gamma_eff = 0.5043 mm  chi2/ndf = 62.50
 
 Estimacion sigma_hit:
-  [gamma_simple vs curva_3hits]: gamma_exp=0.5002+-0.0124  =>  sigma_hit = 1.3145 +- 0.0330 mm
-  [gamma_eff vs curva_3hits]: gamma_exp=0.5043+-0.0041  =>  sigma_hit = 1.3256 +- 0.0112 mm
-  [gamma1 vs curva_4hits_core]: gamma_exp=0.2507+-0.0041  =>  sigma_hit = 1.9955 +- 0.0449 mm
-  [gamma2 vs curva_4hits_cola]: gamma_exp=1.0978+-0.0174  =>  sigma_hit = 2.4747 +- 0.0466 mm
+  [gamma_simple vs curva_3hits]: gamma_exp=0.5002+-0.0124  =>  sigma_hit = 0.2755 +- 0.0088 mm
+  [gamma_eff vs curva_3hits]: gamma_exp=0.5043+-0.0041  =>  sigma_hit = 0.2783 +- 0.0041 mm
+  [gamma1 vs curva_4hits_core]: no se pudo estimar (fuera del rango simulado)
+  [gamma2 vs curva_4hits_cola]: gamma_exp=1.0978+-0.0174  =>  sigma_hit = 210.3169 +- 9.3830 mm
 
 ==================================================
 Detector: FERT  Coord: X  Angulo: 30 deg [NOTA: angulo ~30 deg en Y afecta coord X]
@@ -69,10 +69,10 @@ Lorentz simple:  gamma = 0.5893 +- 0.0164 mm  chi2/ndf = 2931.57
 Doble Lorentz:   gamma1 = 0.4268 +- 0.0192 mm  gamma2 = 2.3674 +- 0.3345 mm  gamma_eff = 0.6624 mm  chi2/ndf = 413.33
 
 Estimacion sigma_hit:
-  [gamma_simple vs curva_3hits]: gamma_exp=0.5893+-0.0164  =>  sigma_hit = 1.5335 +- 0.0430 mm
-  [gamma_eff vs curva_3hits]: gamma_exp=0.6624+-0.0192  =>  sigma_hit = 1.7253 +- 0.0504 mm
-  [gamma1 vs curva_4hits_core]: gamma_exp=0.4268+-0.0192  =>  sigma_hit = 3.6647 +- 0.1783 mm
-  [gamma2 vs curva_4hits_cola]: gamma_exp=2.3674+-0.3345  =>  sigma_hit = 5.4278 +- 0.7730 mm
+  [gamma_simple vs curva_3hits]: gamma_exp=0.5893+-0.0164  =>  sigma_hit = 1.5118 +- 0.0424 mm
+  [gamma_eff vs curva_3hits]: gamma_exp=0.6624+-0.0192  =>  sigma_hit = 1.7009 +- 0.0497 mm
+  [gamma1 vs curva_4hits_core]: gamma_exp=0.4268+-0.0192  =>  sigma_hit = 3.3617 +- 0.1776 mm
+  [gamma2 vs curva_4hits_cola]: gamma_exp=2.3674+-0.3345  =>  sigma_hit = 4.5229 +- 0.6416 mm
 
 ==================================================
 Detector: FERT  Coord: Z  Angulo: 30 deg
@@ -83,7 +83,7 @@ Lorentz simple:  gamma = 0.4253 +- 0.0098 mm  chi2/ndf = 1952.15
 Doble Lorentz:   gamma1 = 0.2419 +- 0.0038 mm  gamma2 = 1.0449 +- 0.0209 mm  gamma_eff = 0.4394 mm  chi2/ndf = 54.91
 
 Estimacion sigma_hit:
-  [gamma_simple vs curva_3hits]: gamma_exp=0.4253+-0.0098  =>  sigma_hit = 1.1158 +- 0.0262 mm
-  [gamma_eff vs curva_3hits]: gamma_exp=0.4394+-0.0038  =>  sigma_hit = 1.1532 +- 0.0104 mm
-  [gamma1 vs curva_4hits_core]: gamma_exp=0.2419+-0.0038  =>  sigma_hit = 1.9247 +- 0.0427 mm
-  [gamma2 vs curva_4hits_cola]: gamma_exp=1.0449+-0.0209  =>  sigma_hit = 2.3538 +- 0.0530 mm
+  [gamma_simple vs curva_3hits]: gamma_exp=0.4253+-0.0098  =>  sigma_hit = 0.2256 +- 0.0070 mm
+  [gamma_eff vs curva_3hits]: gamma_exp=0.4394+-0.0038  =>  sigma_hit = 0.2349 +- 0.0037 mm
+  [gamma1 vs curva_4hits_core]: no se pudo estimar (fuera del rango simulado)
+  [gamma2 vs curva_4hits_cola]: gamma_exp=1.0449+-0.0209  =>  sigma_hit = 200.1811 +- 9.2564 mm
