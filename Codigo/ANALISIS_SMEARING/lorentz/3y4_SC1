@@ -174,70 +174,48 @@ def ejecutar_analisis(sigma_hit):
 
         nombre_archivo = titulo.replace(" ","_").replace("(","").replace(")","").replace("+","y")
         base_ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Combinado_Lorentz\{nombre_archivo}_{sigma_hit:.3f}"
-        x_fit = np.linspace(min(centers), max(centers), 400)
+        x_fit  = np.linspace(min(centers), max(centers), 400)
+        margen = max(abs(corte_p95[0]), abs(corte_p95[1])) * 1.05
 
-        # plot lineal con zoom al corte del fit
+        def _dibujar_fits(ax_or_plt, log=False):
+            if simple_ok:
+                ax_or_plt.plot(x_fit, lorentz(x_fit,A_s,mu_s,gamma_s),
+                         color='orange', linewidth=2,
+                         label=f"Lorentz simple: gamma={gamma_s:.3f}  chi2/ndf={chi2_s:.2f}")
+            if double_ok:
+                ax_or_plt.plot(x_fit, double_lorentz(x_fit,A1,gamma1,A2,gamma2,mu_dl),
+                         color='red', linewidth=2, label=f"Doble Lorentz  chi2/ndf={chi2_dl:.2f}")
+                ax_or_plt.plot(x_fit, lorentz(x_fit,A1,mu_dl,gamma1),
+                         '--', color='blue', linewidth=1.5, label=f"Core: g1={gamma1:.3f}")
+                ax_or_plt.plot(x_fit, lorentz(x_fit,A2,mu_dl,gamma2),
+                         '--', color='green', linewidth=1.5, label=f"Cola: g2={gamma2:.3f}")
+            ax_or_plt.axvline(corte_p95[0], color='magenta', linestyle='-', linewidth=1.5,
+                       label=f"p95: [{corte_p95[0]:.3f}, {corte_p95[1]:.3f}] mm ({frac_p95:.1f}%)")
+            ax_or_plt.axvline(corte_p95[1], color='magenta', linestyle='-', linewidth=1.5)
+            ax_or_plt.axvline(corte_3s[0], color='cyan', linestyle='--', linewidth=1,
+                       label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}] mm ({frac_3s:.1f}%)")
+            ax_or_plt.axvline(corte_3s[1], color='cyan', linestyle='--', linewidth=1)
+
+        # plot lineal
         plt.figure(figsize=(9,6))
         plt.hist(data_fit, bins=60, alpha=0.6, color='steelblue',
                  label=f"Datos (p95)  N={len(data_fit)}")
-        if simple_ok:
-            plt.plot(x_fit, lorentz(x_fit,A_s,mu_s,gamma_s),
-                     color='orange', linewidth=2,
-                     label=f"Lorentz simple: gamma={gamma_s:.3f}  chi2/ndf={chi2_s:.2f}")
-        if double_ok:
-            plt.plot(x_fit, double_lorentz(x_fit,A1,gamma1,A2,gamma2,mu_dl),
-                     color='red', linewidth=2, label=f"Doble Lorentz  chi2/ndf={chi2_dl:.2f}")
-            plt.plot(x_fit, lorentz(x_fit,A1,mu_dl,gamma1),
-                     '--', color='blue', linewidth=1.5, label=f"Core: g1={gamma1:.3f}")
-            plt.plot(x_fit, lorentz(x_fit,A2,mu_dl,gamma2),
-                     '--', color='green', linewidth=1.5, label=f"Cola: g2={gamma2:.3f}")
-        if np.isfinite(corte):
-            plt.axvline( corte, color='magenta', linestyle=':', linewidth=1.5,
-                         label=f"5*gamma: +-{corte:.3f} mm ({frac_5g:.1f}%)")
-            plt.axvline(-corte, color='magenta', linestyle=':', linewidth=1.5)
-            plt.xlim(-corte*1.5, corte*1.5)
-        # CAMBIO: marcar tambien p95 y 3sigma
-        plt.axvline(corte_p95[0], color='orange', linestyle='--', linewidth=1,
-                    label=f"p95: +-{abs(corte_p95[0]):.3f} mm ({frac_p95:.1f}%)")
-        plt.axvline(corte_p95[1], color='orange', linestyle='--', linewidth=1)
-        plt.axvline(corte_3s[0], color='cyan', linestyle='--', linewidth=1,
-                    label=f"3sigma: +-{abs(corte_3s[0]):.3f} mm ({frac_3s:.1f}%)")
-        plt.axvline(corte_3s[1], color='cyan', linestyle='--', linewidth=1)
+        _dibujar_fits(plt)
+        plt.xlim(-margen, margen)
         plt.title(titulo); plt.xlabel("Residual [mm]"); plt.ylabel("Counts")
         plt.legend(fontsize=7); plt.grid()
         plt.savefig(base_ruta + "_lineal.png", dpi=150); plt.close()
 
         # plot logaritmico
         fig, ax = plt.subplots(figsize=(9,6))
-        hist_log, bins_log = np.histogram(data_fit, bins=60)
-        ctrs_log = (bins_log[:-1]+bins_log[1:])/2
-        w_log    = bins_log[1]-bins_log[0]
-        ax.bar(ctrs_log[hist_log>0], hist_log[hist_log>0],
-               width=w_log, alpha=0.6, color='steelblue',
+        hl, bl = np.histogram(data_fit, bins=60)
+        cl = (bl[:-1]+bl[1:])/2; wl = bl[1]-bl[0]
+        ax.bar(cl[hl>0], hl[hl>0], width=wl, alpha=0.6, color='steelblue',
                label=f"Datos (p95)  N={len(data_fit)}")
-        if simple_ok:
-            ax.plot(x_fit, lorentz(x_fit,A_s,mu_s,gamma_s),
-                    color='orange', linewidth=2,
-                    label=f"Lorentz simple: gamma={gamma_s:.3f}  chi2/ndf={chi2_s:.2f}")
-        if double_ok:
-            ax.plot(x_fit, double_lorentz(x_fit,A1,gamma1,A2,gamma2,mu_dl),
-                    color='red', linewidth=2, label=f"Doble Lorentz  chi2/ndf={chi2_dl:.2f}")
-            ax.plot(x_fit, lorentz(x_fit,A1,mu_dl,gamma1),
-                    '--', color='blue', linewidth=1.5, label=f"Core: g1={gamma1:.3f}")
-            ax.plot(x_fit, lorentz(x_fit,A2,mu_dl,gamma2),
-                    '--', color='green', linewidth=1.5, label=f"Cola: g2={gamma2:.3f}")
-        if np.isfinite(corte):
-            ax.axvline( corte, color='magenta', linestyle=':', linewidth=2,
-                        label=f"5*gamma: +-{corte:.3f} mm ({frac_5g:.1f}%)")
-            ax.axvline(-corte, color='magenta', linestyle=':', linewidth=2)
-        ax.axvline(corte_p95[0], color='orange', linestyle='--', linewidth=1,
-                   label=f"p95 ({frac_p95:.1f}%)")
-        ax.axvline(corte_p95[1], color='orange', linestyle='--', linewidth=1)
-        ax.axvline(corte_3s[0], color='cyan', linestyle='--', linewidth=1,
-                   label=f"3sigma ({frac_3s:.1f}%)")
-        ax.axvline(corte_3s[1], color='cyan', linestyle='--', linewidth=1)
+        _dibujar_fits(ax, log=True)
         ax.set_yscale('log')
-        ax.set_title(titulo + " [escala logaritmica]")
+        ax.set_xlim(-margen, margen)
+        ax.set_title(titulo + " [log]")
         ax.set_xlabel("Residual [mm]"); ax.set_ylabel("Counts (log)")
         ax.legend(fontsize=7); ax.grid(which='both', linestyle='--', alpha=0.5)
         fig.savefig(base_ruta + "_log.png", dpi=150); plt.close(fig)

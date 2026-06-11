@@ -209,7 +209,7 @@ def ejecutar_analisis_D(D):
                    label=f"3sigma ({frac_3s:.1f}%)")
         ax.axvline(corte_3s[1], color='cyan', linestyle='--', linewidth=1)
         ax.set_yscale('log')
-        ax.set_xlim(min(cl[hl>0])-wl, max(cl[hl>0])+wl)
+        ax.set_xlim(-margen, margen)
         ax.set_title(titulo+f" D={D:.1f}cm [log]")
         ax.set_xlabel("Residual [mm]"); ax.set_ylabel("Counts (log)")
         ax.legend(fontsize=7); ax.grid(which='both', linestyle='--', alpha=0.5)
