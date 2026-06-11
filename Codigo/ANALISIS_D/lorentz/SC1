@@ -120,7 +120,7 @@ def ejecutar_analisis_D(D):
                    label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}] mm")
         ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
         ax.set_xlim(-margen, margen)
-        ax.set_title(titulo); ax.set_xlabel("Residual [mm]"); ax.set_ylabel("Counts")
+        ax.set_title(titulo); ax.set_xlabel("D [cm]"); ax.set_ylabel("Counts")
         ax.legend(fontsize=7); ax.grid()
         fig.savefig(ruta_base + "_lineal.png", dpi=150); plt.close(fig)
 
@@ -140,7 +140,7 @@ def ejecutar_analisis_D(D):
         ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
         ax.set_yscale('log')
         ax.set_xlim(-margen, margen)
-        ax.set_title(titulo + " [log]"); ax.set_xlabel("Residual [mm]"); ax.set_ylabel("Counts (log)")
+        ax.set_title(titulo + " [log]"); ax.set_xlabel("D [cm]"); ax.set_ylabel("Counts (log)")
         ax.legend(fontsize=7); ax.grid(which='both', linestyle='--', alpha=0.5)
         fig.savefig(ruta_base + "_log.png", dpi=150); plt.close(fig)
     
@@ -180,7 +180,7 @@ def ejecutar_analisis_D(D):
         nombre = titulo.replace(" ","_").replace("(","").replace(")","")
         hacer_plots(data, x_fit, hist, centers, bins,
                     fits, fits, corte_p95, corte_3s, titulo,
-                    rf"{RUTA_PLOTS}\{nombre}_{sigma_hit:.3f}")
+                    rf"{RUTA_PLOTS}\{nombre}_{D:.1f}")
 
         f_info.write(f"\n--- {titulo} ---\n")
         f_info.write(f"N total: {len(data_full)}  N tras p95: {len(data)}\n")

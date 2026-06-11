@@ -1,0 +1,116 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Lorentz"
+out_dir = os.path.join(carpeta, "plots_Ang")
+os.makedirs(out_dir, exist_ok=True)
+
+data = np.loadtxt(os.path.join(carpeta, "todos_los_angulos.txt"), skiprows=1)
+data = data[np.argsort(data[:,0])]
+data = data[data[:,0] >= 7.0]
+
+# columnas:
+# [0]  ang
+# [1]  X3_gamma  [2]  X3_err  [3]  X3_p95_lo  [4]  X3_p95_hi
+# [5]  Z3_gamma  [6]  Z3_err  [7]  Z3_p95_lo  [8]  Z3_p95_hi
+# [9]  X4_gamma1 [10] X4_err1 [11] X4_gamma2  [12] X4_err2  [13] X4_gamma_eff [14] X4_p95_lo [15] X4_p95_hi
+# [16] Z4_gamma1 [17] Z4_err1 [18] Z4_gamma2  [19] Z4_err2  [20] Z4_gamma_eff [21] Z4_p95_lo [22] Z4_p95_hi
+
+ang         = data[:,0]
+X3_g      = data[:,1];  X3_e  = data[:,2]
+X3_p95_lo = data[:,3];  X3_p95_hi = data[:,4]
+Z3_g      = data[:,5];  Z3_e  = data[:,6]
+Z3_p95_lo = data[:,7];  Z3_p95_hi = data[:,8]
+X4_g1     = data[:,9];  X4_e1 = data[:,10]
+X4_g2     = data[:,11]; X4_e2 = data[:,12]; X4_ge = data[:,13]
+X4_p95_lo = data[:,14]; X4_p95_hi = data[:,15]
+Z4_g1     = data[:,16]; Z4_e1 = data[:,17]
+Z4_g2     = data[:,18]; Z4_e2 = data[:,19]; Z4_ge = data[:,20]
+Z4_p95_lo = data[:,21]; Z4_p95_hi = data[:,22]
+
+# semiancho del corte p95
+X3_p95_ancho = (X3_p95_hi - X3_p95_lo) / 2
+Z3_p95_ancho = (Z3_p95_hi - Z3_p95_lo) / 2
+X4_p95_ancho = (X4_p95_hi - X4_p95_lo) / 2
+Z4_p95_ancho = (Z4_p95_hi - Z4_p95_lo) / 2
+
+def limpiar(x, y, e=None):
+    if e is not None:
+        mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<5)
+        return x[mask], y[mask], e[mask]
+    mask = np.isfinite(x)&np.isfinite(y)&(y>0)
+    return x[mask], y[mask]
+
+f_out = open(os.path.join(carpeta, "pendientes_angulos.txt"), "w", encoding="utf-8")
+
+def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
+                  p95_3, p95_4, titulo, nombre):
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9,10), sharex=True)
+    fig.suptitle(titulo)
+
+    # --- panel 1: gammas vs ang ---
+    xs, ys, ees = limpiar(ang, g3,  e3)
+    x1, y1, ee1 = limpiar(ang, g1,  e1)
+    x2, y2, ee2 = limpiar(ang, g2,  e2)
+    xge, yge    = limpiar(ang, ge)
+
+    ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='blue',   capsize=3, label='3 hits gamma simple')
+    ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='green',  capsize=3, label='4 hits gamma1 (core)')
+    ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='4 hits gamma2 (cola)')
+    ax1.plot(xge, yge, 'D--', color='orange', label='4 hits gamma_eff')
+
+    f_out.write(f"\n--- {titulo} ---\n")
+    for (x, y, e, color, etiq) in [
+        (xs, ys, ees, 'blue',  '3hits gamma'),
+        (x1, y1, ee1, 'green', '4hits gamma1'),
+        (x2, y2, ee2, 'red',   '4hits gamma2'),
+    ]:
+        if len(x) >= 3:
+            p, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
+            xf = np.linspace(min(x), max(x), 200)
+            ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2,
+                     label=f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
+            f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
+                        f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
+
+    
+    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
+
+    # --- panel 2: semiancho corte p95 vs ang (3 hits y 4 hits) ---
+    xc3, yc3 = limpiar(ang, p95_3)
+    xc4, yc4 = limpiar(ang, p95_4)
+
+    ax2.plot(xc3, yc3, 'o-', color='blue',  linewidth=2, label='Semiancho p95 — 3 hits')
+    ax2.plot(xc4, yc4, 's-', color='green', linewidth=2, label='Semiancho p95 — 4 hits')
+
+    for (xc, yc, color, etiq) in [(xc3, yc3, 'blue', 'p95_3hits'),
+                                   (xc4, yc4, 'green','p95_4hits')]:
+        if len(xc) >= 3:
+            p2 = np.polyfit(xc, yc, 1)
+            xf = np.linspace(min(xc), max(xc), 200)
+            ax2.plot(xf, p2[0]*xf+p2[1], '--', color=color, linewidth=1.5,
+                     label=f'Fit {etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}')
+            f_out.write(f"{etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
+
+    
+    ax2.set_xlabel("Ángulo [grados]"); ax2.set_ylabel("Semiancho p95 [mm]")
+    ax2.set_title("Ventana de ajuste (semiancho p95) vs Ángulo")
+    ax2.legend(fontsize=8); ax2.grid()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=200)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+plot_separado(ang, X3_g, X3_e, X4_g1, X4_e1, X4_g2, X4_e2, X4_ge,
+              X3_p95_ancho, X4_p95_ancho,
+              "Barrido Ángulo — X (3 y 4 hits separados, Lorentz)", "ang_X_separado")
+
+plot_separado(ang, Z3_g, Z3_e, Z4_g1, Z4_e1, Z4_g2, Z4_e2, Z4_ge,
+              Z3_p95_ancho, Z4_p95_ancho,
+              "Barrido Ángulo — Z (3 y 4 hits separados, Lorentz)", "ang_Z_separado")
+
+f_out.close()
+print(f"\nPendientes en: {carpeta}\\pendientes_angulos.txt")
