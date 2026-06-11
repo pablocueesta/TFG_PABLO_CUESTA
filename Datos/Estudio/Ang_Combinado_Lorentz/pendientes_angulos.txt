@@ -1,0 +1,12 @@
+
+--- Barrido Ángulo — X combinado Lorentz ---
+gamma_simple: a=0.0001+-0.0000, b=0.0372+-0.0006
+gamma1: a=0.0000+-0.0000, b=0.0122+-0.0007
+gamma2: a=0.0001+-0.0000, b=0.0515+-0.0012
+p95_semiancho: a=0.0019, b=0.1954
+
+--- Barrido Ángulo — Z combinado Lorentz ---
+gamma_simple: a=0.0001+-0.0000, b=0.0372+-0.0008
+gamma1: a=-0.0000+-0.0000, b=0.0131+-0.0005
+gamma2: a=0.0001+-0.0000, b=0.0524+-0.0008
+p95_semiancho: a=0.0018, b=0.1960

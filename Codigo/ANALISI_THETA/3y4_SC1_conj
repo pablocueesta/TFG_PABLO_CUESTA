@@ -1,0 +1,243 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+sigma_hit  = 0.085
+D = 13.0
+valores_ang  = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0]
+
+N_BINS = 500  # suficientes para resolver el pico estrecho de 4 hits
+
+def aplicar_percentil(data, p=95):
+    low  = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100-(100-p)/2)
+    return data[(data > low) & (data < high)]
+
+def lorentz(x, A, mu, gamma):
+    return A / (1 + ((x-mu)/gamma)**2)
+
+def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
+    return (A1/(1+((x-mu)/gamma1)**2) + A2/(1+((x-mu)/gamma2)**2))
+
+def chi2_reducido(y_data, y_fit, n_params):
+    mask = y_data > 0
+    r    = y_data[mask] - y_fit[mask]
+    chi2 = np.sum(r**2 / y_data[mask])
+    ndf  = np.sum(mask) - n_params
+    return np.nan if ndf <= 0 else chi2/ndf
+
+
+def ejecutar_analisis_ang(ang):
+
+    np.random.seed(42)
+    Ang_TAG      = f"Ang{ang:.0f}" #.replace(".", "_")
+    archivo    = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\coordenadas_{Ang_TAG}_total.csv"
+    salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Combinado_Lorentz\fits_s{sigma_hit:.3f}_{ang:.1f}.txt"
+
+    print(f"\n==============================")
+    print(f"Analizando ang = {ang:.1f} degrees  (combinado)")
+    print(f"==============================")
+
+    df     = pd.read_csv(archivo)
+    coords = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
+
+    coords_smeared = coords.copy()
+    valid = coords[:,:,0] != -99999
+    coords_smeared[:,:,0][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords_smeared[:,:,2][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords = coords_smeared
+
+    mask     = np.all(coords != -99999, axis=2)
+    hits     = mask.sum(axis=1)
+    eventos3 = np.where(hits == 3)[0]
+    eventos4 = np.where(hits == 4)[0]
+
+    # 3 HITS
+    coords3 = coords[eventos3]; mask3 = mask[eventos3]
+    coords_validos = np.array([ev[m] for ev,m in zip(coords3,mask3)])
+    coords_validos = np.array([ev[np.argsort(ev[:,1])] for ev in coords_validos])
+    x3,y3,z3 = coords_validos[:,:,0],coords_validos[:,:,1],coords_validos[:,:,2]
+    x_izq,x_mid,x_der = x3.T; y_izq,y_mid,y_der = y3.T; z_izq,z_mid,z_der = z3.T
+    m_x = (x_izq-x_der)/(y_izq-y_der); x_teo = m_x*y_mid+(x_izq-m_x*y_izq)
+    resX3_full = x_mid-x_teo
+    m_z = (z_izq-z_der)/(y_izq-y_der); z_teo = m_z*y_mid+(z_izq-m_z*y_izq)
+    resZ3_full = z_mid-z_teo
+
+    # 4 HITS
+    combos  = np.array([[0,1,2],[0,1,3],[0,2,3],[1,2,3]])
+    coords4 = coords[eventos4]
+    coords4 = np.array([ev[np.argsort(ev[:,1])] for ev in coords4])
+    coords4 = coords4[:,combos]
+    x4,y4,z4 = coords4[:,:,:,0],coords4[:,:,:,1],coords4[:,:,:,2]
+    m_x = (x4[:,:,0]-x4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    x_teo = m_x*y4[:,:,1]+(x4[:,:,0]-m_x*y4[:,:,0])
+    resX_all = x4[:,:,1]-x_teo
+    resX4_full = resX_all[np.arange(len(resX_all)), np.argmin(np.abs(resX_all),axis=1)]
+    m_z = (z4[:,:,0]-z4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    z_teo = m_z*y4[:,:,1]+(z4[:,:,0]-m_z*y4[:,:,0])
+    resZ_all = z4[:,:,1]-z_teo
+    resZ4_full = resZ_all[np.arange(len(resZ_all)), np.argmin(np.abs(resZ_all),axis=1)]
+
+    # COMBINADO: concatenar todo y aplicar percentil UNA SOLA VEZ sobre el total
+    # Los 4 hits (~75% de eventos) dominan el percentil, el corte cae en ~+-0.16mm
+    # Con N_BINS=500 el bin width es suficientemente pequeño para resolver el pico de 4 hits
+    resX_comb_full = np.concatenate([resX3_full, resX4_full])
+    resZ_comb_full = np.concatenate([resZ3_full, resZ4_full])
+    resX_comb_cut  = aplicar_percentil(resX_comb_full, p=95)
+    resZ_comb_cut  = aplicar_percentil(resZ_comb_full, p=95)
+
+    # corte p95: extremos del array ya cortado = exactamente donde se cortan los datos
+    cp95_X = (resX_comb_cut.min(), resX_comb_cut.max())
+    cp95_Z = (resZ_comb_cut.min(), resZ_comb_cut.max())
+
+    # 3sigma sobre datos completos para comparacion
+    c3s_X = (np.mean(resX_comb_full)-3*np.std(resX_comb_full),
+             np.mean(resX_comb_full)+3*np.std(resX_comb_full))
+    c3s_Z = (np.mean(resZ_comb_full)-3*np.std(resZ_comb_full),
+             np.mean(resZ_comb_full)+3*np.std(resZ_comb_full))
+
+    frac_p95_X = len(resX_comb_cut)/len(resX_comb_full)*100
+    frac_p95_Z = len(resZ_comb_cut)/len(resZ_comb_full)*100
+    frac_3s_X  = np.sum((resX_comb_full>=c3s_X[0])&(resX_comb_full<=c3s_X[1]))/len(resX_comb_full)*100
+    frac_3s_Z  = np.sum((resZ_comb_full>=c3s_Z[0])&(resZ_comb_full<=c3s_Z[1]))/len(resZ_comb_full)*100
+
+    f_info = open(salida_fit, "w", encoding="utf-8")
+    f_info.write(f"ang={ang:.1f} degrees  sigma_hit={sigma_hit:.3f} mm\n")
+
+    RUTA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Ang_Combinado_Lorentz"
+
+    def analizar_combinado(data, corte_p95, corte_3s, frac_p95, frac_3s, titulo):
+
+        hist, bins = np.histogram(data, bins=N_BINS)
+        centers    = (bins[:-1]+bins[1:])/2
+        gamma0     = np.std(data)*0.5
+        x_fit      = np.linspace(corte_p95[0], corte_p95[1], 600)
+        margen     = max(abs(corte_p95[0]), abs(corte_p95[1])) * 1.05
+
+        # Lorentz simple
+        simple_ok = False
+        try:
+            ps, covs = curve_fit(lorentz, centers, hist,
+                                 p0=[max(hist),0,gamma0],
+                                 bounds=([0,-0.5,0],[np.inf,0.5,np.inf]),
+                                 maxfev=20000)
+            A_s,mu_s,gamma_s = [float(p) for p in ps]
+            err_gs = float(np.sqrt(np.diag(covs))[2])
+            simple_ok = True
+        except RuntimeError:
+            print(f"  Fit Lorentz simple fallido en {titulo}")
+            gamma_s = err_gs = np.nan
+        chi2_s = chi2_reducido(hist, lorentz(centers,A_s,mu_s,gamma_s), 3) if simple_ok else np.nan
+
+        # doble Lorentz
+        p0_dl = [max(hist), gamma0*0.3, max(hist)/5, gamma0*1.5, 0]
+        double_ok = False
+        try:
+            pdl, cdl = curve_fit(double_lorentz, centers, hist,
+                                 p0=p0_dl,
+                                 bounds=([0,0,0,0,-0.5],[np.inf,np.inf,np.inf,np.inf,0.5]),
+                                 maxfev=20000)
+            A1,g1,A2,g2,mu_dl = [float(p) for p in pdl]
+            errs = np.sqrt(np.diag(cdl))
+            eg1,eg2 = float(errs[1]),float(errs[3])
+            if g1>g2: A1,A2=A2,A1; g1,g2=g2,g1; eg1,eg2=eg2,eg1
+            if 0<g1<5 and 0<g2<5:
+                double_ok = True
+            else:
+                print(f"  Fit doble no fisico en {titulo}")
+        except RuntimeError:
+            print(f"  Fit doble fallido en {titulo}")
+
+        if double_ok:
+            chi2_dl   = chi2_reducido(hist, double_lorentz(centers,A1,g1,A2,g2,mu_dl), 5)
+            gamma_eff = (A1*g1+A2*g2)/(A1+A2)
+        else:
+            chi2_dl = gamma_eff = np.nan
+
+        nombre = titulo.replace(" ","_").replace("(","").replace(")","").replace("+","y")
+        base   = rf"{RUTA}\{nombre}_{sigma_hit:.3f}_{D:.1f}_{ang:.0f}"
+
+        def _dibujar(ax_o_plt, log=False):
+            if simple_ok:
+                ax_o_plt.plot(x_fit, lorentz(x_fit,A_s,mu_s,gamma_s),
+                              color='orange', linewidth=2,
+                              label=f"Lorentz: gamma={gamma_s:.3f}  chi2={chi2_s:.1f}")
+            if double_ok:
+                ax_o_plt.plot(x_fit, double_lorentz(x_fit,A1,g1,A2,g2,mu_dl),
+                              color='red', linewidth=2,
+                              label=f"Doble  chi2={chi2_dl:.1f}")
+                ax_o_plt.plot(x_fit, lorentz(x_fit,A1,mu_dl,g1),
+                              '--', color='blue', linewidth=1.5,
+                              label=f"Core g1={g1:.3f}")
+                ax_o_plt.plot(x_fit, lorentz(x_fit,A2,mu_dl,g2),
+                              '--', color='green', linewidth=1.5,
+                              label=f"Cola g2={g2:.3f}")
+            # p95: linea solida magenta — coincide con extremo del histograma
+            ax_o_plt.axvline(corte_p95[0], color='magenta', linestyle='-', linewidth=1.5,
+                             label=f"p95: [{corte_p95[0]:.3f},{corte_p95[1]:.3f}] mm ({frac_p95:.1f}%)")
+            ax_o_plt.axvline(corte_p95[1], color='magenta', linestyle='-', linewidth=1.5)
+            # 3sigma: linea discontinua cyan — solo comparacion
+            ax_o_plt.axvline(corte_3s[0], color='cyan', linestyle='--', linewidth=1.2,
+                             label=f"3sigma: [{corte_3s[0]:.3f},{corte_3s[1]:.3f}] mm ({frac_3s:.1f}%)")
+            ax_o_plt.axvline(corte_3s[1], color='cyan', linestyle='--', linewidth=1.2)
+
+        # plot lineal
+        plt.figure(figsize=(9,6))
+        plt.hist(data, bins=N_BINS, alpha=0.6, color='steelblue',
+                 label=f"Datos (p95)  N={len(data)}")
+        _dibujar(plt)
+        plt.xlim(-margen, margen)
+        plt.title(titulo+f" D={D:.1f}cm")
+        plt.xlabel("Ángulo [grados]"); plt.ylabel("Counts")
+        plt.legend(fontsize=7); plt.grid()
+        plt.savefig(base+"_lineal.png", dpi=150); plt.close()
+
+        # plot logaritmico
+        fig, ax = plt.subplots(figsize=(9,6))
+        hl, bl = np.histogram(data, bins=N_BINS)
+        cl = (bl[:-1]+bl[1:])/2; wl = bl[1]-bl[0]
+        ax.bar(cl[hl>0], hl[hl>0], width=wl, alpha=0.6, color='steelblue',
+               label=f"Datos (p95)  N={len(data)}")
+        _dibujar(ax, log=True)
+        ax.set_yscale('log')
+        ax.set_xlim(-margen, margen)
+        ax.set_title(titulo+f" D={D:.1f}cm [log]")
+        ax.set_xlabel("Ángulo [grados]"); ax.set_ylabel("Counts (log)")
+        ax.legend(fontsize=7); ax.grid(which='both', linestyle='--', alpha=0.5)
+        fig.savefig(base+"_log.png", dpi=150); plt.close(fig)
+
+        # guardar resultados
+        f_info.write(f"\n--- {titulo} ---\n")
+        f_info.write(f"N para fit (p95): {len(data)}  N total: {len(resX_comb_full) if 'X' in titulo else len(resZ_comb_full)}\n")
+        f_info.write(f"Corte p95:   [{corte_p95[0]:.4f}, {corte_p95[1]:.4f}] mm ({frac_p95:.1f}% datos totales)\n")
+        f_info.write(f"Corte 3sigma:[{corte_3s[0]:.4f}, {corte_3s[1]:.4f}] mm ({frac_3s:.1f}% datos totales)\n")
+        if simple_ok:
+            f_info.write(f"Lorentz simple: mu={mu_s:.4f} gamma={gamma_s:.4f}+-{err_gs:.4f} chi2/ndf={chi2_s:.4f}\n")
+        else:
+            f_info.write(f"Lorentz simple: fallido\n")
+        if double_ok:
+            f_info.write(f"Doble Lorentz: mu={mu_dl:.4f}\n")
+            f_info.write(f"   gamma1 (core)={g1:.4f}+-{eg1:.4f}\n")
+            f_info.write(f"   gamma2 (cola)={g2:.4f}+-{eg2:.4f}\n")
+            f_info.write(f"   gamma_eff={gamma_eff:.4f}  chi2/ndf={chi2_dl:.4f}\n")
+        else:
+            f_info.write(f"Doble Lorentz: fallido\n")
+        if simple_ok and double_ok:
+            decision = "DOBLE MEJOR" if chi2_dl < chi2_s*0.9 else "SIMPLE SUFICIENTE"
+            f_info.write(f"Decision: {decision}\n")
+        print(f"  {titulo}: chi2_s={chi2_s:.1f}  chi2_dl={chi2_dl:.1f}"
+              f"  p95=[{corte_p95[0]:.3f},{corte_p95[1]:.3f}] ({frac_p95:.1f}%)")
+
+    analizar_combinado(resX_comb_cut, cp95_X, c3s_X, frac_p95_X, frac_3s_X,
+                       "Combinado X (3+4 hits)")
+    analizar_combinado(resZ_comb_cut, cp95_Z, c3s_Z, frac_p95_Z, frac_3s_Z,
+                       "Combinado Z (3+4 hits)")
+    f_info.close()
+
+
+for ang in valores_ang:
+    try:
+        ejecutar_analisis_ang(ang)
+    except Exception as e:
+        print(f"Error ang={ang:.1f}: {e}")

@@ -1,0 +1,114 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Combinado_Lorentz"
+out_dir = os.path.join(carpeta, "plots_Ang")
+os.makedirs(out_dir, exist_ok=True)
+
+data = np.loadtxt(os.path.join(carpeta, "todos_los_angulos.txt"), skiprows=1)
+# ordenar por angulo numericamente y filtrar angulo < 0
+data = data[np.argsort(data[:,0])]
+data = data[data[:,0] >= 0.0]
+
+# columnas:
+# [0]  Ang
+# [1]  X_gamma_s  [2]  X_err_s
+# [3]  X_gamma1   [4]  X_err1
+# [5]  X_gamma2   [6]  X_err2
+# [7]  X_gamma_eff
+# [8]  X_p95_lo   [9]  X_p95_hi
+# [10] Z_gamma_s  [11] Z_err_s
+# [12] Z_gamma1   [13] Z_err1
+# [14] Z_gamma2   [15] Z_err2
+# [16] Z_gamma_eff
+# [17] Z_p95_lo   [18] Z_p95_hi
+
+Ang       = data[:,0]
+X_gs    = data[:,1];  X_es  = data[:,2]
+X_g1    = data[:,3];  X_e1  = data[:,4]
+X_g2    = data[:,5];  X_e2  = data[:,6]
+X_ge    = data[:,7]
+X_p95lo = data[:,8];  X_p95hi = data[:,9]
+Z_gs    = data[:,10]; Z_es  = data[:,11]
+Z_g1    = data[:,12]; Z_e1  = data[:,13]
+Z_g2    = data[:,14]; Z_e2  = data[:,15]
+Z_ge    = data[:,16]
+Z_p95lo = data[:,17]; Z_p95hi = data[:,18]
+
+# ancho del corte p95 = p95_hi - p95_lo (simetrico aprox)
+X_p95_ancho = (X_p95hi - X_p95lo) / 2
+Z_p95_ancho = (Z_p95hi - Z_p95lo) / 2
+
+def limpiar(x, y, e=None):
+    if e is not None:
+        mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<5)
+        return x[mask], y[mask], e[mask]
+    mask = np.isfinite(x)&np.isfinite(y)&(y>0)
+    return x[mask], y[mask]
+
+f_out = open(os.path.join(carpeta, "pendientes_angulos.txt"), "w", encoding="utf-8")
+
+def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9,10), sharex=True)
+    fig.suptitle(titulo)
+
+    # --- panel superior: gammas ---
+    xs, ys, ees = limpiar(Ang, gs, es)
+    x1, y1, ee1 = limpiar(Ang, g1, e1)
+    x2, y2, ee2 = limpiar(Ang, g2, e2)
+    xge, yge    = limpiar(Ang, ge)
+
+    ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='orange', capsize=3, label='gamma simple')
+    ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='blue',   capsize=3, label='gamma1 core')
+    ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='gamma2 cola')
+    ax1.plot(xge, yge, 'D--', color='green', label='gamma_eff')
+
+    f_out.write(f"\n--- {titulo} ---\n")
+    for (x, y, e, color, etiq) in [
+        (xs, ys, ees, 'orange', 'gamma_simple'),
+        (x1, y1, ee1, 'blue',   'gamma1'),
+        (x2, y2, ee2, 'red',    'gamma2'),
+    ]:
+        if len(x) >= 3:
+            p, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
+            xf = np.linspace(min(x), max(x), 200)
+            ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2,
+                     label=f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
+            f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
+                        f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
+
+    #ax1.axvline(7.0, color='gray', linestyle=':', linewidth=1, label='D=d=7cm')
+    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
+
+    # --- panel inferior: ancho del corte p95 vs D ---
+    xc, yc = limpiar(Ang, p95_ancho)
+    ax2.plot(xc, yc,
+         color='magenta',
+         linewidth=2,
+         label='Semiancho corte p95 [mm]')
+    if len(xc) >= 3:
+        p2 = np.polyfit(xc, yc, 1)
+        xf = np.linspace(min(xc), max(xc), 200)
+        ax2.plot(xf, p2[0]*xf+p2[1], '--', color='darkviolet', linewidth=2,
+                 label=f'Fit lineal: a={p2[0]:.4f}, b={p2[1]:.4f}')
+        f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
+
+    #ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
+    ax2.set_xlabel("Ángulo [grados]"); ax2.set_ylabel("Semiancho p95 [mm]")
+    ax2.set_title("Ventana de ajuste (semiancho p95) vs Ángulo")
+    ax2.legend(fontsize=8); ax2.grid()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=200)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+plot_Ang_comb(Ang, X_gs, X_es, X_g1, X_e1, X_g2, X_e2, X_ge, X_p95_ancho,
+            "Barrido Ángulo — X combinado Lorentz", "Ang_X_combinado")
+plot_Ang_comb(Ang, Z_gs, Z_es, Z_g1, Z_e1, Z_g2, Z_e2, Z_ge, Z_p95_ancho,
+            "Barrido Ángulo — Z combinado Lorentz", "Ang_Z_combinado")
+
+f_out.close()
+print(f"\nPendientes en: {carpeta}\\pendientes_angulos.txt")
