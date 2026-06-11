@@ -39,7 +39,10 @@ def extraer_fila(bloque):
     ge_v = m.group(1) if m else "NaN"
 
     # corte p95: linea "Corte p95:   [X,Y] mm"
-    m = re.search(r'Corte p95:\s+\[([-\d\.]+),([\d\.]+)\]', bloque)
+    m = re.search(
+    r'Corte p95:.*?\[\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*\]',
+    bloque
+    )
     cp95_lo = m.group(1) if m else "NaN"
     cp95_hi = m.group(2) if m else "NaN"
 

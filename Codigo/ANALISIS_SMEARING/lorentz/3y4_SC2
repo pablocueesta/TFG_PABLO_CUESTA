@@ -5,8 +5,10 @@ import glob
 carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz"
 os.chdir(carpeta)
 
-archivos = glob.glob("fits_s*.txt")
-archivos.sort()
+archivos = sorted(
+    glob.glob("fits_s*.txt"),
+    key=lambda x: float(re.search(r'fits_s([\d\.]+)\.txt', x).group(1))
+)
 
 print(f"Encontrados {len(archivos)} archivos")
 
@@ -14,7 +16,10 @@ pat_gamma_s  = r'gamma=([\d\.]+)\+\-([\d\.]+)'
 pat_chi2     = r'chi2/ndf=([\d\.]+)'
 pat_gamma1   = r'gamma1 \(core\)=([\d\.]+)\+\-([\d\.]+)'
 pat_gamma2   = r'gamma2 \(cola\)=([\d\.]+)\+\-([\d\.]+)'
-pat_corte_p95 = r'Corte p95:\s+\[([-\d\.]+),\s*([-\d\.]+)\] mm'
+pat_corte_p95 = (
+    r'Corte p95:.*?'
+    r'\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]'
+)
 
 def extraer_bloque(contenido, titulo):
     m = re.search(rf'--- {re.escape(titulo)} ---(.*?)(?=\n---|$)', contenido, re.DOTALL)

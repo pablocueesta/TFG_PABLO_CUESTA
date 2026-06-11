@@ -189,7 +189,7 @@ def ejecutar_analisis_D(D):
         _dibujar(plt)
         plt.xlim(-margen, margen)
         plt.title(titulo+f" D={D:.1f}cm")
-        plt.xlabel("Residual [mm]"); plt.ylabel("Counts")
+        plt.xlabel("D [cm]"); plt.ylabel("Counts")
         plt.legend(fontsize=7); plt.grid()
         plt.savefig(base+"_lineal.png", dpi=150); plt.close()
 
@@ -203,7 +203,7 @@ def ejecutar_analisis_D(D):
         ax.set_yscale('log')
         ax.set_xlim(-margen, margen)
         ax.set_title(titulo+f" D={D:.1f}cm [log]")
-        ax.set_xlabel("Residual [mm]"); ax.set_ylabel("Counts (log)")
+        ax.set_xlabel("D [cm]"); ax.set_ylabel("Counts (log)")
         ax.legend(fontsize=7); ax.grid(which='both', linestyle='--', alpha=0.5)
         fig.savefig(base+"_log.png", dpi=150); plt.close(fig)
 
