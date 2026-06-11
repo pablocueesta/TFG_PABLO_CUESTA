@@ -1,0 +1,12 @@
+
+--- Barrido D — X combinado Lorentz ---
+gamma_simple: a=0.0006+-0.0000, b=0.0301+-0.0002
+gamma1: a=-0.0001+-0.0001, b=0.0128+-0.0017
+gamma2: a=0.0015+-0.0002, b=0.0282+-0.0021
+p95_semiancho: a=0.0024, b=0.1148
+
+--- Barrido D — Z combinado Lorentz ---
+gamma_simple: a=0.0006+-0.0000, b=0.0301+-0.0003
+gamma1: a=-0.0000+-0.0001, b=0.0105+-0.0019
+gamma2: a=0.0015+-0.0002, b=0.0275+-0.0020
+p95_semiancho: a=0.0023, b=0.1153

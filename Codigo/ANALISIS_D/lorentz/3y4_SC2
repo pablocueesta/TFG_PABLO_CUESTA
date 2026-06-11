@@ -1,0 +1,68 @@
+import os, re, glob
+import numpy as np
+
+carpeta   = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D_Combinado_Lorentz"
+sigma_hit = 0.085
+theta     = 0.00
+
+os.chdir(carpeta)
+archivos_raw = glob.glob(f"fits_s{sigma_hit:.3f}_*_{theta:.2f}.txt")
+archivos = sorted(archivos_raw,
+                  key=lambda x: float(re.search(r'fits_s[\d\.]+_([\d\.]+)_[\d\.]+\.txt', x).group(1)))
+print(f"Encontrados {len(archivos)} archivos (orden numerico)")
+
+def extraer_bloque(contenido, titulo):
+    m = re.search(rf'--- {re.escape(titulo)} ---(.*?)(?=\n--- |\Z)', contenido, re.DOTALL)
+    return m.group(1) if m else None
+
+def extraer_fila(bloque):
+    if not bloque:
+        return ["NaN"] * 9
+
+    # gamma simple
+    m = re.search(r'Lorentz simple:.*?gamma=([\d\.]+)\+\-([\d\.]+)', bloque)
+    gs_v = m.group(1) if m else "NaN"
+    gs_e = m.group(2) if m else "NaN"
+
+    # gamma1 core
+    m = re.search(r'gamma1 \(core\)=([\d\.]+)\+\-([\d\.]+)', bloque)
+    g1_v = m.group(1) if m else "NaN"
+    g1_e = m.group(2) if m else "NaN"
+
+    # gamma2 cola
+    m = re.search(r'gamma2 \(cola\)=([\d\.]+)\+\-([\d\.]+)', bloque)
+    g2_v = m.group(1) if m else "NaN"
+    g2_e = m.group(2) if m else "NaN"
+
+    # gamma_eff
+    m = re.search(r'gamma_eff=([\d\.]+)', bloque)
+    ge_v = m.group(1) if m else "NaN"
+
+    # corte p95: linea "Corte p95:   [X,Y] mm"
+    m = re.search(r'Corte p95:\s+\[([-\d\.]+),([\d\.]+)\]', bloque)
+    cp95_lo = m.group(1) if m else "NaN"
+    cp95_hi = m.group(2) if m else "NaN"
+
+    return [gs_v, gs_e, g1_v, g1_e, g2_v, g2_e, ge_v, cp95_lo, cp95_hi]
+
+with open("todos_los_D.txt", "w", encoding="utf-8") as sal:
+    sal.write(
+        "D\t"
+        "X_gamma_s\tX_err_s\tX_gamma1\tX_err1\tX_gamma2\tX_err2\tX_gamma_eff\tX_p95_lo\tX_p95_hi\t"
+        "Z_gamma_s\tZ_err_s\tZ_gamma1\tZ_err1\tZ_gamma2\tZ_err2\tZ_gamma_eff\tZ_p95_lo\tZ_p95_hi\n"
+    )
+    for arch in archivos:
+        m = re.search(r'fits_s[\d\.]+_([\d\.]+)_[\d\.]+\.txt', arch)
+        D = m.group(1) if m else "NaN"
+        print(f"  D={D}: {arch}")
+        with open(arch, "r", encoding="utf-8", errors="ignore") as f:
+            cont = f.read()
+        bx = extraer_bloque(cont, "Combinado X (3+4 hits)")
+        bz = extraer_bloque(cont, "Combinado Z (3+4 hits)")
+        sal.write(f"{D}\t")
+        sal.write("\t".join(extraer_fila(bx)) + "\t")
+        sal.write("\t".join(extraer_fila(bz)) + "\n")
+
+print(f"\nGuardado: {carpeta}\\todos_los_D.txt")
+print("Columnas: D | X_gamma_s X_err_s X_gamma1 X_err1 X_gamma2 X_err2 X_gamma_eff X_p95_lo X_p95_hi |")
+print("             Z_gamma_s Z_err_s Z_gamma1 Z_err1 Z_gamma2 Z_err2 Z_gamma_eff Z_p95_lo Z_p95_hi")

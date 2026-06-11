@@ -3,53 +3,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-# --------------------------------------------------
-# FUNCIÓN PERCENTIL
-# --------------------------------------------------
-
 def aplicar_percentil(data, p=95):
     low  = np.percentile(data, (100-p)/2)
     high = np.percentile(data, 100 - (100-p)/2)
     return data[(data > low) & (data < high)]
 
-
-# --------------------------------------------------
-# FUNCIONES DE AJUSTE
-# CAMBIO: Lorentzianas en lugar de Gaussianas
-# --------------------------------------------------
-
 def gauss(x, A, mu, sigma):
-    """Gaussiana — mantenida para comparacion visual"""
     return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
 def lorentz(x, A, mu, gamma):
-    """
-    Lorentziana (Cauchy): A / (1 + ((x-mu)/gamma)^2)
-    gamma es la semianchu ra a media altura (HWHM)
-    A es la amplitud en el pico
-    """
     return A / (1 + ((x - mu) / gamma)**2)
 
 def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
-    """
-    Doble Lorentziana con mismo centro mu
-    gamma1 < gamma2: core y cola
-    """
-    return (
-        A1 / (1 + ((x - mu) / gamma1)**2)
-        +
-        A2 / (1 + ((x - mu) / gamma2)**2)
-    )
+    return (A1 / (1 + ((x - mu) / gamma1)**2)
+            + A2 / (1 + ((x - mu) / gamma2)**2))
 
-
-# --------------------------------------------------
-# FUNCIÓN PRINCIPAL
-# --------------------------------------------------
 
 def ejecutar_analisis(sigma_hit):
 
     np.random.seed(42)
-
     print(f"\n==============================")
     print(f"Ejecutando sigma_hit = {sigma_hit:.3f}")
     print(f"==============================")
@@ -57,16 +29,8 @@ def ejecutar_analisis(sigma_hit):
     archivo    = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
     salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\fits_s{sigma_hit:.3f}.txt"
 
-    # --------------------------------------------------
-    # LEER DATOS
-    # --------------------------------------------------
-
     df     = pd.read_csv(archivo)
     coords = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
-
-    # --------------------------------------------------
-    # SMEARING
-    # --------------------------------------------------
 
     coords_smeared = coords.copy()
     valid = coords[:,:,0] != -99999
@@ -74,306 +38,255 @@ def ejecutar_analisis(sigma_hit):
     coords_smeared[:,:,2][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
     coords = coords_smeared
 
-    # --------------------------------------------------
-    # EVENTOS VÁLIDOS
-    # --------------------------------------------------
-
     mask     = np.all(coords != -99999, axis=2)
     hits     = mask.sum(axis=1)
     eventos3 = np.where(hits == 3)[0]
     eventos4 = np.where(hits == 4)[0]
 
-    # --------------------------------------------------
     # 3 HITS
-    # --------------------------------------------------
-
-    coords3 = coords[eventos3]
-    mask3   = mask[eventos3]
-
+    coords3 = coords[eventos3]; mask3 = mask[eventos3]
     coords_validos = np.array([ev[m] for ev,m in zip(coords3,mask3)])
     coords_validos = np.array([ev[np.argsort(ev[:,1])] for ev in coords_validos])
+    x3,y3,z3 = coords_validos[:,:,0], coords_validos[:,:,1], coords_validos[:,:,2]
+    x_izq,x_mid,x_der = x3.T; y_izq,y_mid,y_der = y3.T; z_izq,z_mid,z_der = z3.T
 
-    x3 = coords_validos[:,:,0]
-    y3 = coords_validos[:,:,1]
-    z3 = coords_validos[:,:,2]
+    m_x = (x_izq-x_der)/(y_izq-y_der); x_teo = m_x*y_mid+(x_izq-m_x*y_izq)
+    resX3 = x_mid - x_teo
 
-    x_izq, x_mid, x_der = x3.T
-    y_izq, y_mid, y_der = y3.T
-    z_izq, z_mid, z_der = z3.T
+    m_z = (z_izq-z_der)/(y_izq-y_der); z_teo = m_z*y_mid+(z_izq-m_z*y_izq)
+    resZ3 = z_mid - z_teo
 
-    m_x       = (x_izq - x_der)/(y_izq - y_der)
-    x_teo     = m_x*y_mid + (x_izq - m_x*y_izq)
-    resX3     = x_mid - x_teo
-    resX3_cut = aplicar_percentil(resX3)
+    # CAMBIO: percentil 95% dinamico para este smearing
+    resX3_cut = aplicar_percentil(resX3, p=95)
+    resZ3_cut = aplicar_percentil(resZ3, p=95)
 
-    m_z       = (z_izq - z_der)/(y_izq - y_der)
-    z_teo     = m_z*y_mid + (z_izq - m_z*y_izq)
-    resZ3     = z_mid - z_teo
-    resZ3_cut = aplicar_percentil(resZ3)
+    # CAMBIO: ventana media +- 3sigma para comparacion
+    corte_3sigma_X3 = (np.mean(resX3) - 3*np.std(resX3),
+                       np.mean(resX3) + 3*np.std(resX3))
+    corte_3sigma_Z3 = (np.mean(resZ3) - 3*np.std(resZ3),
+                       np.mean(resZ3) + 3*np.std(resZ3))
 
-    # --------------------------------------------------
     # 4 HITS
-    # --------------------------------------------------
-
     combos  = np.array([[0,1,2],[0,1,3],[0,2,3],[1,2,3]])
     coords4 = coords[eventos4]
     coords4 = np.array([ev[np.argsort(ev[:,1])] for ev in coords4])
     coords4 = coords4[:,combos]
-
     x4,y4,z4 = coords4[:,:,:,0], coords4[:,:,:,1], coords4[:,:,:,2]
 
-    m_x      = (x4[:,:,0]-x4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
-    x_teo    = m_x*y4[:,:,1] + (x4[:,:,0]-m_x*y4[:,:,0])
-    resX_all = x4[:,:,1] - x_teo
-    resX4    = resX_all[np.arange(len(resX_all)), np.argmin(np.abs(resX_all), axis=1)]
-    resX4_cut = aplicar_percentil(resX4)
+    m_x = (x4[:,:,0]-x4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    x_teo = m_x*y4[:,:,1]+(x4[:,:,0]-m_x*y4[:,:,0])
+    resX_all = x4[:,:,1]-x_teo
+    resX4 = resX_all[np.arange(len(resX_all)), np.argmin(np.abs(resX_all),axis=1)]
 
-    m_z      = (z4[:,:,0]-z4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
-    z_teo    = m_z*y4[:,:,1] + (z4[:,:,0]-m_z*y4[:,:,0])
-    resZ_all = z4[:,:,1] - z_teo
-    resZ4    = resZ_all[np.arange(len(resZ_all)), np.argmin(np.abs(resZ_all), axis=1)]
-    resZ4_cut = aplicar_percentil(resZ4)
+    m_z = (z4[:,:,0]-z4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    z_teo = m_z*y4[:,:,1]+(z4[:,:,0]-m_z*y4[:,:,0])
+    resZ_all = z4[:,:,1]-z_teo
+    resZ4 = resZ_all[np.arange(len(resZ_all)), np.argmin(np.abs(resZ_all),axis=1)]
 
-    # --------------------------------------------------
-    # ARCHIVO RESULTADOS
-    # --------------------------------------------------
+    # CAMBIO: percentil 95% dinamico
+    resX4_cut = aplicar_percentil(resX4, p=95)
+    resZ4_cut = aplicar_percentil(resZ4, p=95)
+
+    # CAMBIO: ventana media +- 3sigma para comparacion
+    corte_3sigma_X4 = (np.mean(resX4) - 3*np.std(resX4),
+                       np.mean(resX4) + 3*np.std(resX4))
+    corte_3sigma_Z4 = (np.mean(resZ4) - 3*np.std(resZ4),
+                       np.mean(resZ4) + 3*np.std(resZ4))
 
     f_info = open(salida_fit, "w", encoding="utf-8")
 
-    # --------------------------------------------------
-    # ANÁLISIS 3 HITS: Lorentziana simple
-    # CAMBIO: en lugar de gaussiana simple
-    # --------------------------------------------------
-
-    def analizar_residuals_3hits(data, titulo):
+    # CAMBIO: funcion que recibe tambien los cortes para guardarlos
+    def analizar_residuals_3hits(data, data_full, corte_p95, corte_3s, titulo):
 
         hist, bins = np.histogram(data, bins=60)
         centers    = (bins[:-1] + bins[1:]) / 2
 
-        # --- fit gaussiano simple (para comparacion) ---
+        # fit gaussiano de referencia
+        gauss_ok = False
         try:
             params_g, cov_g = curve_fit(
                 gauss, centers, hist,
                 p0=[max(hist), 0, 0.1],
                 bounds=([0,-0.1,0],[np.inf,0.1,np.inf]),
-                maxfev=10000
-            )
-            sigma_g     = params_g[2]
-            err_sigma_g = np.sqrt(np.diag(cov_g))[2]
+                maxfev=10000)
+            sigma_g     = float(params_g[2])
+            err_sigma_g = float(np.sqrt(np.diag(cov_g))[2])
+            gauss_ok = True
         except RuntimeError:
-            params_g    = None
-            sigma_g     = np.nan
-            err_sigma_g = np.nan
+            sigma_g = err_sigma_g = np.nan
 
-        # --- fit Lorentziana simple ---
-        # p0: [amplitud, centro, gamma]
-        # gamma inicial: std de los datos como estimacion
-        gamma0 = np.std(data) * 0.5   # Lorentz es mas estrecha q gauss para misma dispersion visual
+        # fit Lorentziana simple
+        gamma0 = np.std(data) * 0.5
         try:
             params_l, cov_l = curve_fit(
                 lorentz, centers, hist,
                 p0=[max(hist), 0, gamma0],
-                bounds=([0, -0.1, 0], [np.inf, 0.1, np.inf]),
-                maxfev=10000
-            )
-            A_l, mu_l, gamma_l = params_l
-            err_gamma_l = np.sqrt(np.diag(cov_l))[2]
+                bounds=([0,-0.1,0],[np.inf,0.1,np.inf]),
+                maxfev=10000)
+            A_l, mu_l, gamma_l = [float(p) for p in params_l]
+            err_gamma_l = float(np.sqrt(np.diag(cov_l))[2])
         except RuntimeError:
             print(f"  Fit Lorentz simple fallido en {titulo}")
             return
 
-        # --- plot ---
+        # plot lineal
         plt.figure()
-        plt.hist(data, bins=60, alpha=0.6, label="Datos")
+        plt.hist(data, bins=60, alpha=0.6, label="Datos (p95)")
         x_fit = np.linspace(min(centers), max(centers), 300)
-
-        if params_g is not None:
+        if gauss_ok:
             plt.plot(x_fit, gauss(x_fit, *params_g),
-                     linestyle='--', color='gray', linewidth=1.5,
+                     '--', color='gray', linewidth=1.5,
                      label=f"Gauss: sigma={sigma_g:.3f} (ref)")
-
-        plt.plot(x_fit, lorentz(x_fit, *params_l),
+        plt.plot(x_fit, lorentz(x_fit, A_l, mu_l, gamma_l),
                  color='blue', linewidth=2,
                  label=f"Lorentz: gamma={gamma_l:.3f}+-{err_gamma_l:.3f}")
-
-        plt.title(titulo)
-        plt.xlabel("Residual [mm]")
-        plt.ylabel("Counts")
-        plt.legend()
-        plt.grid()
-
+        # CAMBIO: marcar los dos cortes
+        plt.axvline(corte_p95[0], color='orange', linestyle=':', linewidth=1.5,
+                    label=f"p95: [{corte_p95[0]:.3f}, {corte_p95[1]:.3f}]")
+        plt.axvline(corte_p95[1], color='orange', linestyle=':', linewidth=1.5)
+        plt.axvline(corte_3s[0], color='green', linestyle='--', linewidth=1.5,
+                    label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}]")
+        plt.axvline(corte_3s[1], color='green', linestyle='--', linewidth=1.5)
+        plt.title(titulo); plt.xlabel("Residual [mm]"); plt.ylabel("Counts")
+        plt.legend(fontsize=7); plt.grid()
         nombre_archivo = titulo.replace(" ","_").replace("(","").replace(")","")
         ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\First_Cambio_Smearing_Lorentz\{nombre_archivo}_{sigma_hit:.3f}.png"
-        plt.savefig(ruta)
-        plt.close()
+        plt.savefig(ruta); plt.close()
 
+        # CAMBIO: guardar info de cortes
         f_info.write(f"\n--- {titulo} ---\n")
+        f_info.write(f"N total: {len(data_full)}  N tras p95: {len(data)}\n")
+        f_info.write(f"Corte p95: [{corte_p95[0]:.4f}, {corte_p95[1]:.4f}] mm\n")
+        f_info.write(f"Corte 3sigma: [{corte_3s[0]:.4f}, {corte_3s[1]:.4f}] mm\n")
         f_info.write(f"Gauss simple (ref): sigma = {sigma_g:.4f} +- {err_sigma_g:.4f}\n")
         f_info.write(f"Lorentz simple: mu = {mu_l:.4f}, gamma = {gamma_l:.4f} +- {err_gamma_l:.4f}\n")
-
         print(f"  {titulo} OK  gamma={gamma_l:.4f}")
 
-    # --------------------------------------------------
-    # ANÁLISIS 4 HITS: doble Lorentziana
-    # CAMBIO: en lugar de doble gaussiana
-    # --------------------------------------------------
-
-    def analizar_residuals_4hits(data, titulo):
+    def analizar_residuals_4hits(data, data_full, corte_p95, corte_3s, titulo):
 
         hist, bins = np.histogram(data, bins=60)
         centers    = (bins[:-1] + bins[1:]) / 2
+        gamma0     = np.std(data) * 0.5
 
-        # --- fit gaussiano simple (para comparacion) ---
-        gauss_ok = False   # CAMBIO
+        # fit gaussiano referencia
+        gauss_ok = False
         try:
             params_g, cov_g = curve_fit(
                 gauss, centers, hist,
                 p0=[max(hist), 0, 0.1],
                 bounds=([0,-0.1,0],[np.inf,0.1,np.inf]),
-                maxfev=10000
-            )
-            sigma_g = params_g[2]
-            gauss_ok = True
+                maxfev=10000)
+            sigma_g = float(params_g[2]); gauss_ok = True
         except RuntimeError:
-            sigma_g  = np.nan
+            sigma_g = np.nan
 
-        # --- fit Lorentziana simple ---
-        gamma0 = np.std(data) * 0.5
-        lorentz_ok = False   # CAMBIO: flag booleano explícito
+        # fit Lorentziana simple
+        lorentz_ok = False
         try:
             params_l, cov_l = curve_fit(
                 lorentz, centers, hist,
                 p0=[max(hist), 0, gamma0],
                 bounds=([0,-0.1,0],[np.inf,0.1,np.inf]),
-                maxfev=10000
-            )
-            A_l, mu_l, gamma_l = params_l
-            lorentz_ok = True   # CAMBIO
+                maxfev=10000)
+            A_l, mu_l, gamma_l = [float(p) for p in params_l]
+            lorentz_ok = True
         except RuntimeError:
-            gamma_l  = np.nan
+            gamma_l = np.nan
 
-        # --- fit doble Lorentziana ---
-        # p0: [A1, gamma1, A2, gamma2, mu]
-        # gamma1 pequeño (core), gamma2 grande (cola)
+        # fit doble Lorentziana
         p0_dl = [max(hist), gamma0*0.3, max(hist)/5, gamma0*1.5, 0]
-
         try:
             params_dl, cov_dl = curve_fit(
                 double_lorentz, centers, hist,
                 p0=p0_dl,
-                bounds=(
-                    [0, 0,    0, 0,    -0.1],
-                    [np.inf, np.inf, np.inf, np.inf, 0.1]
-                ),
-                maxfev=10000
-            )
+                bounds=([0,0,0,0,-0.1],[np.inf,np.inf,np.inf,np.inf,0.1]),
+                maxfev=10000)
         except RuntimeError:
             print(f"  Fit doble Lorentz fallido en {titulo}")
             return
 
-        A1, gamma1, A2, gamma2, mu_dl = params_dl
-
-        # forzar escalares para evitar ambiguedad en comparaciones
-        A1     = float(A1)
-        gamma1 = float(gamma1)
-        A2     = float(A2)
-        gamma2 = float(gamma2)
-        mu_dl  = float(mu_dl)
-
-        errors     = np.sqrt(np.diag(cov_dl))
-        err_gamma1 = errors[1]
-        err_gamma2 = errors[3]
-        
-        # ordenar: gamma1 <= gamma2
+        A1,gamma1,A2,gamma2,mu_dl = [float(p) for p in params_dl]
+        errors = np.sqrt(np.diag(cov_dl))
+        err_gamma1 = float(errors[1]); err_gamma2 = float(errors[3])
         if gamma1 > gamma2:
-            A1, A2       = A2, A1
-            gamma1, gamma2 = gamma2, gamma1
-            err_gamma1, err_gamma2 = err_gamma2, err_gamma1
-
+            A1,A2 = A2,A1; gamma1,gamma2 = gamma2,gamma1
+            err_gamma1,err_gamma2 = err_gamma2,err_gamma1
         if gamma1 <= 0 or gamma2 <= 0 or gamma1 > 5 or gamma2 > 5:
-            print(f"  Fit doble Lorentz no fisico en {titulo}")
+            print(f"  Fit doble no fisico en {titulo}")
             return
 
-        # sigma_eff equivalente para Lorentziana
-        # para Lorentz no existe varianza finita, usamos gamma_eff ponderado
         gamma_eff = (A1*gamma1 + A2*gamma2) / (A1 + A2)
 
-        # --- plot ---
+        # plot
         plt.figure()
-        plt.hist(data, bins=60, alpha=0.6, label="Datos")
+        plt.hist(data, bins=60, alpha=0.6, label="Datos (p95)")
         x_fit = np.linspace(min(centers), max(centers), 300)
-
         if gauss_ok:
             plt.plot(x_fit, gauss(x_fit, *params_g),
-                     linestyle='--', color='gray', linewidth=1.5,
+                     '--', color='gray', linewidth=1.5,
                      label=f"Gauss: sigma={sigma_g:.3f} (ref)")
-
         if lorentz_ok:
-            plt.plot(x_fit, lorentz(x_fit, *params_l),
-                     linestyle=':', color='green', linewidth=1.5,
+            plt.plot(x_fit, lorentz(x_fit, A_l, mu_l, gamma_l),
+                     ':', color='green', linewidth=1.5,
                      label=f"Lorentz simple: gamma={gamma_l:.3f}")
-
-        # doble Lorentziana total
         plt.plot(x_fit, double_lorentz(x_fit, *params_dl),
                  color='red', linewidth=2,
                  label=f"Doble Lorentz: g1={gamma1:.3f}, g2={gamma2:.3f}")
-
-        # las dos componentes por separado en discontinuo
-        plt.plot(x_fit,
-                 lorentz(x_fit, A1, mu_dl, gamma1),
-                 linestyle='--', color='blue', linewidth=1.5,
-                 label=f"Componente core: g1={gamma1:.3f}")
-        plt.plot(x_fit,
-                 lorentz(x_fit, A2, mu_dl, gamma2),
-                 linestyle='--', color='orange', linewidth=1.5,
-                 label=f"Componente cola: g2={gamma2:.3f}")
-
-        plt.title(titulo)
-        plt.xlabel("Residual [mm]")
-        plt.ylabel("Counts")
-        plt.legend(fontsize=8)
-        plt.grid()
-
+        plt.plot(x_fit, lorentz(x_fit, A1, mu_dl, gamma1),
+                 '--', color='blue', linewidth=1.5,
+                 label=f"Core: g1={gamma1:.3f}")
+        plt.plot(x_fit, lorentz(x_fit, A2, mu_dl, gamma2),
+                 '--', color='orange', linewidth=1.5,
+                 label=f"Cola: g2={gamma2:.3f}")
+        # CAMBIO: marcar los dos cortes
+        plt.axvline(corte_p95[0], color='magenta', linestyle=':', linewidth=1.5,
+                    label=f"p95: [{corte_p95[0]:.3f}, {corte_p95[1]:.3f}]")
+        plt.axvline(corte_p95[1], color='magenta', linestyle=':', linewidth=1.5)
+        plt.axvline(corte_3s[0], color='cyan', linestyle='--', linewidth=1.5,
+                    label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}]")
+        plt.axvline(corte_3s[1], color='cyan', linestyle='--', linewidth=1.5)
+        plt.title(titulo); plt.xlabel("Residual [mm]"); plt.ylabel("Counts")
+        plt.legend(fontsize=7); plt.grid()
         nombre_archivo = titulo.replace(" ","_").replace("(","").replace(")","")
         ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\First_Cambio_Smearing_Lorentz\{nombre_archivo}_{sigma_hit:.3f}.png"
-        plt.savefig(ruta)
-        plt.close()
+        plt.savefig(ruta); plt.close()
 
+        # CAMBIO: guardar info de cortes
         f_info.write(f"\n--- {titulo} ---\n")
+        f_info.write(f"N total: {len(data_full)}  N tras p95: {len(data)}\n")
+        f_info.write(f"Corte p95: [{corte_p95[0]:.4f}, {corte_p95[1]:.4f}] mm\n")
+        f_info.write(f"Corte 3sigma: [{corte_3s[0]:.4f}, {corte_3s[1]:.4f}] mm\n")
         f_info.write(f"Gauss simple (ref): sigma = {sigma_g:.4f}\n")
-        
-        if lorentz_ok:   # CAMBIO
+        if lorentz_ok:
             f_info.write(f"Lorentz simple: gamma = {gamma_l:.4f}\n")
         else:
-            f_info.write("Lorentz simple: fallido\n")
-        
+            f_info.write(f"Lorentz simple: fallido\n")
         f_info.write(f"Doble Lorentz:\n")
         f_info.write(f"   mu = {mu_dl:.4f}\n")
         f_info.write(f"   gamma1 (core) = {gamma1:.4f} +- {err_gamma1:.4f}\n")
         f_info.write(f"   gamma2 (cola) = {gamma2:.4f} +- {err_gamma2:.4f}\n")
         f_info.write(f"   gamma_eff = {gamma_eff:.4f}\n")
-
         print(f"  {titulo} OK  gamma1={gamma1:.4f}  gamma2={gamma2:.4f}")
 
-    # --------------------------------------------------
-    # EJECUTAR
-    # --------------------------------------------------
-
-    analizar_residuals_3hits(resX3_cut, "Residual X (3 hits)")
-    analizar_residuals_3hits(resZ3_cut, "Residual Z (3 hits)")
-    analizar_residuals_4hits(resX4_cut, "Residual X (4 hits)")
-    analizar_residuals_4hits(resZ4_cut, "Residual Z (4 hits)")
+    # CAMBIO: pasar datos completos y cortes a las funciones
+    analizar_residuals_3hits(resX3_cut, resX3, corte_3sigma_X3,
+                             (np.percentile(resX3_cut, 2.5), np.percentile(resX3_cut, 97.5)),
+                             "Residual X (3 hits)")
+    analizar_residuals_3hits(resZ3_cut, resZ3, corte_3sigma_Z3,
+                             (np.percentile(resZ3_cut, 2.5), np.percentile(resZ3_cut, 97.5)),
+                             "Residual Z (3 hits)")
+    analizar_residuals_4hits(resX4_cut, resX4, corte_3sigma_X4,
+                             (np.percentile(resX4_cut, 2.5), np.percentile(resX4_cut, 97.5)),
+                             "Residual X (4 hits)")
+    analizar_residuals_4hits(resZ4_cut, resZ4, corte_3sigma_Z4,
+                             (np.percentile(resZ4_cut, 2.5), np.percentile(resZ4_cut, 97.5)),
+                             "Residual Z (4 hits)")
 
     f_info.close()
     print(f"Resultados guardados para sigma={sigma_hit:.3f}")
 
 
-# --------------------------------------------------
-# BARRIDO AUTOMÁTICO
-# --------------------------------------------------
-
 sigmas = np.arange(0.050, 0.205, 0.005)
-#sigmas = np.concatenate([[0.0], np.arange(0.050, 0.205, 0.005)])  # meto tmb sigma_hit=0 para ver si tiende a la delta de dirac
 
 for sigma in sigmas:
     try:

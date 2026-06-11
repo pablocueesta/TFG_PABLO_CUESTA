@@ -1,0 +1,75 @@
+import os, re, glob
+
+carpeta   = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D_Lorentz"
+sigma_hit = 0.085
+theta     = 0.00
+
+os.chdir(carpeta)
+archivos_raw = glob.glob(f"fits_s{sigma_hit:.3f}_*_{theta:.2f}.txt")
+archivos = sorted(archivos_raw,
+                  key=lambda x: float(re.search(r'fits_s[\d\.]+_([\d\.]+)_[\d\.]+\.txt', x).group(1)))
+print(f"Encontrados {len(archivos)} archivos (orden numerico)")
+
+pat_gamma_s  = r'gamma = ([\d\.]+) \+\- ([\d\.]+)'
+pat_gamma1   = r'gamma1 \(core\) = ([\d\.]+) \+\- ([\d\.]+)'
+pat_gamma2   = r'gamma2 \(cola\) = ([\d\.]+) \+\- ([\d\.]+)'
+pat_gamma_e  = r'gamma_eff = ([\d\.]+)'
+pat_corte_p95 = r'Corte p95: \[([-\d\.]+), ([\d\.]+)\] mm'
+
+def extraer_bloque(contenido, titulo):
+    m = re.search(rf'--- {re.escape(titulo)} ---(.*?)(?=\n---|$)', contenido, re.DOTALL)
+    return m.group(1) if m else None
+
+def extraer_lorentz_simple(bloque):
+    if not bloque: return ["NaN", "NaN"]
+    m = re.search(pat_gamma_s, bloque)
+    return [m.group(1), m.group(2)] if m else ["NaN", "NaN"]
+
+def extraer_doble(bloque):
+    if not bloque: return ["NaN"] * 5
+    g1 = re.search(pat_gamma1, bloque)
+    g2 = re.search(pat_gamma2, bloque)
+    ge = re.search(pat_gamma_e, bloque)
+    return [
+        g1.group(1) if g1 else "NaN", g1.group(2) if g1 else "NaN",
+        g2.group(1) if g2 else "NaN", g2.group(2) if g2 else "NaN",
+        ge.group(1) if ge else "NaN",
+    ]
+
+def extraer_corte_p95(bloque):
+    if not bloque: return ["NaN", "NaN"]
+    m = re.search(pat_corte_p95, bloque)
+    return [m.group(1), m.group(2)] if m else ["NaN", "NaN"]
+
+with open("todos_los_D.txt", "w", encoding="utf-8") as sal:
+    sal.write(
+        "D\t"
+        "X3_gamma\tX3_err\tX3_p95_lo\tX3_p95_hi\t"
+        "Z3_gamma\tZ3_err\tZ3_p95_lo\tZ3_p95_hi\t"
+        "X4_gamma1\tX4_err1\tX4_gamma2\tX4_err2\tX4_gamma_eff\tX4_p95_lo\tX4_p95_hi\t"
+        "Z4_gamma1\tZ4_err1\tZ4_gamma2\tZ4_err2\tZ4_gamma_eff\tZ4_p95_lo\tZ4_p95_hi\n"
+    )
+    for arch in archivos:
+        m = re.search(r'fits_s[\d\.]+_([\d\.]+)_[\d\.]+\.txt', arch)
+        D = m.group(1) if m else "NaN"
+        print(f"  D={D}: {arch}")
+        with open(arch, "r", encoding="utf-8", errors="ignore") as f:
+            cont = f.read()
+
+        bX3 = extraer_bloque(cont, "Residual X (3 hits)")
+        bZ3 = extraer_bloque(cont, "Residual Z (3 hits)")
+        bX4 = extraer_bloque(cont, "Residual X (4 hits)")
+        bZ4 = extraer_bloque(cont, "Residual Z (4 hits)")
+
+        x3 = extraer_lorentz_simple(bX3); x3p = extraer_corte_p95(bX3)
+        z3 = extraer_lorentz_simple(bZ3); z3p = extraer_corte_p95(bZ3)
+        x4 = extraer_doble(bX4);          x4p = extraer_corte_p95(bX4)
+        z4 = extraer_doble(bZ4);          z4p = extraer_corte_p95(bZ4)
+
+        sal.write(f"{D}\t")
+        sal.write("\t".join(x3 + x3p) + "\t")
+        sal.write("\t".join(z3 + z3p) + "\t")
+        sal.write("\t".join(x4 + x4p) + "\t")
+        sal.write("\t".join(z4 + z4p) + "\n")
+
+print(f"\nGuardado: {carpeta}\\todos_los_D.txt")

@@ -2,61 +2,45 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-# -------------------------
-# CARGAR DATOS
-# -------------------------
-
 data = np.loadtxt(
     r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz\todos_los_sigmas.txt",
     skiprows=1
 )
 
-# columnas (18 columnas de datos + sigma_hit = 19 total):
+# columnas:
 # [0]  sigma_hit
-# [1]  X_gamma_s   [2]  X_err_s    [3]  X_chi2_s
-# [4]  X_gamma1    [5]  X_err1     [6]  X_gamma2   [7]  X_err2   [8]  X_chi2_dl
-# [9]  X_corte
-# [10] Z_gamma_s   [11] Z_err_s    [12] Z_chi2_s
-# [13] Z_gamma1    [14] Z_err1     [15] Z_gamma2   [16] Z_err2   [17] Z_chi2_dl
-# [18] Z_corte
+# [1]  X_gamma_s  [2]  X_err_s  [3]  X_chi2_s
+# [4]  X_gamma1   [5]  X_err1   [6]  X_gamma2  [7]  X_err2  [8]  X_chi2_dl
+# [9]  X_p95_lo   [10] X_p95_hi
+# [11] Z_gamma_s  [12] Z_err_s  [13] Z_chi2_s
+# [14] Z_gamma1   [15] Z_err1   [16] Z_gamma2  [17] Z_err2  [18] Z_chi2_dl
+# [19] Z_p95_lo   [20] Z_p95_hi
 
-s_hit = data[:,0]
+s_hit    = data[:,0]
+X_gs     = data[:,1];  X_es    = data[:,2];  X_chi2s  = data[:,3]
+X_g1     = data[:,4];  X_e1    = data[:,5]
+X_g2     = data[:,6];  X_e2    = data[:,7];  X_chi2dl = data[:,8]
+X_p95_lo = data[:,9];  X_p95_hi= data[:,10]
+Z_gs     = data[:,11]; Z_es    = data[:,12]; Z_chi2s  = data[:,13]
+Z_g1     = data[:,14]; Z_e1    = data[:,15]
+Z_g2     = data[:,16]; Z_e2    = data[:,17]; Z_chi2dl = data[:,18]
+Z_p95_lo = data[:,19]; Z_p95_hi= data[:,20]
 
-X_gs    = data[:,1];  X_es   = data[:,2];  X_chi2s  = data[:,3]
-X_g1    = data[:,4];  X_e1   = data[:,5]
-X_g2    = data[:,6];  X_e2   = data[:,7];  X_chi2dl = data[:,8]
-X_corte = data[:,9]
+X_p95_ancho = (X_p95_hi - X_p95_lo) / 2
+Z_p95_ancho = (Z_p95_hi - Z_p95_lo) / 2
 
-Z_gs    = data[:,10]; Z_es   = data[:,11]; Z_chi2s  = data[:,12]
-Z_g1    = data[:,13]; Z_e1   = data[:,14]
-Z_g2    = data[:,15]; Z_e2   = data[:,16]; Z_chi2dl = data[:,17]
-Z_corte = data[:,18]
+def limpiar(x, y, e=None):
+    if e is not None:
+        mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<2.0)
+        return x[mask],y[mask],e[mask]
+    mask = np.isfinite(x)&np.isfinite(y)&(y>0)
+    return x[mask],y[mask]
 
-# -------------------------
-# UTILIDADES
-# -------------------------
-
-def limpiar(x, y, err=None):
-    if err is not None:
-        mask = np.isfinite(x) & np.isfinite(y) & np.isfinite(err) & (err > 0) & (y > 0) & (y < 2.0)
-        return x[mask], y[mask], err[mask]
-    else:
-        # CORRECCIÓN: el filtro anterior (y < 20) excluía chi² perfectamente
-        # válidos en distribuciones con muchos bins. Se amplía a 200 para no
-        # descartar puntos legítimos; los outliers reales se ven en el plot.
-        mask = np.isfinite(x) & np.isfinite(y) & (y > 0) & (y < 200.0)
-        return x[mask], y[mask]
-
-def fit_lineal(x, y, e):
-    x, y, e = limpiar(x, y, e)
-    if len(x) < 3:
-        return None
-    params, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
-    return params[0], params[1], np.sqrt(cov[0,0]), np.sqrt(cov[1,1])
-
-# -------------------------
-# CARPETA SALIDA
-# -------------------------
+def fit_lineal(x,y,e):
+    x,y,e = limpiar(x,y,e)
+    if len(x)<3: return None
+    p,cov = np.polyfit(x,y,1,w=1/e,cov=True)
+    return p[0],p[1],np.sqrt(cov[0,0]),np.sqrt(cov[1,1])
 
 out_dir = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz\plots_sigmas"
 os.makedirs(out_dir, exist_ok=True)
@@ -66,108 +50,62 @@ f_out = open(
     "w", encoding="utf-8"
 )
 
-# -------------------------
-# PLOT: gamma simple vs doble + chi2 + corte propuesto
-# -------------------------
+def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, chi2s,chi2dl, p95_ancho, titulo, nombre):
 
-def plot_comparacion(s_hit, gs, es, g1, e1, g2, e2, chi2s, chi2dl, corte, titulo, nombre):
+    fig, (ax1, ax2, ax3) = plt.subplots(3,1,figsize=(9,14),sharex=True)
+    fig.suptitle(titulo)
 
-    xs, ys, ees   = limpiar(s_hit, gs,  es)
-    x1, y1, ee1   = limpiar(s_hit, g1,  e1)
-    x2, y2, ee2   = limpiar(s_hit, g2,  e2)
-    xcs, ycs      = limpiar(s_hit, chi2s)
-    xcd, ycd      = limpiar(s_hit, chi2dl)
+    xs,ys,ees = limpiar(s_hit,gs,es)
+    x1,y1,ee1 = limpiar(s_hit,g1,e1)
+    x2,y2,ee2 = limpiar(s_hit,g2,e2)
+    xcs,ycs   = limpiar(s_hit,chi2s)
+    xcd,ycd   = limpiar(s_hit,chi2dl)
+    xc,yc     = limpiar(s_hit,p95_ancho)
 
-    # Limpiar corte: solo finitos y positivos
-    mask_c = np.isfinite(s_hit) & np.isfinite(corte) & (corte > 0)
-    xc_plot = s_hit[mask_c]
-    yc_plot = corte[mask_c]
-
-    # 3 paneles: gammas | chi2 | corte propuesto
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(9, 14), sharex=True)
-
-    # --- panel 1: gammas ---
-    ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='orange', capsize=3,
-                 label='Lorentz simple: gamma')
-    ax1.errorbar(x1, y1, yerr=ee1, fmt='o', color='blue',   capsize=3,
-                 label='Doble Lorentz: gamma1 (core)')
-    ax1.errorbar(x2, y2, yerr=ee2, fmt='s', color='red',    capsize=3,
-                 label='Doble Lorentz: gamma2 (cola)')
-
+    # panel 1: gammas
+    ax1.errorbar(xs,ys,yerr=ees,fmt='o',color='orange',capsize=3,label='gamma simple')
+    ax1.errorbar(x1,y1,yerr=ee1,fmt='o',color='blue',  capsize=3,label='gamma1 (core)')
+    ax1.errorbar(x2,y2,yerr=ee2,fmt='s',color='red',   capsize=3,label='gamma2 (cola)')
     f_out.write(f"\n--- {titulo} ---\n")
-
-    for (x, y, e, color, etiq) in [
-        (xs, ys, ees, 'orange', 'gamma_simple'),
-        (x1, y1, ee1, 'blue',   'gamma1'),
-        (x2, y2, ee2, 'red',    'gamma2')
-    ]:
-        res = fit_lineal(x, y, e)
+    for (x,y,e,color,etiq) in [(xs,ys,ees,'orange','gamma_simple'),
+                                (x1,y1,ee1,'blue','gamma1'),
+                                (x2,y2,ee2,'red','gamma2')]:
+        res = fit_lineal(x,y,e)
         if res:
-            a, b, ea, eb = res
-            xf = np.linspace(min(x), max(x), 200)
-            ax1.plot(xf, a*xf+b, color=color, linewidth=2,
+            a,b,ea,eb = res
+            xf = np.linspace(min(x),max(x),200)
+            ax1.plot(xf,a*xf+b,color=color,linewidth=2,
                      label=f'Fit {etiq}: a={a:.3f}+-{ea:.3f}')
             f_out.write(f"{etiq}: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
+    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
 
-    ax1.set_ylabel("gamma [mm]")
-    ax1.set_title(titulo)
-    ax1.legend(fontsize=8)
-    ax1.grid()
+    # panel 2: chi2
+    ax2.plot(xcs,ycs,'o-',color='orange',label='chi2/ndf Lorentz simple')
+    ax2.plot(xcd,ycd,'s-',color='red',   label='chi2/ndf Doble Lorentz')
+    ax2.axhline(1.0,color='black',linestyle='--',linewidth=1,label='chi2/ndf=1')
+    ax2.set_ylabel("chi2/ndf"); ax2.set_title("Calidad del ajuste")
+    ax2.legend(fontsize=8); ax2.grid()
 
-    # --- panel 2: chi2 reducido ---
-    ax2.plot(xcs, ycs, 'o-', color='orange', label='chi2/ndf Lorentz simple')
-    ax2.plot(xcd, ycd, 's-', color='red',    label='chi2/ndf Doble Lorentz')
-    ax2.axhline(1.0, color='black', linestyle='--', linewidth=1, label='chi2/ndf = 1 (ideal)')
-    ax2.set_ylabel("chi2 / ndf")
-    ax2.set_title("Calidad del ajuste")
-    ax2.legend(fontsize=8)
-    ax2.grid()
-
-    # --- panel 3: corte propuesto (5·gamma) vs smearing ---
-    ax3.plot(xc_plot, yc_plot, 'D-', color='magenta', linewidth=2,
-             label='Corte propuesto = 5·gamma [mm]')
-
-    # Fit lineal del corte vs smearing
-    if len(xc_plot) >= 3:
-        params_c = np.polyfit(xc_plot, yc_plot, 1)
-        xf_c = np.linspace(min(xc_plot), max(xc_plot), 200)
-        ax3.plot(xf_c, np.polyval(params_c, xf_c),
-                 color='darkviolet', linestyle='--', linewidth=2,
-                 label=f'Fit lineal: a={params_c[0]:.3f}, b={params_c[1]:.3f}')
-        f_out.write(f"corte_propuesto: a={params_c[0]:.4f}, b={params_c[1]:.4f}\n")
-
-    ax3.set_xlabel("Smearing [mm]")
-    ax3.set_ylabel("Corte propuesto [mm]")
-    #ax3.set_ylim(0.1, 0.4)
-    ax3.set_title("Ventana de ajuste propuesta (5·gamma) vs smearing")
-    ax3.legend(fontsize=8)
-    ax3.grid()
+    # panel 3: ventana p95
+    ax3.plot(xc,yc,'D-',color='magenta',linewidth=2,label='Semiancho p95')
+    if len(xc)>=3:
+        p2 = np.polyfit(xc,yc,1)
+        xf = np.linspace(min(xc),max(xc),200)
+        ax3.plot(xf,p2[0]*xf+p2[1],'--',color='darkviolet',linewidth=2,
+                 label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
+        f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
+    ax3.set_xlabel("Smearing [mm]"); ax3.set_ylabel("Semiancho p95 [mm]")
+    ax3.set_title("Ventana de ajuste (semiancho p95) vs smearing")
+    ax3.legend(fontsize=8); ax3.grid()
 
     plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=200)
-    plt.close()
+    plt.savefig(os.path.join(out_dir,f"{nombre}.png"),dpi=200); plt.close()
     print(f"Guardado: {nombre}.png")
 
-# -------------------------
-# GENERAR GRAFICAS
-# -------------------------
-
-plot_comparacion(
-    s_hit,
-    X_gs, X_es, X_g1, X_e1, X_g2, X_e2,
-    X_chi2s, X_chi2dl, X_corte,
-    "Combinado X (3+4 hits) — Lorentz simple vs doble",
-    "combinado_X"
-)
-
-plot_comparacion(
-    s_hit,
-    Z_gs, Z_es, Z_g1, Z_e1, Z_g2, Z_e2,
-    Z_chi2s, Z_chi2dl, Z_corte,
-    "Combinado Z (3+4 hits) — Lorentz simple vs doble",
-    "combinado_Z"
-)
+plot_comparacion(s_hit, X_gs,X_es,X_g1,X_e1,X_g2,X_e2,X_chi2s,X_chi2dl,X_p95_ancho,
+                 "Combinado X (3+4 hits) — Lorentz simple vs doble","combinado_X")
+plot_comparacion(s_hit, Z_gs,Z_es,Z_g1,Z_e1,Z_g2,Z_e2,Z_chi2s,Z_chi2dl,Z_p95_ancho,
+                 "Combinado Z (3+4 hits) — Lorentz simple vs doble","combinado_Z")
 
 f_out.close()
-print("\nPendientes guardadas en pendientes.txt")
-print("Graficas guardadas en plots_sigmas")
+print("\nPendientes en pendientes.txt")
