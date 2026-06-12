@@ -89,11 +89,11 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, chi2s,chi2dl, p95_ancho, titulo
     # panel 3: ventana p95
     ax3.plot(xc,yc,'D-',color='magenta',linewidth=2,label='Semiancho p95')
     if len(xc)>=3:
-        p2 = np.polyfit(xc,yc,1)
+        #p2 = np.polyfit(xc,yc,1)
         xf = np.linspace(min(xc),max(xc),200)
-        ax3.plot(xf,p2[0]*xf+p2[1],'--',color='darkviolet',linewidth=2,
-                 label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
-        f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
+        #ax3.plot(xf,p2[0]*xf+p2[1],'--',color='darkviolet',linewidth=2,
+                 #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
+        #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
     ax3.set_xlabel("Smearing [mm]"); ax3.set_ylabel("Semiancho p95 [mm]")
     ax3.set_title("Ventana de ajuste (semiancho p95) vs smearing")
     ax3.legend(fontsize=8); ax3.grid()

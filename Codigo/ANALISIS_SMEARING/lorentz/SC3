@@ -72,11 +72,11 @@ def plot_3hits(s_hit, g, e, p95_ancho, titulo, nombre):
     ax2.plot(xc,yc,'o-',color='orange',linewidth=2,label='Semiancho p95')
     res2 = None
     if len(xc)>=3:
-        p2 = np.polyfit(xc,yc,1)
+        #p2 = np.polyfit(xc,yc,1)
         xf = np.linspace(min(xc),max(xc),200)
-        ax2.plot(xf,p2[0]*xf+p2[1],'--',color='darkorange',linewidth=2,
-                 label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
-        f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
+        #ax2.plot(xf,p2[0]*xf+p2[1],'--',color='darkorange',linewidth=2,
+                 #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
+        #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
     ax2.set_xlabel("Smearing [mm]"); ax2.set_ylabel("Semiancho p95 [mm]")
     ax2.set_title("Ventana de ajuste (semiancho p95) vs smearing")
     ax2.legend(fontsize=8); ax2.grid()
@@ -107,11 +107,11 @@ def plot_4hits(s_hit, g1,e1,g2,e2, p95_ancho, titulo, nombre):
     xc,yc = limpiar(s_hit,p95_ancho)
     ax2.plot(xc,yc,'s-',color='green',linewidth=2,label='Semiancho p95')
     if len(xc)>=3:
-        p2 = np.polyfit(xc,yc,1)
+        #p2 = np.polyfit(xc,yc,1)
         xf = np.linspace(min(xc),max(xc),200)
-        ax2.plot(xf,p2[0]*xf+p2[1],'--',color='darkgreen',linewidth=2,
-                 label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
-        f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
+        #ax2.plot(xf,p2[0]*xf+p2[1],'--',color='darkgreen',linewidth=2,
+                 #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
+        #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
     ax2.set_xlabel("Smearing [mm]"); ax2.set_ylabel("Semiancho p95 [mm]")
     ax2.set_title("Ventana de ajuste (semiancho p95) vs smearing")
     ax2.legend(fontsize=8); ax2.grid()

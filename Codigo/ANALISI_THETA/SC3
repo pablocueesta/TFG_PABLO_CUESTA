@@ -88,11 +88,11 @@ def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
     for (xc, yc, color, etiq) in [(xc3, yc3, 'blue', 'p95_3hits'),
                                    (xc4, yc4, 'green','p95_4hits')]:
         if len(xc) >= 3:
-            p2 = np.polyfit(xc, yc, 1)
+            #p2 = np.polyfit(xc, yc, 1)
             xf = np.linspace(min(xc), max(xc), 200)
-            ax2.plot(xf, p2[0]*xf+p2[1], '--', color=color, linewidth=1.5,
-                     label=f'Fit {etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}')
-            f_out.write(f"{etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
+            #ax2.plot(xf, p2[0]*xf+p2[1], '--', color=color, linewidth=1.5,
+                     #label=f'Fit {etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}')
+            #f_out.write(f"{etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     
     ax2.set_xlabel("Ángulo [grados]"); ax2.set_ylabel("Semiancho p95 [mm]")

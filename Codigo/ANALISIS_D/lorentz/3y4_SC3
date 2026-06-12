@@ -87,11 +87,11 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     ax2.plot(xc, yc, 'D-', color='magenta', linewidth=2,
              label='Semiancho corte p95 [mm]')
     if len(xc) >= 3:
-        p2 = np.polyfit(xc, yc, 1)
+        #p2 = np.polyfit(xc, yc, 1)
         xf = np.linspace(min(xc), max(xc), 200)
-        ax2.plot(xf, p2[0]*xf+p2[1], '--', color='darkviolet', linewidth=2,
-                 label=f'Fit lineal: a={p2[0]:.4f}, b={p2[1]:.4f}')
-        f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
+        #ax2.plot(xf, p2[0]*xf+p2[1], '--', color='darkviolet', linewidth=2,
+                 #label=f'Fit lineal: a={p2[0]:.4f}, b={p2[1]:.4f}')
+        #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
     ax2.set_xlabel("D [cm]"); ax2.set_ylabel("Semiancho p95 [mm]")
