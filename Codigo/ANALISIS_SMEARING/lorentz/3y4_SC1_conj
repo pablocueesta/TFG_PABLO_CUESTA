@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+import os
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+
 D = 13
 theta     = 0.00
 sigmas = np.arange(0.050, 0.205, 0.005)
@@ -32,8 +35,10 @@ def ejecutar_analisis(sigma_hit):
 
     np.random.seed(42)
     sigma_TAG      = f"s{sigma_hit:.3f}" #.replace(".", "_")
-    archivo    = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
-    salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz\fits_{sigma_TAG}.txt"
+    #archivo    = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
+    #salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz\fits_{sigma_TAG}.txt"
+    archivo    = os.path.join(BASE, f"muon_hits_complete.csv")
+    salida_fit = os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz", f"fits_{sigma_TAG}.txt")
 
     print(f"\n==============================")
     print(f"Analizando sigma_hit = {sigma_hit:.3f} mm  (combinado)")
@@ -105,7 +110,8 @@ def ejecutar_analisis(sigma_hit):
     f_info = open(salida_fit, "w", encoding="utf-8")
     f_info.write(f"D={D:.1f} cm  sigma_hit={sigma_hit:.3f} mm\n")
 
-    RUTA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Combinado_Lorentz"
+    #RUTA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Combinado_Lorentz"
+    RUTA = os.path.join(BASE, "Plots", "Combinado_Lorentz")
 
     def analizar_combinado(data, corte_p95, corte_3s, frac_p95, frac_3s, titulo):
 

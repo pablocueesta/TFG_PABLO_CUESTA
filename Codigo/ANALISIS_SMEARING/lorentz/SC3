@@ -2,10 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-data = np.loadtxt(
-    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\todos_los_sigmas.txt",
-    skiprows=1
-)
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+
+#data = np.loadtxt(
+#    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\todos_los_sigmas.txt",
+#    skiprows=1
+#)
+carpeta = os.path.join(BASE, "Datos", "Estudio", "First_Cambio_Smearing_Lorentz")
+data = np.loadtxt(os.path.join(carpeta, "todos_los_sigmas.txt"), skiprows=1)
 
 # columnas:
 # [0]  sigma_hit
@@ -44,13 +48,15 @@ def fit_lineal(x, y, e):
     p, cov = np.polyfit(x,y,1,w=1/e,cov=True)
     return p[0],p[1],np.sqrt(cov[0,0]),np.sqrt(cov[1,1])
 
-out_dir = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\plots_sigmas"
-os.makedirs(out_dir, exist_ok=True)
+#out_dir = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\plots_sigmas"
+#os.makedirs(out_dir, exist_ok=True)
+out_dir = os.path.join(carpeta, "plots_sigmas")
 
-f_out = open(
-    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\pendientes.txt",
-    "w", encoding="utf-8"
-)
+#f_out = open(
+#    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\pendientes.txt",
+#    "w", encoding="utf-8"
+#)
+f_out = open(os.path.join(carpeta, "pendientes.txt"), "w", encoding="utf-8")
 
 def plot_3hits(s_hit, g, e, p95_ancho, titulo, nombre):
     fig, (ax1, ax2) = plt.subplots(2,1,figsize=(8,10),sharex=True)

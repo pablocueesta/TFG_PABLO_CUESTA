@@ -2,13 +2,16 @@ import os
 import re
 import glob
 
-carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz"
-os.chdir(carpeta)
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+#carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz"
+#os.chdir(carpeta)
+carpeta = os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz")
 
-archivos = sorted(
-    glob.glob("fits_s*.txt"),
-    key=lambda x: float(re.search(r'fits_s([\d\.]+)\.txt', x).group(1))
-)
+#archivos = sorted(
+#    glob.glob("fits_s*.txt"),
+#    key=lambda x: float(re.search(r'fits_s([\d\.]+)\.txt', x).group(1))
+#)
+archivos = glob.glob(os.path.join(carpeta, "fits_s*.txt"))
 
 print(f"Encontrados {len(archivos)} archivos")
 

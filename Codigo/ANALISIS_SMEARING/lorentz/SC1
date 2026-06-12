@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+import os
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+
 def aplicar_percentil(data, p=95):
     low  = np.percentile(data, (100-p)/2)
     high = np.percentile(data, 100-(100-p)/2)
@@ -25,8 +28,11 @@ def ejecutar_analisis(sigma_hit):
     print(f"Ejecutando sigma_hit = {sigma_hit:.3f}")
     print(f"==============================")
 
-    archivo    = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
-    salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\fits_s{sigma_hit:.3f}.txt"
+    #archivo    = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
+    #salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\First_Cambio_Smearing_Lorentz\fits_s{sigma_hit:.3f}.txt"
+    archivo    = os.path.join(BASE, f"muon_hits_complete.csv")
+    salida_fit = os.path.join(BASE, "Datos", "Estudio", "First_Cambio_Smearing_Lorentz", f"fits_s{sigma_hit:.3f}.txt")
+
 
     df     = pd.read_csv(archivo)
     coords = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
@@ -81,8 +87,9 @@ def ejecutar_analisis(sigma_hit):
 
     f_info = open(salida_fit, "w", encoding="utf-8")
 
-    RUTA_PLOTS = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\First_Cambio_Smearing_Lorentz"
-
+    #RUTA_PLOTS = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\First_Cambio_Smearing_Lorentz"
+    RUTA_PLOTS = os.path.join(BASE, "Plots", "First_Cambio_Smearing_Lorentz")
+    
     def hacer_plots(data, x_fit, hist, centers, bins,
                     fits_lineal, fits_log, corte_p95, corte_3s, titulo, ruta_base):
         """

@@ -1,10 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-
-carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D_Combinado_Lorentz"
-out_dir = os.path.join(carpeta, "plots_D")
-os.makedirs(out_dir, exist_ok=True)
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+#carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\D_Combinado_Lorentz"
+#out_dir = os.path.join(carpeta, "plots_D")
+#os.makedirs(out_dir, exist_ok=True)
+carpeta  = os.path.join(BASE, "Datos", "Estudio", "D_Combinado_Lorentz")
+out_dir  = os.path.join(BASE, "Datos", "Estudio", "D_Combinado_Lorentz", "plots_D")
 
 data = np.loadtxt(os.path.join(carpeta, "todos_los_D.txt"), skiprows=1)
 # ordenar por D numericamente y filtrar D < 7
