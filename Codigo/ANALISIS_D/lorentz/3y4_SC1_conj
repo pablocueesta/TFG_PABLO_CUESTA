@@ -178,9 +178,9 @@ def ejecutar_analisis_D(D):
                              label=f"p95: [{corte_p95[0]:.3f},{corte_p95[1]:.3f}] mm ({frac_p95:.1f}%)")
             ax_o_plt.axvline(corte_p95[1], color='magenta', linestyle='-', linewidth=1.5)
             # 3sigma: linea discontinua cyan — solo comparacion
-            ax_o_plt.axvline(corte_3s[0], color='cyan', linestyle='--', linewidth=1.2,
-                             label=f"3sigma: [{corte_3s[0]:.3f},{corte_3s[1]:.3f}] mm ({frac_3s:.1f}%)")
-            ax_o_plt.axvline(corte_3s[1], color='cyan', linestyle='--', linewidth=1.2)
+            #ax_o_plt.axvline(corte_3s[0], color='cyan', linestyle='--', linewidth=1.2,
+            #                 label=f"3sigma: [{corte_3s[0]:.3f},{corte_3s[1]:.3f}] mm ({frac_3s:.1f}%)")
+            #ax_o_plt.axvline(corte_3s[1], color='cyan', linestyle='--', linewidth=1.2)
 
         # plot lineal
         plt.figure(figsize=(9,6))

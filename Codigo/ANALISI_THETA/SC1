@@ -116,9 +116,9 @@ def ejecutar_analisis_ang(ang):
         ax.axvline(corte_p95[0], color='magenta', linestyle='-', linewidth=1.5,
                    label=f"p95: [{corte_p95[0]:.3f}, {corte_p95[1]:.3f}] mm")
         ax.axvline(corte_p95[1], color='magenta', linestyle='-', linewidth=1.5)
-        ax.axvline(corte_3s[0],  color='cyan',    linestyle='--', linewidth=1.2,
-                   label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}] mm")
-        ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
+        #ax.axvline(corte_3s[0],  color='cyan',    linestyle='--', linewidth=1.2,
+                   #label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}] mm")
+        #ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
         ax.set_xlim(-margen, margen)
         ax.set_title(titulo); ax.set_xlabel("Ángulo [grados]"); ax.set_ylabel("Counts")
         ax.legend(fontsize=7); ax.grid()
@@ -135,9 +135,9 @@ def ejecutar_analisis_ang(ang):
         ax.axvline(corte_p95[0], color='magenta', linestyle='-', linewidth=1.5,
                    label=f"p95: [{corte_p95[0]:.3f}, {corte_p95[1]:.3f}] mm")
         ax.axvline(corte_p95[1], color='magenta', linestyle='-', linewidth=1.5)
-        ax.axvline(corte_3s[0],  color='cyan',    linestyle='--', linewidth=1.2,
-                   label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}] mm")
-        ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
+        #ax.axvline(corte_3s[0],  color='cyan',    linestyle='--', linewidth=1.2,
+        #           label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}] mm")
+        #ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
         ax.set_yscale('log')
         ax.set_xlim(-margen, margen)
         ax.set_title(titulo + " [log]"); ax.set_xlabel("Ángulo [grados]"); ax.set_ylabel("Counts (log)")
