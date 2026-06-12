@@ -1,0 +1,23 @@
+D=13.0 cm  sigma_hit=0.085 mm
+
+--- Combinado X (3+4 hits) ---
+N para fit (p95): 153750  N total: 161844
+Corte p95:   [-0.2092, 0.2117] mm (95.0% datos totales)
+Corte 3sigma:[-10.3185, 10.3503] mm (99.4% datos totales)
+Lorentz simple: mu=0.0001 gamma=0.0378+-0.0003 chi2/ndf=4.4571
+Doble Lorentz: mu=0.0000
+   gamma1 (core)=0.0120+-0.0005
+   gamma2 (cola)=0.0515+-0.0007
+   gamma_eff=0.0352  chi2/ndf=3.5107
+Decision: DOBLE MEJOR
+
+--- Combinado Z (3+4 hits) ---
+N para fit (p95): 153750  N total: 161844
+Corte p95:   [-0.2116, 0.2093] mm (95.0% datos totales)
+Corte 3sigma:[-9.5976, 9.6169] mm (99.4% datos totales)
+Lorentz simple: mu=0.0001 gamma=0.0378+-0.0003 chi2/ndf=4.3636
+Doble Lorentz: mu=-0.0000
+   gamma1 (core)=0.0130+-0.0005
+   gamma2 (cola)=0.0531+-0.0008
+   gamma_eff=0.0356  chi2/ndf=3.2198
+Decision: DOBLE MEJOR

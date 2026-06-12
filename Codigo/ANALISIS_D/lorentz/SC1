@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 
 sigma_hit  = 0.085
 theta      = 0.00
-valores_D  = [7.0, 10.0, 15.0, 20.0, 25.0, 30.0]
+valores_D  = [7.0, 10.0, 13.0, 15.0, 20.0, 25.0, 30.0]
 
 def aplicar_percentil(data, p=95):
     low  = np.percentile(data, (100-p)/2)
