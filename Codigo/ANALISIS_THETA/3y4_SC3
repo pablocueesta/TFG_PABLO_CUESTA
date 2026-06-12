@@ -2,9 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Combinado_Lorentz"
-out_dir = os.path.join(carpeta, "plots_Ang")
-os.makedirs(out_dir, exist_ok=True)
+#carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Combinado_Lorentz"
+#out_dir = os.path.join(carpeta, "plots_Ang")
+#os.makedirs(out_dir, exist_ok=True)
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+carpeta  = os.path.join(BASE, "Datos", "Estudio", "Ang_Combinado_Lorentz")
+out_dir = os.path.join(BASE, "Datos", "Estudio", "Ang_Combinado_Lorentz", "plots_Ang")
 
 data = np.loadtxt(os.path.join(carpeta, "todos_los_angulos.txt"), skiprows=1)
 # ordenar por angulo numericamente y filtrar angulo < 0

@@ -1,6 +1,9 @@
 import os, re, glob
 
-carpeta   = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Lorentz"
+#carpeta   = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Lorentz"
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+carpeta  = os.path.join(BASE, "Datos", "Estudio", "Ang_Lorentz")
+
 sigma_hit = 0.085
 theta     = 0.00
 D=13

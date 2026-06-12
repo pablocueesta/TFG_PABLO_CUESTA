@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+import os
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+
 sigma_hit  = 0.085
 D = 13.0
 valores_ang  = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
@@ -32,8 +35,10 @@ def ejecutar_analisis_ang(ang):
 
     np.random.seed(42)
     Ang_TAG      = f"Ang{ang:.0f}" #.replace(".", "_")
-    archivo    = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\coordenadas_{Ang_TAG}_total.csv"
-    salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Combinado_Lorentz\fits_s{sigma_hit:.3f}_{ang:.1f}.txt"
+    #archivo    = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\coordenadas_{Ang_TAG}_total.csv"
+    #salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Combinado_Lorentz\fits_s{sigma_hit:.3f}_{ang:.1f}.txt"
+    archivo    = os.path.join(BASE, f"coordenadas_{Ang_TAG}_total.csv")
+    salida_fit = os.path.join(BASE, "Datos", "Estudio", "Ang_Combinado_Lorentz", f"fits_s{sigma_hit:.3f}_{ang:.1f}.txt")
 
     print(f"\n==============================")
     print(f"Analizando ang = {ang:.1f} degrees  (combinado)")
@@ -105,7 +110,8 @@ def ejecutar_analisis_ang(ang):
     f_info = open(salida_fit, "w", encoding="utf-8")
     f_info.write(f"ang={ang:.1f} degrees  sigma_hit={sigma_hit:.3f} mm\n")
 
-    RUTA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Ang_Combinado_Lorentz"
+    #RUTA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Ang_Combinado_Lorentz"
+    RUTA = os.path.join(BASE, "Plots", "Ang_Combinado_Lorentz")
 
     def analizar_combinado(data, corte_p95, corte_3s, frac_p95, frac_3s, titulo):
 

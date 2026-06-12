@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+import os
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+
 sigma_hit  = 0.085
 theta      = 0.00
 valores_ang  = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
@@ -33,8 +36,11 @@ def chi2_reducido(y_data, y_fit, n_params):
 def ejecutar_analisis_ang(ang):
 
     Ang_TAG      = f"Ang{ang:.0f}" #.replace(".", "_")
-    archivo    = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\coordenadas_{Ang_TAG}_total.csv"
-    salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Lorentz\fits_s{sigma_hit:.3f}_{ang:.1f}.txt"
+    #archivo    = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\coordenadas_{Ang_TAG}_total.csv"
+    #salida_fit = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Ang_Lorentz\fits_s{sigma_hit:.3f}_{ang:.1f}.txt"
+    archivo    = os.path.join(BASE, f"coordenadas_{Ang_TAG}_total.csv")
+    salida_fit = os.path.join(BASE, "Datos", "Estudio", "Ang_Lorentz", f"fits_s{sigma_hit:.3f}_{ang:.1f}.txt")
+
 
     print(f"\n==============================")
     print(f"Analizando Ang = {ang:.1f} degrees")
@@ -97,8 +103,9 @@ def ejecutar_analisis_ang(ang):
 
     f_info = open(salida_fit, "w", encoding="utf-8")
     
-    RUTA_PLOTS = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Ang_Lorentz"
-
+    #RUTA_PLOTS = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Ang_Lorentz"
+    RUTA_PLOTS = os.path.join(BASE, "Plots", "Ang_Lorentz")
+    
     def hacer_plots(data, x_fit, hist, centers, bins,
                     fits_lineal, fits_log, corte_p95, corte_3s, titulo, ruta_base):
         """
