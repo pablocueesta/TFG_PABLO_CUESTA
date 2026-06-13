@@ -1,0 +1,77 @@
+import os, re, glob
+import numpy as np
+
+BASE    = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        '..', '..'))
+carpeta = os.path.join(BASE, "Datos", "Estudio", "D_Ang_Lorentz")
+
+sigma_hit   = 0.085
+valores_D   = [7.0, 13.0, 20.0, 30.0]
+valores_ang = [0,   20,   40,   60]
+
+pat_gamma_s  = r'Lorentz: mu=[\d\.\-]+ gamma=([\d\.]+)\+\-([\d\.]+)'
+pat_gamma1   = r'gamma1 \(core\)=([\d\.]+)\+\-([\d\.]+)'
+pat_gamma2   = r'gamma2 \(cola\)=([\d\.]+)\+\-([\d\.]+)'
+pat_gamma_eff= r'gamma_eff=([\d\.]+)'
+pat_p95      = r'Corte p95: \[([-\d\.]+),([\d\.]+)\] mm'
+
+def extraer_bloque(cont, titulo):
+    m = re.search(rf'--- {re.escape(titulo)} ---(.*?)(?=\n---|$)', cont, re.DOTALL)
+    return m.group(1) if m else None
+
+def get_gamma_s(bloque):
+    if not bloque: return "NaN","NaN"
+    m = re.search(pat_gamma_s, bloque)
+    return (m.group(1),m.group(2)) if m else ("NaN","NaN")
+
+def get_doble(bloque):
+    if not bloque: return "NaN","NaN","NaN","NaN","NaN"
+    g1 = re.search(pat_gamma1, bloque)
+    g2 = re.search(pat_gamma2, bloque)
+    ge = re.search(pat_gamma_eff, bloque)
+    return (g1.group(1) if g1 else "NaN", g1.group(2) if g1 else "NaN",
+            g2.group(1) if g2 else "NaN", g2.group(2) if g2 else "NaN",
+            ge.group(1) if ge else "NaN")
+
+def get_p95(bloque):
+    if not bloque: return "NaN","NaN"
+    m = re.search(pat_p95, bloque)
+    return (m.group(1),m.group(2)) if m else ("NaN","NaN")
+
+salida = os.path.join(carpeta, "todos_D_ang.txt")
+with open(salida, "w", encoding="utf-8") as sal:
+    sal.write(
+        "D\tang\t"
+        "X3_gamma\tX3_err\tX3_p95_lo\tX3_p95_hi\t"
+        "Z3_gamma\tZ3_err\tZ3_p95_lo\tZ3_p95_hi\t"
+        "X4_gamma1\tX4_err1\tX4_gamma2\tX4_err2\tX4_gamma_eff\tX4_p95_lo\tX4_p95_hi\t"
+        "Z4_gamma1\tZ4_err1\tZ4_gamma2\tZ4_err2\tZ4_gamma_eff\tZ4_p95_lo\tZ4_p95_hi\n"
+    )
+    for D in valores_D:
+        for ang in valores_ang:
+            arch = os.path.join(carpeta,
+                                f"fits_s{sigma_hit:.3f}_{D:.1f}_{ang:.0f}.txt")
+            print(f"Leyendo: D={D}  ang={ang} -> {os.path.basename(arch)}")
+            try:
+                with open(arch, "r", encoding="utf-8", errors="ignore") as f:
+                    cont = f.read()
+                bX3 = extraer_bloque(cont, "Residual X (3 hits)")
+                bZ3 = extraer_bloque(cont, "Residual Z (3 hits)")
+                bX4 = extraer_bloque(cont, "Residual X (4 hits)")
+                bZ4 = extraer_bloque(cont, "Residual Z (4 hits)")
+                x3g,x3e           = get_gamma_s(bX3); x3p = get_p95(bX3)
+                z3g,z3e           = get_gamma_s(bZ3); z3p = get_p95(bZ3)
+                x4g1,x4e1,x4g2,x4e2,x4ge = get_doble(bX4); x4p = get_p95(bX4)
+                z4g1,z4e1,z4g2,z4e2,z4ge = get_doble(bZ4); z4p = get_p95(bZ4)
+                sal.write(
+                    f"{D}\t{ang}\t"
+                    f"{x3g}\t{x3e}\t{x3p[0]}\t{x3p[1]}\t"
+                    f"{z3g}\t{z3e}\t{z3p[0]}\t{z3p[1]}\t"
+                    f"{x4g1}\t{x4e1}\t{x4g2}\t{x4e2}\t{x4ge}\t{x4p[0]}\t{x4p[1]}\t"
+                    f"{z4g1}\t{z4e1}\t{z4g2}\t{z4e2}\t{z4ge}\t{z4p[0]}\t{z4p[1]}\n"
+                )
+            except FileNotFoundError:
+                print(f"  AVISO: no encontrado {arch}")
+                sal.write(f"{D}\t{ang}\t" + "NaN\t"*21 + "\n")
+
+print(f"\nGuardado: {salida}")
