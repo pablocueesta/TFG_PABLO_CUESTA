@@ -4,8 +4,8 @@ import glob
 
 BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
 #carpeta = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\Combinado_Lorentz"
-#os.chdir(carpeta)
 carpeta = os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz")
+os.chdir(carpeta)
 
 #archivos = sorted(
 #    glob.glob("fits_s*.txt"),
