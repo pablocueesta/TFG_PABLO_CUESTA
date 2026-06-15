@@ -182,7 +182,7 @@ def ejecutar_analisis_ang(ang):
                           'label':f"Gauss: sigma={sigma_g:.3f} (ref)"}))
         fits.append((x_fit, lorentz(x_fit,A_l,mu_l,gamma_l),
                      {'color':'blue','linewidth':2,
-                      'label':f"Lorentz: gamma={gamma_l:.3f}+-{err_gl:.3f}"}))
+                      'label':f"Lorentz: gamma={gamma_l:.3f}+-{err_gl:.3f}, mu={mu_l:.3f}"}))
 
         nombre = titulo.replace(" ","_").replace("(","").replace(")","")
         hacer_plots(data, x_fit, hist, centers, bins,
@@ -245,10 +245,10 @@ def ejecutar_analisis_ang(ang):
         if lorentz_ok:
             fits.append((x_fit, lorentz(x_fit,A_l,mu_l,gamma_l),
                          {'linestyle':':','color':'green','linewidth':1.5,
-                          'label':f"Lorentz simple: gamma={gamma_l:.3f}"}))
+                          'label':f"Lorentz simple: gamma={gamma_l:.3f}",}))
         fits.append((x_fit, double_lorentz(x_fit,A1,g1,A2,g2,mu_dl),
                      {'color':'red','linewidth':2,
-                      'label':f"Doble Lorentz: g1={g1:.3f}, g2={g2:.3f}"}))
+                      'label':f"Doble Lorentz: g1={g1:.3f}, g2={g2:.3f}, mu={mu_l:.3f}"}))
         fits.append((x_fit, lorentz(x_fit,A1,mu_dl,g1),
                      {'linestyle':'--','color':'blue','linewidth':1.5,
                       'label':f"Core: g1={g1:.3f}"}))

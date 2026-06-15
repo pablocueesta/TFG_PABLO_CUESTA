@@ -168,11 +168,11 @@ def ejecutar_analisis_ang(ang):
             if simple_ok:
                 ax_o_plt.plot(x_fit, lorentz(x_fit,A_s,mu_s,gamma_s),
                               color='orange', linewidth=2,
-                              label=f"Lorentz: gamma={gamma_s:.3f}  chi2={chi2_s:.1f}")
+                              label=f"Lorentz: gamma={gamma_s:.3f}  chi2={chi2_s:.1f} mu={mu_s:.3f}")
             if double_ok:
                 ax_o_plt.plot(x_fit, double_lorentz(x_fit,A1,g1,A2,g2,mu_dl),
                               color='red', linewidth=2,
-                              label=f"Doble  chi2={chi2_dl:.1f}")
+                              label=f"Doble  chi2={chi2_dl:.1f} mu={mu_dl:.3f}")
                 ax_o_plt.plot(x_fit, lorentz(x_fit,A1,mu_dl,g1),
                               '--', color='blue', linewidth=1.5,
                               label=f"Core g1={g1:.3f}")
