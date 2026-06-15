@@ -57,19 +57,19 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     fig.suptitle(titulo)
 
     # --- panel superior: gammas ---
-    xs, ys, ees = limpiar(D, gs, es)
+    #xs, ys, ees = limpiar(D, gs, es)
     x1, y1, ee1 = limpiar(D, g1, e1)
     x2, y2, ee2 = limpiar(D, g2, e2)
-    xge, yge    = limpiar(D, ge)
+    #xge, yge    = limpiar(D, ge)
 
-    ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='orange', capsize=3, label='gamma simple')
+    #ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='orange', capsize=3, label='gamma simple')
     ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='blue',   capsize=3, label='gamma1 core')
     ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='gamma2 cola')
-    ax1.plot(xge, yge, 'D--', color='green', label='gamma_eff')
+    #ax1.plot(xge, yge, 'D--', color='green', label='gamma_eff')
 
     f_out.write(f"\n--- {titulo} ---\n")
     for (x, y, e, color, etiq) in [
-        (xs, ys, ees, 'orange', 'gamma_simple'),
+        #(xs, ys, ees, 'orange', 'gamma_simple'),
         (x1, y1, ee1, 'blue',   'gamma1'),
         (x2, y2, ee2, 'red',    'gamma2'),
     ]:
@@ -87,7 +87,7 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     # --- panel inferior: ancho del corte p95 vs D ---
     xc, yc = limpiar(D, p95_ancho)
     ax2.plot(xc, yc, 'D-', color='magenta', linewidth=2,
-             label='Semiancho corte p95 [mm]')
+             label='Semianchura del percentil 95 [mm]')
     if len(xc) >= 3:
         #p2 = np.polyfit(xc, yc, 1)
         xf = np.linspace(min(xc), max(xc), 200)
@@ -96,8 +96,8 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
-    ax2.set_xlabel("D [cm]"); ax2.set_ylabel("Semiancho p95 [mm]")
-    ax2.set_title("Ventana de ajuste (semiancho p95) vs D")
+    ax2.set_xlabel("D [cm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs D")
     ax2.legend(fontsize=8); ax2.grid()
 
     plt.tight_layout()
@@ -106,9 +106,9 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     print(f"Guardado: {nombre}.png")
 
 plot_D_comb(D, X_gs, X_es, X_g1, X_e1, X_g2, X_e2, X_ge, X_p95_ancho,
-            "Barrido D — X combinado Lorentz", "D_X_combinado")
+            "Anchura resolución combinada X", "D_X_combinado")
 plot_D_comb(D, Z_gs, Z_es, Z_g1, Z_e1, Z_g2, Z_e2, Z_ge, Z_p95_ancho,
-            "Barrido D — Z combinado Lorentz", "D_Z_combinado")
+            "Anchura resolución combinada Z", "D_Z_combinado")
 
 f_out.close()
 print(f"\nPendientes en: {carpeta}\\pendientes_D.txt")

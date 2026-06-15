@@ -23,6 +23,7 @@ pat_corte_p95 = (
     r'Corte p95:.*?'
     r'\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]'
 )
+pat_gamma_eff = r'gamma_eff=([\d\.]+)'
 
 def extraer_bloque(contenido, titulo):
     m = re.search(rf'--- {re.escape(titulo)} ---(.*?)(?=\n---|$)', contenido, re.DOTALL)
@@ -38,13 +39,15 @@ def extraer_simple(bloque):
             c.group(1) if c else "NaN"]
 
 def extraer_doble(bloque):
-    if not bloque: return ["NaN"]*5
+    if not bloque: return ["NaN"]*6
     sub = re.search(r'Doble Lorentz:(.*?)(?=Decision|Corte|$)', bloque, re.DOTALL)
-    if not sub: return ["NaN"]*5
+    if not sub: return ["NaN"]*6
     t = sub.group(1)
-    g1 = re.search(pat_gamma1, t); g2 = re.search(pat_gamma2, t); c = re.search(pat_chi2, t)
+    g1 = re.search(pat_gamma1, t); g2 = re.search(pat_gamma2, t)
+    c  = re.search(pat_chi2, t);   ge = re.search(pat_gamma_eff, t)
     return [g1.group(1) if g1 else "NaN", g1.group(2) if g1 else "NaN",
             g2.group(1) if g2 else "NaN", g2.group(2) if g2 else "NaN",
+            ge.group(1) if ge else "NaN",
             c.group(1)  if c  else "NaN"]
 
 def extraer_p95(bloque):
@@ -56,10 +59,10 @@ with open("todos_los_sigmas.txt", "w", encoding="utf-8") as salida:
     salida.write(
         "sigma_hit\t"
         "X_gamma_s\tX_err_s\tX_chi2_s\t"
-        "X_gamma1\tX_err1\tX_gamma2\tX_err2\tX_chi2_dl\t"
+        "X_gamma1\tX_err1\tX_gamma2\tX_err2\tX_gamma_eff\tX_chi2_dl\t"
         "X_p95_lo\tX_p95_hi\t"
         "Z_gamma_s\tZ_err_s\tZ_chi2_s\t"
-        "Z_gamma1\tZ_err1\tZ_gamma2\tZ_err2\tZ_chi2_dl\t"
+        "Z_gamma1\tZ_err1\tZ_gamma2\tZ_err2\tZ_gamma_eff\tZ_chi2_dl\t"
         "Z_p95_lo\tZ_p95_hi\n"
     )
 

@@ -9,25 +9,32 @@ BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 #)
 data = np.loadtxt(os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz", "todos_los_sigmas.txt"), skiprows=1)
 
-# columnas:
+# columnas actualizadas:
 # [0]  sigma_hit
 # [1]  X_gamma_s  [2]  X_err_s  [3]  X_chi2_s
-# [4]  X_gamma1   [5]  X_err1   [6]  X_gamma2  [7]  X_err2  [8]  X_chi2_dl
-# [9]  X_p95_lo   [10] X_p95_hi
-# [11] Z_gamma_s  [12] Z_err_s  [13] Z_chi2_s
-# [14] Z_gamma1   [15] Z_err1   [16] Z_gamma2  [17] Z_err2  [18] Z_chi2_dl
-# [19] Z_p95_lo   [20] Z_p95_hi
+# [4]  X_gamma1   [5]  X_err1   [6]  X_gamma2  [7]  X_err2
+# [8]  X_gamma_eff
+# [9]  X_chi2_dl
+# [10] X_p95_lo   [11] X_p95_hi
+# [12] Z_gamma_s  [13] Z_err_s  [14] Z_chi2_s
+# [15] Z_gamma1   [16] Z_err1   [17] Z_gamma2  [18] Z_err2
+# [19] Z_gamma_eff
+# [20] Z_chi2_dl
+# [21] Z_p95_lo   [22] Z_p95_hi
 
 s_hit    = data[:,0]
 X_gs     = data[:,1];  X_es    = data[:,2];  X_chi2s  = data[:,3]
 X_g1     = data[:,4];  X_e1    = data[:,5]
-X_g2     = data[:,6];  X_e2    = data[:,7];  X_chi2dl = data[:,8]
-X_p95_lo = data[:,9];  X_p95_hi= data[:,10]
-Z_gs     = data[:,11]; Z_es    = data[:,12]; Z_chi2s  = data[:,13]
-Z_g1     = data[:,14]; Z_e1    = data[:,15]
-Z_g2     = data[:,16]; Z_e2    = data[:,17]; Z_chi2dl = data[:,18]
-Z_p95_lo = data[:,19]; Z_p95_hi= data[:,20]
-
+X_g2     = data[:,6];  X_e2    = data[:,7]
+X_ge     = data[:,8]                        # nueva
+X_chi2dl = data[:,9]                        # antes era [8]
+X_p95_lo = data[:,10]; X_p95_hi= data[:,11] # antes [9],[10]
+Z_gs     = data[:,12]; Z_es    = data[:,13]; Z_chi2s  = data[:,14]  # antes [11],[12],[13]
+Z_g1     = data[:,15]; Z_e1    = data[:,16]
+Z_g2     = data[:,17]; Z_e2    = data[:,18]
+Z_ge     = data[:,19]                        # nueva
+Z_chi2dl = data[:,20]                        # antes [18]
+Z_p95_lo = data[:,21]; Z_p95_hi= data[:,22] # antes [19],[20]
 X_p95_ancho = (X_p95_hi - X_p95_lo) / 2
 Z_p95_ancho = (Z_p95_hi - Z_p95_lo) / 2
 
@@ -54,7 +61,7 @@ out_dir = os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz", "plots_sig
 #)
 f_out = open(os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz", "pendientes.txt"), "w", encoding="utf-8")
 
-def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, chi2s,chi2dl, p95_ancho, titulo, nombre):
+def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, ge, chi2s,chi2dl, p95_ancho, titulo, nombre):
 
     fig, (ax1, ax2, ax3) = plt.subplots(3,1,figsize=(9,14),sharex=True)
     fig.suptitle(titulo)
@@ -65,11 +72,13 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, chi2s,chi2dl, p95_ancho, titulo
     xcs,ycs   = limpiar(s_hit,chi2s)
     xcd,ycd   = limpiar(s_hit,chi2dl)
     xc,yc     = limpiar(s_hit,p95_ancho)
+    xge, yge = limpiar(s_hit, ge)
 
     # panel 1: gammas
     ax1.errorbar(xs,ys,yerr=ees,fmt='o',color='orange',capsize=3,label='gamma simple')
     ax1.errorbar(x1,y1,yerr=ee1,fmt='o',color='blue',  capsize=3,label='gamma1 (core)')
     ax1.errorbar(x2,y2,yerr=ee2,fmt='s',color='red',   capsize=3,label='gamma2 (cola)')
+    ax1.plot(xge, yge, 'D--', color='green', label='gamma_eff')
     f_out.write(f"\n--- {titulo} ---\n")
     for (x,y,e,color,etiq) in [(xs,ys,ees,'orange','gamma_simple'),
                                 (x1,y1,ee1,'blue','gamma1'),
@@ -106,9 +115,9 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, chi2s,chi2dl, p95_ancho, titulo
     plt.savefig(os.path.join(out_dir,f"{nombre}.png"),dpi=200); plt.close()
     print(f"Guardado: {nombre}.png")
 
-plot_comparacion(s_hit, X_gs,X_es,X_g1,X_e1,X_g2,X_e2,X_chi2s,X_chi2dl,X_p95_ancho,
+plot_comparacion(s_hit, X_gs,X_es,X_g1,X_e1,X_g2,X_e2, X_ge, X_chi2s,X_chi2dl,X_p95_ancho,
                  "Anchura resolución combinada X","combinado_X")
-plot_comparacion(s_hit, Z_gs,Z_es,Z_g1,Z_e1,Z_g2,Z_e2,Z_chi2s,Z_chi2dl,Z_p95_ancho,
+plot_comparacion(s_hit, Z_gs,Z_es,Z_g1,Z_e1,Z_g2,Z_e2, Z_ge, Z_chi2s,Z_chi2dl,Z_p95_ancho,
                  "Anchura resolución combinada Z","combinado_Z")
 
 f_out.close()

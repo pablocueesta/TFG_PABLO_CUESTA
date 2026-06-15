@@ -57,12 +57,12 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
     xs, ys, ees = limpiar(D, g3,  e3)
     x1, y1, ee1 = limpiar(D, g1,  e1)
     x2, y2, ee2 = limpiar(D, g2,  e2)
-    xge, yge    = limpiar(D, ge)
+    #xge, yge    = limpiar(D, ge)
 
     ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='blue',   capsize=3, label='3 hits gamma simple')
     ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='green',  capsize=3, label='4 hits gamma1 (core)')
     ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='4 hits gamma2 (cola)')
-    ax1.plot(xge, yge, 'D--', color='orange', label='4 hits gamma_eff')
+    #ax1.plot(xge, yge, 'D--', color='orange', label='4 hits gamma_eff')
 
     f_out.write(f"\n--- {titulo} ---\n")
     for (x, y, e, color, etiq) in [
@@ -85,8 +85,8 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
     xc3, yc3 = limpiar(D, p95_3)
     xc4, yc4 = limpiar(D, p95_4)
 
-    ax2.plot(xc3, yc3, 'o-', color='blue',  linewidth=2, label='Semiancho p95 — 3 hits')
-    ax2.plot(xc4, yc4, 's-', color='green', linewidth=2, label='Semiancho p95 — 4 hits')
+    ax2.plot(xc3, yc3, 'o-', color='blue',  linewidth=2, label='Semianchura del percentil 95 — 3 hits')
+    ax2.plot(xc4, yc4, 's-', color='green', linewidth=2, label='Semianchura del percentil 95 — 4 hits')
 
     for (xc, yc, color, etiq) in [(xc3, yc3, 'blue', 'p95_3hits'),
                                    (xc4, yc4, 'green','p95_4hits')]:
@@ -98,8 +98,8 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
             #f_out.write(f"{etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
-    ax2.set_xlabel("D [cm]"); ax2.set_ylabel("Semiancho p95 [mm]")
-    ax2.set_title("Ventana de ajuste (semiancho p95) vs D")
+    ax2.set_xlabel("D [cm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs D")
     ax2.legend(fontsize=8); ax2.grid()
 
     plt.tight_layout()
@@ -109,11 +109,11 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
 
 plot_separado(D, X3_g, X3_e, X4_g1, X4_e1, X4_g2, X4_e2, X4_ge,
               X3_p95_ancho, X4_p95_ancho,
-              "Barrido D — X (3 y 4 hits separados, Lorentz)", "D_X_separado")
+              "Anchura resolución por separado X", "D_X_separado")
 
 plot_separado(D, Z3_g, Z3_e, Z4_g1, Z4_e1, Z4_g2, Z4_e2, Z4_ge,
               Z3_p95_ancho, Z4_p95_ancho,
-              "Barrido D — Z (3 y 4 hits separados, Lorentz)", "D_Z_separado")
+              "Anchura resolución por separado Z", "D_Z_separado")
 
 f_out.close()
 print(f"\nPendientes en: {carpeta}\\pendientes_D.txt")

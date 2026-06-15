@@ -1,10 +1,8 @@
 
---- Barrido D — X combinado Lorentz ---
-gamma_simple: a=0.0006+-0.0000, b=0.0299+-0.0002
+--- Anchura resolución combinada X ---
 gamma1: a=-0.0002+-0.0001, b=0.0133+-0.0016
 gamma2: a=0.0015+-0.0002, b=0.0291+-0.0024
 
---- Barrido D — Z combinado Lorentz ---
-gamma_simple: a=0.0006+-0.0000, b=0.0299+-0.0002
+--- Anchura resolución combinada Z ---
 gamma1: a=-0.0001+-0.0001, b=0.0122+-0.0017
 gamma2: a=0.0015+-0.0002, b=0.0287+-0.0022

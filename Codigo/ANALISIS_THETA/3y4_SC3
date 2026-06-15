@@ -58,27 +58,28 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     fig.suptitle(titulo)
 
     # --- panel superior: gammas ---
-    xs, ys, ees = limpiar(Ang, gs, es)
+    #xs, ys, ees = limpiar(Ang, gs, es)
     x1, y1, ee1 = limpiar(Ang, g1, e1)
     x2, y2, ee2 = limpiar(Ang, g2, e2)
-    xge, yge    = limpiar(Ang, ge)
+    #xge, yge    = limpiar(Ang, ge)
 
-    ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='orange', capsize=3, label='gamma simple')
+    #ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='orange', capsize=3, label='gamma simple')
     ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='blue',   capsize=3, label='gamma1 core')
     ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='gamma2 cola')
-    ax1.plot(xge, yge, 'D--', color='green', label='gamma_eff')
+    #ax1.plot(xge, yge, 'D--', color='green', label='gamma_eff')
 
     f_out.write(f"\n--- {titulo} ---\n")
-    for (x, y, e, color, etiq) in [
-        (xs, ys, ees, 'orange', 'gamma_simple'),
-        (x1, y1, ee1, 'blue',   'gamma1'),
-        (x2, y2, ee2, 'red',    'gamma2'),
-    ]:
-        if len(x) >= 3:
-            p, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
-            xf = np.linspace(min(x), max(x), 200)
-            ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2,
-                     label=f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
+    for (x, y, e, color, etiq) in [(x1, y1, ee1, 'blue', 'gamma1'),
+                                (x2, y2, ee2, 'red',  'gamma2')]:
+        mask = x <= 50 if etiq == 'gamma2' else np.ones(len(x), dtype=bool)
+        xm, ym, em = x[mask], y[mask], e[mask]
+        if len(xm) >= 3:
+            p, cov = np.polyfit(xm, ym, 1, w=1/em, cov=True)
+            xf = np.linspace(min(xm), max(xm), 200)
+            label_fit = f'Fit {etiq} (0-50°): a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}' \
+                    if etiq == 'gamma2' else \
+                    f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}'
+            ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2, label=label_fit)
             f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
                         f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
 
@@ -90,7 +91,7 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     ax2.plot(xc, yc, 'D-',
          color='magenta',
          linewidth=2,
-         label='Semiancho corte p95 [mm]')
+         label='Semianchura del percentil 95 [mm]')
     if len(xc) >= 3:
         #p2 = np.polyfit(xc, yc, 1)
         xf = np.linspace(min(xc), max(xc), 200)
@@ -99,8 +100,8 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     #ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
-    ax2.set_xlabel("Ángulo [grados]"); ax2.set_ylabel("Semiancho p95 [mm]")
-    ax2.set_title("Ventana de ajuste (semiancho p95) vs Ángulo")
+    ax2.set_xlabel("Ángulo [grados]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs Ángulo")
     ax2.legend(fontsize=8); ax2.grid()
 
     plt.tight_layout()
@@ -109,9 +110,9 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     print(f"Guardado: {nombre}.png")
 
 plot_Ang_comb(Ang, X_gs, X_es, X_g1, X_e1, X_g2, X_e2, X_ge, X_p95_ancho,
-            "Barrido Ángulo — X combinado Lorentz", "Ang_X_combinado")
+            "Anchura resolución combinada X", "Ang_X_combinado")
 plot_Ang_comb(Ang, Z_gs, Z_es, Z_g1, Z_e1, Z_g2, Z_e2, Z_ge, Z_p95_ancho,
-            "Barrido Ángulo — Z combinado Lorentz", "Ang_Z_combinado")
+            "Anchura resolución combinada Z", "Ang_Z_combinado")
 
 f_out.close()
 print(f"\nPendientes en: {carpeta}\\pendientes_angulos.txt")

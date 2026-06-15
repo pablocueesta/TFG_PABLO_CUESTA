@@ -57,16 +57,28 @@ def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
     xs, ys, ees = limpiar(ang, g3,  e3)
     x1, y1, ee1 = limpiar(ang, g1,  e1)
     x2, y2, ee2 = limpiar(ang, g2,  e2)
-    xge, yge    = limpiar(ang, ge)
+    #xge, yge    = limpiar(ang, ge)
 
     ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='blue',   capsize=3, label='3 hits gamma simple')
     ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='green',  capsize=3, label='4 hits gamma1 (core)')
     ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='4 hits gamma2 (cola)')
-    ax1.plot(xge, yge, 'D--', color='orange', label='4 hits gamma_eff')
+    #ax1.plot(xge, yge, 'D--', color='orange', label='4 hits gamma_eff')
 
     f_out.write(f"\n--- {titulo} ---\n")
+    
+    # 3 hits: fit solo hasta 50° porque el punto de 60° no aparece (fit colapsado)
+    mask_50 = xs <= 50
+    x50, y50, e50 = xs[mask_50], ys[mask_50], ees[mask_50]
+    if len(x50) >= 3:
+        p, cov = np.polyfit(x50, y50, 1, w=1/e50, cov=True)
+        xf = np.linspace(min(x50), max(x50), 200)
+        ax1.plot(xf, p[0]*xf+p[1], color='blue', linewidth=2,
+            label=f'Fit 3hits (0-50°): a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
+        f_out.write(f"3hits gamma: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
+            f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
+
+    # 4 hits: fit con todos los puntos incluyendo 60°
     for (x, y, e, color, etiq) in [
-        (xs, ys, ees, 'blue',  '3hits gamma'),
         (x1, y1, ee1, 'green', '4hits gamma1'),
         (x2, y2, ee2, 'red',   '4hits gamma2'),
     ]:
@@ -74,9 +86,9 @@ def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
             p, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
             xf = np.linspace(min(x), max(x), 200)
             ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2,
-                     label=f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
+                label=f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
             f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
-                        f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
+                f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
 
     
     ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
@@ -85,8 +97,8 @@ def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
     xc3, yc3 = limpiar(ang, p95_3)
     xc4, yc4 = limpiar(ang, p95_4)
 
-    ax2.plot(xc3, yc3, 'o-', color='blue',  linewidth=2, label='Semiancho p95 — 3 hits')
-    ax2.plot(xc4, yc4, 's-', color='green', linewidth=2, label='Semiancho p95 — 4 hits')
+    ax2.plot(xc3, yc3, 'o-', color='blue',  linewidth=2, label='Semianchura del percentil 95 — 3 hits')
+    ax2.plot(xc4, yc4, 's-', color='green', linewidth=2, label='Semianchura del percentil 95 — 4 hits')
 
     for (xc, yc, color, etiq) in [(xc3, yc3, 'blue', 'p95_3hits'),
                                    (xc4, yc4, 'green','p95_4hits')]:
@@ -98,8 +110,8 @@ def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
             #f_out.write(f"{etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     
-    ax2.set_xlabel("Ángulo [grados]"); ax2.set_ylabel("Semiancho p95 [mm]")
-    ax2.set_title("Ventana de ajuste (semiancho p95) vs Ángulo")
+    ax2.set_xlabel("Ángulo [grados]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs Ángulo")
     ax2.legend(fontsize=8); ax2.grid()
 
     plt.tight_layout()
@@ -109,11 +121,11 @@ def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
 
 plot_separado(ang, X3_g, X3_e, X4_g1, X4_e1, X4_g2, X4_e2, X4_ge,
               X3_p95_ancho, X4_p95_ancho,
-              "Barrido Ángulo — X (3 y 4 hits separados, Lorentz)", "ang_X_separado")
+              "Anchura resolución por separado X", "ang_X_separado")
 
 plot_separado(ang, Z3_g, Z3_e, Z4_g1, Z4_e1, Z4_g2, Z4_e2, Z4_ge,
               Z3_p95_ancho, Z4_p95_ancho,
-              "Barrido Ángulo — Z (3 y 4 hits separados, Lorentz)", "ang_Z_separado")
+              "Anchura resolución por separado Z", "ang_Z_separado")
 
 f_out.close()
 print(f"\nPendientes en: {carpeta}\\pendientes_angulos.txt")

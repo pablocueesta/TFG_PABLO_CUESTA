@@ -1,10 +1,10 @@
 
---- Barrido D — X (3 y 4 hits separados, Lorentz) ---
+--- Anchura resolución por separado X ---
 3hits gamma: a=0.0005+-0.0001, b=0.1075+-0.0018
 4hits gamma1: a=-0.0001+-0.0001, b=0.0110+-0.0020
 4hits gamma2: a=0.0014+-0.0001, b=0.0218+-0.0014
 
---- Barrido D — Z (3 y 4 hits separados, Lorentz) ---
+--- Anchura resolución por separado Z ---
 3hits gamma: a=0.0007+-0.0001, b=0.1057+-0.0025
 4hits gamma1: a=0.0001+-0.0001, b=0.0071+-0.0025
 4hits gamma2: a=0.0014+-0.0001, b=0.0207+-0.0014
