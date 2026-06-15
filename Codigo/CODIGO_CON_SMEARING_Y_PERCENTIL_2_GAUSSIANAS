@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-sigma_hit = 0.200
+sigma_hit = 0.085
 D=9.00
 theta=0.00
 
@@ -86,6 +86,11 @@ resZ_all = z4[:,:,1] - z_teo
 idx_min_Z = np.argmin(np.abs(resZ_all), axis=1)
 resZ4 = resZ_all[np.arange(len(resZ_all)), idx_min_Z]
 resZ4_cut = aplicar_percentil(resZ4)
+
+cp95_X3 = (np.percentile(resX3,2.5), np.percentile(resX3,97.5))
+cp95_Z3 = (np.percentile(resZ3,2.5), np.percentile(resZ3,97.5))
+cp95_X4 = (np.percentile(resX4,2.5), np.percentile(resX4,97.5))
+cp95_Z4 = (np.percentile(resZ4,2.5), np.percentile(resZ4,97.5))
 
 # Guardar resultados
 with open(salida,"w") as f:
@@ -175,8 +180,8 @@ def double_gauss(x, A1, sigma1, A2, sigma2, mu):
     return (A1 * np.exp(-(x - mu)**2 / (2 * sigma1**2)) +
             A2 * np.exp(-(x - mu)**2 / (2 * sigma2**2)))
 
-# FUNCIÓN PARA HACER TODO EL ANÁLISIS
-def analizar_residuals(data, titulo):
+
+def analizar_residuals(data, titulo, corte_p95):
 
     # Histograma
     hist, bins = np.histogram(data, bins=60)
@@ -207,11 +212,7 @@ def analizar_residuals(data, titulo):
     [np.inf, 1.0, np.inf, 1.0, 0.05]
     )
 )
-    """
-    A1,2 positivos
-    sigma1,2 diferentes de cero y hasta 1 para evitar valores extremos
-    mu cerca de 0 para evitar soluciones no físicas
-    """
+
     
     A1, sigma1, A2, sigma2, mu_d = params_double
     errors = np.sqrt(np.diag(cov_double))
@@ -234,14 +235,18 @@ def analizar_residuals(data, titulo):
     plt.plot(x_fit, double_gauss(x_fit, *params_double),
              label=f"Doble Gauss:\nσ1={sigma1:.3f}, σ2={sigma2:.3f}", linewidth=2)
 
-    plt.title(titulo)
+    plt.title(titulo + " - Percentil 95")
     plt.xlabel("Residual [mm]")
+    plt.xlim(-0.45, 0.45)
+    plt.axvline(corte_p95[0], color='magenta', linestyle='-', linewidth=1.5,
+                   label=f"p95: [{corte_p95[0]:.3f}, {corte_p95[1]:.3f}] mm")
+    plt.axvline(corte_p95[1], color='magenta', linestyle='-', linewidth=1.5)
     plt.ylabel("Counts")
     plt.legend()
     plt.grid()
     
     nombre_archivo = titulo.replace(" ", "_").replace("(", "").replace(")", "")
-    ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\First_Cambio_Smearing\{nombre_archivo}_{sigma_hit:.3f}.png"
+    ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\{nombre_archivo}_{sigma_hit:.3f}.png"
 
     plt.savefig(ruta)
     
@@ -257,19 +262,19 @@ def analizar_residuals(data, titulo):
     f_info.write(f"   sigma2 (cola) = {sigma2:.4f} +- {err_sigma2:.4f}\n")
     f_info.write(f"   mu = {mu_d:.4f} +- {err_mu:.4f}\n")
    
-""" 
+
     print(f"\n--- {titulo} ---")
     print(f"Gauss simple: mu = {mu_g:.4f}, sigma = {sigma_g:.4f}")
     print(f"Doble Gauss:")
     print(f"   mu = {mu_d:.4f}")
     print(f"   sigma1 (core) = {sigma1:.4f}")
     print(f"   sigma2 (cola) = {sigma2:.4f}")
-"""
 
-analizar_residuals(resX3_cut, "Residual X (3 hits)")
-analizar_residuals(resZ3_cut, "Residual Z (3 hits)")
-analizar_residuals(resX4_cut, "Residual X (4 hits)")
-analizar_residuals(resZ4_cut, "Residual Z (4 hits)")
+
+#analizar_residuals(resX3_cut, "Residual X (3 hits)")
+#analizar_residuals(resZ3_cut, "Residual Z (3 hits)")
+analizar_residuals(resX4_cut, "Residual X (4 hits)", cp95_X4)
+#analizar_residuals(resZ4_cut, "Residual Z (4 hits)", cp95_Z4)
 
 f_info.close()
 print("Resultados de fit guardados en:", salida_fit)

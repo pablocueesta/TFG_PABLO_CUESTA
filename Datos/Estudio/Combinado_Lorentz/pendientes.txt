@@ -1,10 +1,10 @@
 
---- Combinado X (3+4 hits) — Lorentz simple vs doble ---
+--- Anchura resolución combinada X ---
 gamma_simple: a=0.3866+-0.0007, b=0.0049+-0.0001
 gamma1: a=0.1265+-0.0035, b=0.0017+-0.0003
 gamma2: a=0.5217+-0.0023, b=0.0080+-0.0002
 
---- Combinado Z (3+4 hits) — Lorentz simple vs doble ---
+--- Anchura resolución combinada Z ---
 gamma_simple: a=0.3799+-0.0003, b=0.0051+-0.0000
 gamma1: a=0.1284+-0.0030, b=0.0023+-0.0003
 gamma2: a=0.5338+-0.0036, b=0.0075+-0.0004

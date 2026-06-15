@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 sigma_hit = 0.085 
-cut=0.5 #mm, para eliminar eventos con residuos grandes (outliers) que distorsionan el fit
+cut=0.35 #mm, para eliminar eventos con residuos grandes (outliers) que distorsionan el fit
 
 archivo = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\muon_hits_complete.csv"
 
@@ -109,8 +109,8 @@ plt.yscale('log') # para ver mejor las colas
 plt.title("Residual X (3 hits)")
 plt.xlabel("ResX [mm]")
 plt.ylabel("log(Counts)")
-plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resX3_cut.png")
-plt.show()
+#plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resX3_cut.png")
+#plt.show()
 
 plt.figure()
 plt.hist(resZ3_cut, bins=10)
@@ -119,8 +119,8 @@ plt.yscale('log') # para ver mejor las colas
 plt.title("Residual Z (3 hits)")
 plt.xlabel("ResZ [mm]")
 plt.ylabel("log(Counts)")
-plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resZ3_cut.png")
-plt.show()
+#plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resZ3_cut.png")
+#plt.show()
 
 # -------------------
 # 4 HITS
@@ -132,8 +132,8 @@ plt.yscale('log') # para ver mejor las colas
 plt.title("Residual X (4 hits, min)")
 plt.xlabel("ResX [mm]")
 plt.ylabel("log(Counts)")
-plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resX4_cut.png")
-plt.show()
+#plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resX4_cut.png")
+#plt.show()
 
 plt.figure()
 plt.hist(resZ4_cut, bins=10)
@@ -142,8 +142,8 @@ plt.yscale('log') # para ver mejor las colas
 plt.title("Residual Z (4 hits, min)")
 plt.xlabel("ResZ [mm]")
 plt.ylabel("log(Counts)")
-plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resZ4_cut.png")
-plt.show()
+#plt.savefig(r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\resZ4_cut.png")
+#plt.show()
 
 f_info = open(salida_fit,"w")
 f_info.write(f"Sigma ResX 3 hits: {np.std(resX3_cut):.4f} mm\n")
@@ -210,7 +210,6 @@ def analizar_residuals(data, titulo):
     plt.figure()
     plt.hist(data, bins=60, alpha=0.6, label="Datos")
     #plt.xlim(-50, 50)
-    plt.yscale('log') # para ver mejor las colas
     x_fit = np.linspace(min(centers), max(centers), 300)
 
     plt.plot(x_fit, gauss(x_fit, *params_gauss),
@@ -219,14 +218,18 @@ def analizar_residuals(data, titulo):
     plt.plot(x_fit, double_gauss(x_fit, *params_double),
              label=f"Doble Gauss:\nσ1={sigma1:.3f}, σ2={sigma2:.3f}", linewidth=2)
 
-    plt.title(titulo)
+    plt.title(titulo + " - Cut 0.35 mm")
     plt.xlabel("Residual [mm]")
-    plt.ylabel("log(Counts)")
+    plt.axvline(-0.35, color='magenta', linestyle='-', linewidth=1.5,
+                   label=f"Cut 0.35 mm")
+    plt.axvline(0.35, color='magenta', linestyle='-', linewidth=1.5)
+    plt.xlim(-0.45, 0.45)
+    plt.ylabel("Counts")
     plt.legend()
     plt.grid()
     
     nombre_archivo = titulo.replace(" ", "_").replace("(", "").replace(")", "")
-    ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\{nombre_archivo}.png"
+    ruta = rf"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\{nombre_archivo}.png"
 
     plt.savefig(ruta)
     
@@ -253,10 +256,10 @@ def analizar_residuals(data, titulo):
 # -------------------
 # EJECUTAR ANÁLISIS
 # -------------------
-analizar_residuals(resX3_cut, "Residual X (3 hits)")
-analizar_residuals(resZ3_cut, "Residual Z (3 hits)")
+#analizar_residuals(resX3_cut, "Residual X (3 hits)")
+#analizar_residuals(resZ3_cut, "Residual Z (3 hits)")
 analizar_residuals(resX4_cut, "Residual X (4 hits)")
-analizar_residuals(resZ4_cut, "Residual Z (4 hits)")
+#analizar_residuals(resZ4_cut, "Residual Z (4 hits)")
 
 f_info.close()
 print("Resultados de fit guardados en:", salida_fit)

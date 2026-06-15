@@ -97,7 +97,8 @@ def ejecutar_analisis(sigma_hit):
         fits_lineal / fits_log: lista de (x, y, kwargs_plot)
         La distribucion se corta exactamente en corte_p95 (xlim).
         """
-        margen = max(abs(corte_p95[0]), abs(corte_p95[1])) * 1.05
+        #margen = max(abs(corte_p95[0]), abs(corte_p95[1])) * 1.05
+        margen = 0.15 
 
         # --- lineal ---
         fig, ax = plt.subplots(figsize=(8,6))
@@ -111,7 +112,9 @@ def ejecutar_analisis(sigma_hit):
         #           label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}] mm")
         #ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
         ax.set_xlim(-margen, margen)
-        ax.set_title(titulo); ax.set_xlabel("Residual [mm]"); ax.set_ylabel("Counts")
+        #ax.set_title(titulo); 
+        ax.set_title(f"{titulo}  (sigma_hit={sigma_hit:.3f} mm)")
+        ax.set_xlabel("Residual [mm]"); ax.set_ylabel("Counts")
         ax.legend(fontsize=7); ax.grid()
         fig.savefig(ruta_base + "_lineal.png", dpi=150); plt.close(fig)
 
@@ -268,6 +271,7 @@ def ejecutar_analisis(sigma_hit):
 
 
 sigmas = np.arange(0.050, 0.205, 0.005)
+#sigmas = [0.0, 0.085]
 for sigma in sigmas:
     try:
         ejecutar_analisis(round(sigma, 3)) 

@@ -150,13 +150,13 @@ def analizar(data, titulo, color):
 
 fig, ax = plt.subplots(figsize=(9,5))
 
-ax.hist(resX_min_cut,  bins=60, alpha=0.5, color='blue',  label="Seleccion minimo")
-ax.hist(resX_rand_cut, bins=60, alpha=0.5, color='orange', label="Seleccion aleatoria")
+ax.hist(resX_min_cut,  bins=60, alpha=0.5, color='blue',  label="Selección mínimo")
+ax.hist(resX_rand_cut, bins=60, alpha=0.5, color='orange', label="Selección aleatoria")
 
 ax.set_yscale('log')
 ax.set_xlabel("Residual X [mm]")
 ax.set_ylabel("Counts (log)")
-ax.set_title("4 hits: minimo vs aleatorio — Residual X")
+ax.set_title("4 hits: mínimo vs aleatorio — Residual X")
 ax.legend()
 ax.grid()
 plt.tight_layout()
@@ -174,9 +174,9 @@ plt.close()
 print("=" * 50)
 print("SELECCION MINIMO")
 print("=" * 50)
-analizar(resX_min_cut,  "4 hits seleccion minimo - ResX",   color='blue')
+analizar(resX_min_cut,  "4 hits selección mínimo - ResX",   color='blue')
 
 print("=" * 50)
 print("SELECCION ALEATORIA")
 print("=" * 50)
-analizar(resX_rand_cut, "4 hits seleccion aleatoria - ResX", color='orange')
+analizar(resX_rand_cut, "4 hits selección aleatoria - ResX", color='orange')

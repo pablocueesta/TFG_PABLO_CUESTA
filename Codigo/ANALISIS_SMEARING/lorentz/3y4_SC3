@@ -84,22 +84,22 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, chi2s,chi2dl, p95_ancho, titulo
     ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
 
     # panel 2: chi2
-    ax2.plot(xcs,ycs,'o-',color='orange',label='chi2/ndf Lorentz simple')
-    ax2.plot(xcd,ycd,'s-',color='red',   label='chi2/ndf Doble Lorentz')
-    ax2.axhline(1.0,color='black',linestyle='--',linewidth=1,label='chi2/ndf=1')
-    ax2.set_ylabel("chi2/ndf"); ax2.set_title("Calidad del ajuste")
+    ax2.plot(xcs,ycs,'o-',color='orange',label='chi2/dof Lorentz simple')
+    ax2.plot(xcd,ycd,'s-',color='red',   label='chi2/dof Doble Lorentz')
+    ax2.axhline(1.0,color='black',linestyle='--',linewidth=1,label='chi2/dof=1')
+    ax2.set_ylabel("chi2/dof"); ax2.set_title("Calidad del ajuste")
     ax2.legend(fontsize=8); ax2.grid()
 
     # panel 3: ventana p95
-    ax3.plot(xc,yc,'D-',color='magenta',linewidth=2,label='Semiancho p95')
+    ax3.plot(xc,yc,'D-',color='magenta',linewidth=2,label='Semianchura del percentil 95')
     if len(xc)>=3:
         #p2 = np.polyfit(xc,yc,1)
         xf = np.linspace(min(xc),max(xc),200)
         #ax3.plot(xf,p2[0]*xf+p2[1],'--',color='darkviolet',linewidth=2,
                  #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
-    ax3.set_xlabel("Smearing [mm]"); ax3.set_ylabel("Semiancho p95 [mm]")
-    ax3.set_title("Ventana de ajuste (semiancho p95) vs smearing")
+    ax3.set_xlabel("Smearing [mm]"); ax3.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax3.set_title("Ventana de ajuste (semianchura del percentil 95) vs smearing")
     ax3.legend(fontsize=8); ax3.grid()
 
     plt.tight_layout()
@@ -107,9 +107,9 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, chi2s,chi2dl, p95_ancho, titulo
     print(f"Guardado: {nombre}.png")
 
 plot_comparacion(s_hit, X_gs,X_es,X_g1,X_e1,X_g2,X_e2,X_chi2s,X_chi2dl,X_p95_ancho,
-                 "Combinado X (3+4 hits) — Lorentz simple vs doble","combinado_X")
+                 "Anchura resolución combinada X","combinado_X")
 plot_comparacion(s_hit, Z_gs,Z_es,Z_g1,Z_e1,Z_g2,Z_e2,Z_chi2s,Z_chi2dl,Z_p95_ancho,
-                 "Combinado Z (3+4 hits) — Lorentz simple vs doble","combinado_Z")
+                 "Anchura resolución combinada Z","combinado_Z")
 
 f_out.close()
 print("\nPendientes en pendientes.txt")

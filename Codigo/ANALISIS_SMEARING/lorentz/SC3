@@ -75,7 +75,7 @@ def plot_3hits(s_hit, g, e, p95_ancho, titulo, nombre):
     ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
 
     xc,yc = limpiar(s_hit,p95_ancho)
-    ax2.plot(xc,yc,'o-',color='orange',linewidth=2,label='Semiancho p95')
+    ax2.plot(xc,yc,'o-',color='orange',linewidth=2,label='Corte percentil 95')
     res2 = None
     if len(xc)>=3:
         #p2 = np.polyfit(xc,yc,1)
@@ -83,8 +83,8 @@ def plot_3hits(s_hit, g, e, p95_ancho, titulo, nombre):
         #ax2.plot(xf,p2[0]*xf+p2[1],'--',color='darkorange',linewidth=2,
                  #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
-    ax2.set_xlabel("Smearing [mm]"); ax2.set_ylabel("Semiancho p95 [mm]")
-    ax2.set_title("Ventana de ajuste (semiancho p95) vs smearing")
+    ax2.set_xlabel("Smearing [mm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax2.set_title("Ventana de ajuste (percentil 95) vs smearing")
     ax2.legend(fontsize=8); ax2.grid()
 
     plt.tight_layout()
@@ -111,25 +111,25 @@ def plot_4hits(s_hit, g1,e1,g2,e2, p95_ancho, titulo, nombre):
     ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
 
     xc,yc = limpiar(s_hit,p95_ancho)
-    ax2.plot(xc,yc,'s-',color='green',linewidth=2,label='Semiancho p95')
+    ax2.plot(xc,yc,'s-',color='green',linewidth=2,label='Corte percentil 95')
     if len(xc)>=3:
         #p2 = np.polyfit(xc,yc,1)
         xf = np.linspace(min(xc),max(xc),200)
         #ax2.plot(xf,p2[0]*xf+p2[1],'--',color='darkgreen',linewidth=2,
                  #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
-    ax2.set_xlabel("Smearing [mm]"); ax2.set_ylabel("Semiancho p95 [mm]")
-    ax2.set_title("Ventana de ajuste (semiancho p95) vs smearing")
+    ax2.set_xlabel("Smearing [mm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax2.set_title("Ventana de ajuste (percentil 95) vs smearing")
     ax2.legend(fontsize=8); ax2.grid()
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir,f"{nombre}.png"),dpi=300); plt.close()
     print(f"Guardado: {nombre}.png")
 
-plot_3hits(s_hit, X3_g, X3_e, X3_p95_ancho, "3 hits - X (Lorentz)", "3hits_X")
-plot_3hits(s_hit, Z3_g, Z3_e, Z3_p95_ancho, "3 hits - Z (Lorentz)", "3hits_Z")
-plot_4hits(s_hit, X4_g1,X4_e1,X4_g2,X4_e2, X4_p95_ancho, "4 hits - X (Lorentz)", "4hits_X")
-plot_4hits(s_hit, Z4_g1,Z4_e1,Z4_g2,Z4_e2, Z4_p95_ancho, "4 hits - Z (Lorentz)", "4hits_Z")
+plot_3hits(s_hit, X3_g, X3_e, X3_p95_ancho, " Anchura resolución 3 hits X ", "3hits_X")
+plot_3hits(s_hit, Z3_g, Z3_e, Z3_p95_ancho, " Anchura resolución 3 hits Z ", "3hits_Z")
+plot_4hits(s_hit, X4_g1,X4_e1,X4_g2,X4_e2, X4_p95_ancho, " Anchura resolución 4 hits X ", "4hits_X")
+plot_4hits(s_hit, Z4_g1,Z4_e1,Z4_g2,Z4_e2, Z4_p95_ancho, " Anchura resolución 4 hits Z ", "4hits_Z")
 
 f_out.close()
 print("\nPendientes en pendientes.txt")

@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 import os
 
 # ── rutas relativas ──────────────────────────────────────────────────────────
-# script en TFG/Codigo/ANALISIS_D_ANG/lorentz/  →  3 niveles hasta TFG
+# script en TFG/Codigo/ANALISIS_D_ANG  →  2 niveles hasta TFG
 BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                      '..', '..'))
 

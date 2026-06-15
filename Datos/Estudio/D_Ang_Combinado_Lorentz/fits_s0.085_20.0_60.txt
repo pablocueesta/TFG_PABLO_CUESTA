@@ -1,0 +1,19 @@
+D=20.0cm  ang=60°  sigma_hit=0.085mm
+
+--- Combinado X (3+4 hits) ---
+N fit(p95): 7746  N total: 8154
+Corte p95:   [-4.3647, 0.6364] mm (95.0%)
+Lorentz simple: mu=-0.0005 gamma=0.0496+-0.0006 chi2/ndf=6.4971
+Doble Lorentz: mu=-0.0009
+   gamma1 (core)=0.0100+-0.0006
+   gamma2 (cola)=0.0641+-0.0010
+   gamma_eff=0.0426  chi2/ndf=10.6802
+
+--- Combinado Z (3+4 hits) ---
+N fit(p95): 7746  N total: 8154
+Corte p95:   [-0.4516, 12.0729] mm (95.0%)
+Lorentz simple: mu=-0.0000 gamma=0.0504+-0.0005 chi2/ndf=6.7849
+Doble Lorentz: mu=-0.0004
+   gamma1 (core)=0.0001+-0.0000
+   gamma2 (cola)=0.0678+-0.0008
+   gamma_eff=0.0001  chi2/ndf=12.1247
