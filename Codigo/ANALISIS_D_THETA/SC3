@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 import os
 
 BASE    = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -20,8 +21,12 @@ data = np.loadtxt(os.path.join(carpeta, "todos_D_ang.txt"), skiprows=1)
 # [10] X4_gamma1 [11] X4_err1 [12] X4_gamma2 [13] X4_err2 [14] X4_gamma_eff [15] X4_p95_lo [16] X4_p95_hi
 # [17] Z4_gamma1 [18] Z4_err1 [19] Z4_gamma2 [20] Z4_err2 [21] Z4_gamma_eff [22] Z4_p95_lo [23] Z4_p95_hi
 
-D_vals  = np.array([7.0, 13.0, 20.0, 30.0])
-ang_vals= np.array([0,   20,   40,   60])
+D_vals   = np.array([7.0, 13.0, 20.0, 30.0])
+ang_vals = np.array([0,   20,   40,   60])
+
+# valor nominal: D=13cm, ang=0
+D_nom = 13.0
+ang_nom = 0
 
 D   = data[:,0];  ang = data[:,1]
 X3g = data[:,2];  X3e = data[:,3];  X3p95 = (data[:,5]-data[:,4])/2
@@ -31,6 +36,11 @@ X4g2= data[:,12]; X4e2= data[:,13]; X4ge  = data[:,14]; X4p95= (data[:,16]-data[
 Z4g1= data[:,17]; Z4e1= data[:,18]
 Z4g2= data[:,19]; Z4e2= data[:,20]; Z4ge  = data[:,21]; Z4p95= (data[:,23]-data[:,22])/2
 
+# colormap: azul oscuro -> purpura -> rojo oscuro, luminosidad uniforme
+# evita el problema del blanco central de RdYlBu_r
+CMAP = LinearSegmentedColormap.from_list('br_purple',
+    ['#1a53ff', '#7a00cc', '#cc0000'])
+
 def limpiar(x, y, e=None):
     if e is not None:
         mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<5)
@@ -38,41 +48,76 @@ def limpiar(x, y, e=None):
     mask = np.isfinite(x)&np.isfinite(y)&(y>0)
     return x[mask],y[mask]
 
-# ── MAPA DE COLOR ────────────────────────────────────────────────────────────
-def mapa_color(D, ang, valores, D_vals, ang_vals, titulo, nombre, unidad="mm"):
-    """
-    Dibuja un mapa de color con D en eje X y ang en eje Y.
-    valores: array de len(D_vals)*len(ang_vals) en el mismo orden que data
-    """
-    nD  = len(D_vals)
-    nA  = len(ang_vals)
-    Z   = np.full((nA, nD), np.nan)
+def get_nominal(valores, D, ang, D_nom, ang_nom):
+    """Obtiene el valor nominal en (D_nom, ang_nom)."""
+    mask = (D == D_nom) & (ang == ang_nom)
+    if mask.sum() == 1 and np.isfinite(valores[mask][0]) and valores[mask][0] > 0:
+        return valores[mask][0]
+    return np.nan
 
+def mapa_color(D, ang, valores, D_vals, ang_vals, titulo, nombre):
+    """
+    Mapa de color con PUNTOS (scatter) en lugar de cuadrados (imshow).
+    Los valores se normalizan al valor en (D=13cm, ang=0) = 1.
+    Colormap azul->purpura->rojo sin blanco en el centro.
+    El valor anotado en cada punto es el porcentaje respecto al nominal.
+    """
+    # valor nominal para normalizar
+    v_nom = get_nominal(valores, D, ang, D_nom, ang_nom)
+    if np.isnan(v_nom):
+        print(f"  AVISO: no hay valor nominal para {titulo}, saltando")
+        return
+
+    # construir arrays de puntos validos
+    xs, ys, vs, ns = [], [], [], []
     for i, d in enumerate(D_vals):
         for j, a in enumerate(ang_vals):
             mask = (D == d) & (ang == a)
-            if mask.sum() == 1 and np.isfinite(valores[mask][0]) and valores[mask][0] > 0:
-                Z[j, i] = valores[mask][0]
+            if mask.sum() == 1:
+                v = valores[mask][0]
+                if np.isfinite(v) and v > 0:
+                    xs.append(d)
+                    ys.append(a)
+                    vs.append(v)
+                    ns.append(v / v_nom)  # normalizado
 
-    fig, ax = plt.subplots(figsize=(7,5))
-    im = ax.imshow(Z, aspect='auto', origin='lower',
-                   extent=[D_vals[0]-3, D_vals[-1]+3,
-                           ang_vals[0]-5, ang_vals[-1]+5],
-                   cmap='RdYlBu_r', interpolation='nearest')
-    cbar = fig.colorbar(im, ax=ax)
-    cbar.set_label(f"{titulo} [{unidad}]", fontsize=10)
+    if len(xs) == 0:
+        print(f"  AVISO: sin datos validos para {titulo}")
+        return
 
-    # anotar valor en cada celda
-    for i, d in enumerate(D_vals):
-        for j, a in enumerate(ang_vals):
-            v = Z[j, i]
-            if np.isfinite(v):
-                ax.text(d, a, f"{v:.3f}", ha='center', va='center',
-                        fontsize=8, color='black',
-                        bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.5))
+    xs = np.array(xs); ys = np.array(ys)
+    vs = np.array(vs); ns = np.array(ns)
+
+    # escala centrada en 1 (nominal), simetrica
+    desv_max = max(abs(ns.max() - 1), abs(ns.min() - 1))
+    if desv_max < 0.01: desv_max = 0.01  # minimo para evitar escala plana
+    vmin = 1 - desv_max * 1.1
+    vmax = 1 + desv_max * 1.1
+    norm = TwoSlopeNorm(vcenter=1.0, vmin=vmin, vmax=vmax)
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.set_facecolor('#f5f5f5')  # fondo gris muy claro
+
+    # dibujar puntos grandes con el color de la normalizacion
+    sc = ax.scatter(xs, ys, c=ns, cmap=CMAP, norm=norm,
+                    s=1200, zorder=3, edgecolors='gray', linewidths=0.5)
+
+    # anotar: valor real y porcentaje respecto al nominal
+    for xi, yi, vi, ni in zip(xs, ys, vs, ns):
+        pct = (ni - 1) * 100
+        sign = '+' if pct >= 0 else ''
+        ax.text(xi, yi + 1.5, f"{vi:.3f}", ha='center', va='center',
+                fontsize=7.5, color='black', fontweight='bold', zorder=4)
+        ax.text(xi, yi - 1.5, f"({sign}{pct:.1f}%)", ha='center', va='center',
+                fontsize=6.5, color='#333333', zorder=4)
+
+    cbar = fig.colorbar(sc, ax=ax)
+    cbar.set_label(f"Valor normalizado al nominal\n(D={D_nom:.0f}cm, θ=0°)", fontsize=9)
 
     ax.set_xticks(D_vals); ax.set_xticklabels([f"{d:.0f}" for d in D_vals])
     ax.set_yticks(ang_vals); ax.set_yticklabels([f"{a:.0f}" for a in ang_vals])
+    ax.set_xlim(D_vals[0]-4, D_vals[-1]+4)
+    ax.set_ylim(ang_vals[0]-8, ang_vals[-1]+8)
     ax.set_xlabel("D [cm]"); ax.set_ylabel("Ángulo [grados]")
     ax.set_title(titulo)
     fig.tight_layout()
@@ -80,13 +125,9 @@ def mapa_color(D, ang, valores, D_vals, ang_vals, titulo, nombre, unidad="mm"):
     plt.close(fig)
     print(f"Mapa guardado: {nombre}.png")
 
-# ── PLOTS EVOLUCIÓN (fijando una variable y variando la otra) ────────────────
 def plot_evolucion(D, ang, gamma, err, p95_ancho, D_vals, ang_vals,
-                   titulo_base, nombre_base, xlabel, xvals, fijo_label, fijo_vals,
+                   titulo_base, nombre_base, xlabel, fijo_label, fijo_vals,
                    fijo_arr, libre_arr):
-    """
-    Para cada valor fijo de una variable, plotea gamma y ventana vs la otra.
-    """
     colores = ['blue','red','green','orange']
     for idx, fijo in enumerate(fijo_vals):
         mask_fijo = fijo_arr == fijo
@@ -94,67 +135,50 @@ def plot_evolucion(D, ang, gamma, err, p95_ancho, D_vals, ang_vals,
         g  = gamma[mask_fijo]
         e  = err[mask_fijo]
         p  = p95_ancho[mask_fijo]
-
-        # ordenar por x
         orden = np.argsort(x)
         x,g,e,p = x[orden],g[orden],e[orden],p[orden]
-
-        # filtrar NaN e invalidos
         mask_ok = np.isfinite(g)&np.isfinite(e)&(e>0)&(g>0)&(g<5)
         if mask_ok.sum() < 2: continue
 
         fig,(ax1,ax2) = plt.subplots(2,1,figsize=(8,9),sharex=True)
         fig.suptitle(f"{titulo_base}\n{fijo_label}={fijo}")
-
         ax1.errorbar(x[mask_ok], g[mask_ok], yerr=e[mask_ok],
                      fmt='o-', color=colores[idx%4], capsize=3, label='gamma')
         ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
-
         mask_p = np.isfinite(p)&(p>0)
         ax2.plot(x[mask_p], p[mask_p], 'D-', color=colores[idx%4],
                  linewidth=2, label='Semiancho p95')
         ax2.set_xlabel(xlabel); ax2.set_ylabel("Semiancho p95 [mm]")
         ax2.set_title("Ventana de ajuste vs "+xlabel)
         ax2.legend(fontsize=8); ax2.grid()
-
         plt.tight_layout()
         plt.savefig(os.path.join(out_plots,
                     f"{nombre_base}_{fijo_label}{fijo:.0f}.png"), dpi=150)
         plt.close()
         print(f"Guardado: {nombre_base}_{fijo_label}{fijo:.0f}.png")
 
-# ── EJECUTAR TODO ────────────────────────────────────────────────────────────
-
 # --- mapas de color ---
 mapa_color(D, ang, X3g,  D_vals, ang_vals, "gamma 3hits X (Lorentz simple)",  "mapa_X3_gamma")
 mapa_color(D, ang, Z3g,  D_vals, ang_vals, "gamma 3hits Z (Lorentz simple)",  "mapa_Z3_gamma")
-mapa_color(D, ang, X4g1, D_vals, ang_vals, "gamma1 core 4hits X",              "mapa_X4_gamma1")
-mapa_color(D, ang, X4g2, D_vals, ang_vals, "gamma2 cola 4hits X",              "mapa_X4_gamma2")
-mapa_color(D, ang, X4ge, D_vals, ang_vals, "gamma_eff 4hits X",                "mapa_X4_gamma_eff")
-mapa_color(D, ang, Z4g1, D_vals, ang_vals, "gamma1 core 4hits Z",              "mapa_Z4_gamma1")
-mapa_color(D, ang, Z4g2, D_vals, ang_vals, "gamma2 cola 4hits Z",              "mapa_Z4_gamma2")
-mapa_color(D, ang, Z4ge, D_vals, ang_vals, "gamma_eff 4hits Z",                "mapa_Z4_gamma_eff")
-mapa_color(D, ang, X3p95,D_vals, ang_vals, "Semiancho p95 3hits X",            "mapa_X3_p95")
-mapa_color(D, ang, X4p95,D_vals, ang_vals, "Semiancho p95 4hits X",            "mapa_X4_p95")
+mapa_color(D, ang, X4g1, D_vals, ang_vals, "gamma1 core 4hits X",             "mapa_X4_gamma1")
+mapa_color(D, ang, X4g2, D_vals, ang_vals, "gamma2 cola 4hits X",             "mapa_X4_gamma2")
+mapa_color(D, ang, Z4g1, D_vals, ang_vals, "gamma1 core 4hits Z",             "mapa_Z4_gamma1")
+mapa_color(D, ang, Z4g2, D_vals, ang_vals, "gamma2 cola 4hits Z",             "mapa_Z4_gamma2")
+mapa_color(D, ang, X3p95,D_vals, ang_vals, "Semiancho p95 3hits X",           "mapa_X3_p95")
+mapa_color(D, ang, X4p95,D_vals, ang_vals, "Semiancho p95 4hits X",           "mapa_X4_p95")
 
 # --- evolución gamma 3hits vs D (fijando ang) ---
 plot_evolucion(D, ang, X3g, X3e, X3p95, D_vals, ang_vals,
                "3hits X — gamma vs D", "3hits_X_vsD",
-               "D [cm]", D_vals, "ang", ang_vals, ang, D)
-
-# --- evolución gamma 3hits vs ang (fijando D) ---
+               "D [cm]", "ang", ang_vals, ang, D)
 plot_evolucion(D, ang, X3g, X3e, X3p95, D_vals, ang_vals,
                "3hits X — gamma vs ang", "3hits_X_vsAng",
-               "Ángulo [grados]", ang_vals, "D", D_vals, D, ang)
-
-# --- evolución gamma2 4hits vs D (fijando ang) ---
+               "Ángulo [grados]", "D", D_vals, D, ang)
 plot_evolucion(D, ang, X4g2, X4e2, X4p95, D_vals, ang_vals,
                "4hits X gamma2 — vs D", "4hits_X_g2_vsD",
-               "D [cm]", D_vals, "ang", ang_vals, ang, D)
-
-# --- evolución gamma2 4hits vs ang (fijando D) ---
+               "D [cm]", "ang", ang_vals, ang, D)
 plot_evolucion(D, ang, X4g2, X4e2, X4p95, D_vals, ang_vals,
                "4hits X gamma2 — vs ang", "4hits_X_g2_vsAng",
-               "Ángulo [grados]", ang_vals, "D", D_vals, D, ang)
+               "Ángulo [grados]", "D", D_vals, D, ang)
 
 print("\nSC3 separado completado.")
