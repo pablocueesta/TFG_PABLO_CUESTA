@@ -57,45 +57,53 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     fig.suptitle(titulo)
 
     # --- panel superior: gammas ---
-    #xs, ys, ees = limpiar(D, gs, es)
     x1, y1, ee1 = limpiar(D, g1, e1)
     x2, y2, ee2 = limpiar(D, g2, e2)
-    #xge, yge    = limpiar(D, ge)
 
-    #ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='orange', capsize=3, label='gamma simple')
     ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='blue',   capsize=3, label='gamma1 core')
     ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='gamma2 cola')
-    #ax1.plot(xge, yge, 'D--', color='green', label='gamma_eff')
 
     f_out.write(f"\n--- {titulo} ---\n")
     for (x, y, e, color, etiq) in [
-        #(xs, ys, ees, 'orange', 'gamma_simple'),
-        (x1, y1, ee1, 'blue',   'gamma1'),
-        (x2, y2, ee2, 'red',    'gamma2'),
+        (x1, y1, ee1, 'blue', 'gamma1'),
+        (x2, y2, ee2, 'red',  'gamma2'),
     ]:
-        if len(x) >= 3:
-            p, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
-            xf = np.linspace(min(x), max(x), 200)
-            ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2,
-                     label=f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
-            f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
-                        f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
+        # tramo 1: D <= 20
+        mask1 = x <= 20
+        x_t1, y_t1, e_t1 = x[mask1], y[mask1], e[mask1]
+        # tramo 2: D >= 20
+        mask2 = x >= 20
+        x_t2, y_t2, e_t2 = x[mask2], y[mask2], e[mask2]
 
-    ax1.axvline(7.0, color='gray', linestyle=':', linewidth=1, label='D=d=7cm')
-    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
+        f_out.write(f"\n  {etiq} — tramo D<=20cm:\n")
+        if len(x_t1) >= 2:
+            p1, cov1 = np.polyfit(x_t1, y_t1, 1, w=1/e_t1, cov=True)
+            xf1 = np.linspace(min(x_t1), 20, 200)
+            ax1.plot(xf1, p1[0]*xf1+p1[1], color=color, linewidth=2, linestyle='-',
+                     label=f'Fit {etiq} (D≤20): a={p1[0]:.4f}±{np.sqrt(cov1[0,0]):.4f}')
+            f_out.write(f"    a={p1[0]:.4f}+-{np.sqrt(cov1[0,0]):.4f}"
+                        f", b={p1[1]:.4f}+-{np.sqrt(cov1[1,1]):.4f}\n")
+
+        f_out.write(f"  {etiq} — tramo D>=20cm:\n")
+        if len(x_t2) >= 2:
+            p2, cov2 = np.polyfit(x_t2, y_t2, 1, w=1/e_t2, cov=True)
+            xf2 = np.linspace(20, max(x_t2), 200)
+            ax1.plot(xf2, p2[0]*xf2+p2[1], color=color, linewidth=2, linestyle='--',
+                     label=f'Fit {etiq} (D≥20): a={p2[0]:.4f}±{np.sqrt(cov2[0,0]):.4f}')
+            f_out.write(f"    a={p2[0]:.4f}+-{np.sqrt(cov2[0,0]):.4f}"
+                        f", b={p2[1]:.4f}+-{np.sqrt(cov2[1,1]):.4f}\n")
+
+    ax1.axvline(7.0,  color='gray',   linestyle=':', linewidth=1, label='D=d=7cm')
+    ax1.axvline(20.0, color='black',  linestyle=':', linewidth=1, label='D=20cm')
+    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=7); ax1.grid()
 
     # --- panel inferior: ancho del corte p95 vs D ---
     xc, yc = limpiar(D, p95_ancho)
     ax2.plot(xc, yc, 'D-', color='magenta', linewidth=2,
              label='Semianchura del percentil 95 [mm]')
-    if len(xc) >= 3:
-        #p2 = np.polyfit(xc, yc, 1)
-        xf = np.linspace(min(xc), max(xc), 200)
-        #ax2.plot(xf, p2[0]*xf+p2[1], '--', color='darkviolet', linewidth=2,
-                 #label=f'Fit lineal: a={p2[0]:.4f}, b={p2[1]:.4f}')
-        #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
-    ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
+    ax2.axvline(7.0,  color='gray',  linestyle=':', linewidth=1)
+    ax2.axvline(20.0, color='black', linestyle=':', linewidth=1)
     ax2.set_xlabel("D [cm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
     ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs D")
     ax2.legend(fontsize=8); ax2.grid()
