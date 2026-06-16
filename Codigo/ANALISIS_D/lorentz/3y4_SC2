@@ -19,7 +19,7 @@ def extraer_bloque(contenido, titulo):
 
 def extraer_fila(bloque):
     if not bloque:
-        return ["NaN"] * 9
+        return ["NaN"] * 11
 
     # gamma simple
     m = re.search(r'Lorentz simple:.*?gamma=([\d\.]+)\+\-([\d\.]+)', bloque)
@@ -40,6 +40,14 @@ def extraer_fila(bloque):
     m = re.search(r'gamma_eff=([\d\.]+)', bloque)
     ge_v = m.group(1) if m else "NaN"
 
+    # chi2/ndf simple
+    m = re.search(r'Lorentz simple:.*?chi2/ndf=([\d\.]+)', bloque)
+    chi2s_v = m.group(1) if m else "NaN"
+
+    # chi2/ndf doble
+    m = re.search(r'gamma_eff=[\d\.]+\s+chi2/ndf=([\d\.]+)', bloque)
+    chi2dl_v = m.group(1) if m else "NaN"
+
     # corte p95: linea "Corte p95:   [X,Y] mm"
     m = re.search(
     r'Corte p95:.*?\[\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*\]',
@@ -48,13 +56,13 @@ def extraer_fila(bloque):
     cp95_lo = m.group(1) if m else "NaN"
     cp95_hi = m.group(2) if m else "NaN"
 
-    return [gs_v, gs_e, g1_v, g1_e, g2_v, g2_e, ge_v, cp95_lo, cp95_hi]
+    return [gs_v, gs_e, g1_v, g1_e, g2_v, g2_e, ge_v, chi2s_v, chi2dl_v, cp95_lo, cp95_hi]
 
 with open("todos_los_D.txt", "w", encoding="utf-8") as sal:
     sal.write(
         "D\t"
-        "X_gamma_s\tX_err_s\tX_gamma1\tX_err1\tX_gamma2\tX_err2\tX_gamma_eff\tX_p95_lo\tX_p95_hi\t"
-        "Z_gamma_s\tZ_err_s\tZ_gamma1\tZ_err1\tZ_gamma2\tZ_err2\tZ_gamma_eff\tZ_p95_lo\tZ_p95_hi\n"
+        "X_gamma_s\tX_err_s\tX_gamma1\tX_err1\tX_gamma2\tX_err2\tX_gamma_eff\tX_chi2s\tX_chi2dl\tX_p95_lo\tX_p95_hi\t"
+        "Z_gamma_s\tZ_err_s\tZ_gamma1\tZ_err1\tZ_gamma2\tZ_err2\tZ_gamma_eff\tZ_chi2s\tZ_chi2dl\tZ_p95_lo\tZ_p95_hi\n"
     )
     for arch in archivos:
         m = re.search(r'fits_s[\d\.]+_([\d\.]+)_[\d\.]+\.txt', arch)

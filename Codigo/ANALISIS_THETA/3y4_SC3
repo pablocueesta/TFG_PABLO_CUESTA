@@ -32,12 +32,14 @@ X_gs    = data[:,1];  X_es  = data[:,2]
 X_g1    = data[:,3];  X_e1  = data[:,4]
 X_g2    = data[:,5];  X_e2  = data[:,6]
 X_ge    = data[:,7]
-X_p95lo = data[:,8];  X_p95hi = data[:,9]
-Z_gs    = data[:,10]; Z_es  = data[:,11]
-Z_g1    = data[:,12]; Z_e1  = data[:,13]
-Z_g2    = data[:,14]; Z_e2  = data[:,15]
-Z_ge    = data[:,16]
-Z_p95lo = data[:,17]; Z_p95hi = data[:,18]
+X_chi2s = data[:,8];  X_chi2dl = data[:,9]
+X_p95lo = data[:,10]; X_p95hi = data[:,11]
+Z_gs    = data[:,12]; Z_es  = data[:,13]
+Z_g1    = data[:,14]; Z_e1  = data[:,15]
+Z_g2    = data[:,16]; Z_e2  = data[:,17]
+Z_ge    = data[:,18]
+Z_chi2s = data[:,19]; Z_chi2dl = data[:,20]
+Z_p95lo = data[:,21]; Z_p95hi = data[:,22]
 
 # ancho del corte p95 = p95_hi - p95_lo (simetrico aprox)
 X_p95_ancho = (X_p95hi - X_p95lo) / 2
@@ -51,6 +53,24 @@ def limpiar(x, y, e=None):
     return x[mask], y[mask]
 
 f_out = open(os.path.join(carpeta, "pendientes_angulos.txt"), "w", encoding="utf-8")
+
+def plot_chi2(D, chi2s, chi2dl, titulo, nombre):
+    """Grafica separada de chi2/dof vs D para comparar ajuste simple y doble."""
+    xcs, ycs = limpiar(D, chi2s)
+    xcd, ycd = limpiar(D, chi2dl)
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(xcs, ycs, 'o-', color='orange', label='chi2/dof Lorentz simple')
+    ax.plot(xcd, ycd, 's-', color='red',    label='chi2/dof Doble Lorentz')
+    ax.axhline(1.0, color='black', linestyle='--', linewidth=1, label='chi2/dof=1')
+    ax.set_xlabel("Ángulo [grados]"); ax.set_ylabel("chi2/dof")
+    ax.set_title("Calidad del ajuste — " + titulo)
+    ax.legend(fontsize=8); ax.grid()
+    fig.tight_layout()
+    fig.savefig(os.path.join(out_dir, f"{nombre}_chi2.png"), dpi=200)
+    plt.close(fig)
+    print(f"Guardado: {nombre}_chi2.png")
+
 
 def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
 
@@ -113,6 +133,10 @@ plot_Ang_comb(Ang, X_gs, X_es, X_g1, X_e1, X_g2, X_e2, X_ge, X_p95_ancho,
             "Anchura resolución combinada X", "Ang_X_combinado")
 plot_Ang_comb(Ang, Z_gs, Z_es, Z_g1, Z_e1, Z_g2, Z_e2, Z_ge, Z_p95_ancho,
             "Anchura resolución combinada Z", "Ang_Z_combinado")
+
+# graficas separadas de chi2/dof vs D
+plot_chi2(Ang, X_chi2s, X_chi2dl, "Ángulo rotación, Eje X", "D_X_combinado")
+plot_chi2(Ang, Z_chi2s, Z_chi2dl, "Ángulo rotación, Eje Z", "D_Z_combinado")
 
 f_out.close()
 print(f"\nPendientes en: {carpeta}\\pendientes_angulos.txt")
