@@ -118,7 +118,7 @@ def mapa_color(D, ang, valores, D_vals, ang_vals, titulo, nombre):
     ax.set_yticks(ang_vals); ax.set_yticklabels([f"{a:.0f}" for a in ang_vals])
     ax.set_xlim(D_vals[0]-4, D_vals[-1]+4)
     ax.set_ylim(ang_vals[0]-8, ang_vals[-1]+8)
-    ax.set_xlabel("D [cm]"); ax.set_ylabel("Ángulo [grados]")
+    ax.set_xlabel("D (cm)"); ax.set_ylabel("θ (°)")
     ax.set_title(titulo)
     fig.tight_layout()
     fig.savefig(os.path.join(out_mapas, f"{nombre}.png"), dpi=200)
@@ -158,27 +158,27 @@ def plot_evolucion(D, ang, gamma, err, p95_ancho, D_vals, ang_vals,
         print(f"Guardado: {nombre_base}_{fijo_label}{fijo:.0f}.png")
 
 # --- mapas de color ---
-mapa_color(D, ang, X3g,  D_vals, ang_vals, "gamma 3hits X (Lorentz simple)",  "mapa_X3_gamma")
-mapa_color(D, ang, Z3g,  D_vals, ang_vals, "gamma 3hits Z (Lorentz simple)",  "mapa_Z3_gamma")
-mapa_color(D, ang, X4g1, D_vals, ang_vals, "gamma1 core 4hits X",             "mapa_X4_gamma1")
-mapa_color(D, ang, X4g2, D_vals, ang_vals, "gamma2 cola 4hits X",             "mapa_X4_gamma2")
-mapa_color(D, ang, Z4g1, D_vals, ang_vals, "gamma1 core 4hits Z",             "mapa_Z4_gamma1")
-mapa_color(D, ang, Z4g2, D_vals, ang_vals, "gamma2 cola 4hits Z",             "mapa_Z4_gamma2")
-mapa_color(D, ang, X3p95,D_vals, ang_vals, "Semiancho p95 3hits X",           "mapa_X3_p95")
-mapa_color(D, ang, X4p95,D_vals, ang_vals, "Semiancho p95 4hits X",           "mapa_X4_p95")
+mapa_color(D, ang, X3g,  D_vals, ang_vals, "Mapa gamma (mm) 3hits X",  "mapa_X3_gamma")
+mapa_color(D, ang, Z3g,  D_vals, ang_vals, "Mapa gamma (mm) 3hits Z",  "mapa_Z3_gamma")
+mapa_color(D, ang, X4g1, D_vals, ang_vals, "Mapa gamma1 (mm) 4hits X",             "mapa_X4_gamma1")
+mapa_color(D, ang, X4g2, D_vals, ang_vals, "Mapa gamma2 (mm) 4hits X",             "mapa_X4_gamma2")
+mapa_color(D, ang, Z4g1, D_vals, ang_vals, "Mapa gamma1 (mm) 4hits Z",             "mapa_Z4_gamma1")
+mapa_color(D, ang, Z4g2, D_vals, ang_vals, "Mapa gamma2 (mm) 4hits Z",             "mapa_Z4_gamma2")
+#mapa_color(D, ang, X3p95,D_vals, ang_vals, " Mapa semiancho p95 (mm) 3hits X",           "mapa_X3_p95")
+#mapa_color(D, ang, X4p95,D_vals, ang_vals, " Mapa semiancho p95 (mm) 4hits X",           "mapa_X4_p95")
 
 # --- evolución gamma 3hits vs D (fijando ang) ---
 plot_evolucion(D, ang, X3g, X3e, X3p95, D_vals, ang_vals,
-               "3hits X — gamma vs D", "3hits_X_vsD",
+               " Mapa gamma (mm) 3hits X — gamma vs D", " Mapa gamma (mm) 3hits X_vsD",
                "D [cm]", "ang", ang_vals, ang, D)
 plot_evolucion(D, ang, X3g, X3e, X3p95, D_vals, ang_vals,
-               "3hits X — gamma vs ang", "3hits_X_vsAng",
+               " Mapa gamma (mm) 3hits X — gamma vs ang", " Mapa gamma (mm)  3hits X_vsAng",
                "Ángulo [grados]", "D", D_vals, D, ang)
 plot_evolucion(D, ang, X4g2, X4e2, X4p95, D_vals, ang_vals,
-               "4hits X gamma2 — vs D", "4hits_X_g2_vsD",
+               " Mapa gamma (mm) 4hits X — vs D", " Mapa gamma (mm) 4hits X_vsD",
                "D [cm]", "ang", ang_vals, ang, D)
 plot_evolucion(D, ang, X4g2, X4e2, X4p95, D_vals, ang_vals,
-               "4hits X gamma2 — vs ang", "4hits_X_g2_vsAng",
+               " Mapa gamma (mm) 4hits X — vs ang", " Mapa gamma (mm) 4hits X_vsAng",
                "Ángulo [grados]", "D", D_vals, D, ang)
 
 print("\nSC3 separado completado.")

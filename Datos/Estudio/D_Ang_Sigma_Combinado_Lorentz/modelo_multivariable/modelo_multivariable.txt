@@ -1,0 +1,346 @@
+Modelo lineal multivariable: gamma = a0 + a1*sigma + a2*D + a3*theta + a12*sigma*D + a13*sigma*theta + a23*D*theta
+Dos tramos de D: D<=20cm y D>=20cm
+================================================================================
+
+
+================================================================================
+COORDENADA X
+================================================================================
+
+--- gamma1 ---
+
+  Tramo D<=20cm (excluye theta=60°):
+  gamma1 D<=20cm excl60  (N=36):
+    a0  (cte)         = 0.006359 +- 0.000666 mm
+    a1  (sigma)        = 0.0247 +- 0.0070  [adim]
+    a2  (D)            = -0.00029 +- 0.00004  [mm/cm]
+    a3  (theta)        = -0.000001 +- 0.000020  [mm/grado]
+    a12 (sigma*D)      = 0.00502 +- 0.00041  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000113 +- 0.000132  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000012 +- 0.0000010  [mm/(cm*grado)]
+    chi2/dof           = 15.2582
+
+    Significancia (|coef/err|):
+      a0: 9.5σ 
+      a1: 3.5σ 
+      a2: 7.4σ 
+      a3: 0.0σ <-- DESPRECIABLE
+      a12: 12.3σ 
+      a13: 0.9σ <-- DESPRECIABLE
+      a23: 1.3σ <-- DESPRECIABLE
+
+  Tramo D<=20cm (excluye solo NaN, incluye theta=60°):
+  gamma1 D<=20cm soloNaN  (N=48):
+    a0  (cte)         = 0.004298 +- 0.000638 mm
+    a1  (sigma)        = 0.0372 +- 0.0067  [adim]
+    a2  (D)            = -0.00018 +- 0.00004  [mm/cm]
+    a3  (theta)        = 0.000112 +- 0.000015  [mm/grado]
+    a12 (sigma*D)      = 0.00436 +- 0.00039  [mm/(mm*cm)]
+    a13 (sigma*theta)  = -0.000101 +- 0.000103  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000063 +- 0.0000008  [mm/(cm*grado)]
+    chi2/dof           = 15.7119
+
+    Significancia (|coef/err|):
+      a0: 6.7σ 
+      a1: 5.5σ 
+      a2: 4.8σ 
+      a3: 7.6σ 
+      a12: 11.2σ 
+      a13: 1.0σ <-- DESPRECIABLE
+      a23: 8.2σ 
+
+  Tramo D>=20cm (excluye theta=60°):
+  gamma1 D>=20cm excl60  (N=24):
+    a0  (cte)         = 0.000492 +- 0.000889 mm
+    a1  (sigma)        = 0.1869 +- 0.0098  [adim]
+    a2  (D)            = 0.00002 +- 0.00003  [mm/cm]
+    a3  (theta)        = -0.000061 +- 0.000023  [mm/grado]
+    a12 (sigma*D)      = -0.00349 +- 0.00036  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000029 +- 0.000120  [mm/(mm*grado)]
+    a23 (D*theta)      = 0.0000021 +- 0.0000008  [mm/(cm*grado)]
+    chi2/dof           = 1.4140
+
+    Significancia (|coef/err|):
+      a0: 0.6σ <-- DESPRECIABLE
+      a1: 19.1σ 
+      a2: 0.5σ <-- DESPRECIABLE
+      a3: 2.7σ 
+      a12: 9.6σ 
+      a13: 0.2σ <-- DESPRECIABLE
+      a23: 2.5σ 
+
+  Tramo D>=20cm (excluye solo NaN, incluye theta=60°):
+  gamma1 D>=20cm soloNaN  (N=31):
+    a0  (cte)         = 0.000540 +- 0.000864 mm
+    a1  (sigma)        = 0.1847 +- 0.0096  [adim]
+    a2  (D)            = 0.00000 +- 0.00003  [mm/cm]
+    a3  (theta)        = -0.000029 +- 0.000021  [mm/grado]
+    a12 (sigma*D)      = -0.00326 +- 0.00035  [mm/(mm*cm)]
+    a13 (sigma*theta)  = -0.000284 +- 0.000102  [mm/(mm*grado)]
+    a23 (D*theta)      = 0.0000017 +- 0.0000008  [mm/(cm*grado)]
+    chi2/dof           = 3.3738
+
+    Significancia (|coef/err|):
+      a0: 0.6σ <-- DESPRECIABLE
+      a1: 19.1σ 
+      a2: 0.1σ <-- DESPRECIABLE
+      a3: 1.4σ <-- DESPRECIABLE
+      a12: 9.2σ 
+      a13: 2.8σ 
+      a23: 2.2σ 
+
+
+--- gamma2 ---
+
+  Tramo D<=20cm (excluye theta=60°):
+  gamma2 D<=20cm excl60  (N=36):
+    a0  (cte)         = 0.006427 +- 0.000601 mm
+    a1  (sigma)        = 0.2087 +- 0.0058  [adim]
+    a2  (D)            = 0.00003 +- 0.00005  [mm/cm]
+    a3  (theta)        = 0.000040 +- 0.000021  [mm/grado]
+    a12 (sigma*D)      = 0.02280 +- 0.00053  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000655 +- 0.000152  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000041 +- 0.0000013  [mm/(cm*grado)]
+    chi2/dof           = 6.7478
+
+    Significancia (|coef/err|):
+      a0: 10.7σ 
+      a1: 35.9σ 
+      a2: 0.5σ <-- DESPRECIABLE
+      a3: 1.9σ <-- DESPRECIABLE
+      a12: 42.6σ 
+      a13: 4.3σ 
+      a23: 3.2σ 
+
+  Tramo D<=20cm (excluye solo NaN, incluye theta=60°):
+  gamma2 D<=20cm soloNaN  (N=48):
+    a0  (cte)         = 0.004111 +- 0.000558 mm
+    a1  (sigma)        = 0.2223 +- 0.0054  [adim]
+    a2  (D)            = 0.00014 +- 0.00005  [mm/cm]
+    a3  (theta)        = 0.000185 +- 0.000017  [mm/grado]
+    a12 (sigma*D)      = 0.02185 +- 0.00050  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000287 +- 0.000130  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000082 +- 0.0000010  [mm/(cm*grado)]
+    chi2/dof           = 29.8809
+
+    Significancia (|coef/err|):
+      a0: 7.4σ 
+      a1: 41.3σ 
+      a2: 2.9σ 
+      a3: 10.8σ 
+      a12: 43.4σ 
+      a13: 2.2σ 
+      a23: 8.4σ 
+
+  Tramo D>=20cm (excluye theta=60°):
+  gamma2 D>=20cm excl60  (N=24):
+    a0  (cte)         = 0.002583 +- 0.002210 mm
+    a1  (sigma)        = 0.5763 +- 0.0256  [adim]
+    a2  (D)            = 0.00018 +- 0.00008  [mm/cm]
+    a3  (theta)        = 0.000019 +- 0.000057  [mm/grado]
+    a12 (sigma*D)      = 0.00410 +- 0.00095  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000208 +- 0.000313  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000014 +- 0.0000021  [mm/(cm*grado)]
+    chi2/dof           = 0.5855
+
+    Significancia (|coef/err|):
+      a0: 1.2σ <-- DESPRECIABLE
+      a1: 22.5σ 
+      a2: 2.2σ 
+      a3: 0.3σ <-- DESPRECIABLE
+      a12: 4.3σ 
+      a13: 0.7σ <-- DESPRECIABLE
+      a23: 0.7σ <-- DESPRECIABLE
+
+  Tramo D>=20cm (excluye solo NaN, incluye theta=60°):
+  gamma2 D>=20cm soloNaN  (N=31):
+    a0  (cte)         = -0.001490 +- 0.001979 mm
+    a1  (sigma)        = 0.6063 +- 0.0231  [adim]
+    a2  (D)            = 0.00031 +- 0.00007  [mm/cm]
+    a3  (theta)        = 0.000277 +- 0.000042  [mm/grado]
+    a12 (sigma*D)      = 0.00346 +- 0.00087  [mm/(mm*cm)]
+    a13 (sigma*theta)  = -0.000945 +- 0.000200  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000093 +- 0.0000017  [mm/(cm*grado)]
+    chi2/dof           = 4.0302
+
+    Significancia (|coef/err|):
+      a0: 0.8σ <-- DESPRECIABLE
+      a1: 26.2σ 
+      a2: 4.3σ 
+      a3: 6.5σ 
+      a12: 4.0σ 
+      a13: 4.7σ 
+      a23: 5.6σ 
+
+
+
+================================================================================
+COORDENADA Z
+================================================================================
+
+--- gamma1 ---
+
+  Tramo D<=20cm (excluye theta=60°):
+  gamma1 D<=20cm excl60  (N=36):
+    a0  (cte)         = 0.004853 +- 0.000690 mm
+    a1  (sigma)        = 0.0484 +- 0.0071  [adim]
+    a2  (D)            = -0.00021 +- 0.00004  [mm/cm]
+    a3  (theta)        = -0.000015 +- 0.000021  [mm/grado]
+    a12 (sigma*D)      = 0.00354 +- 0.00041  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000163 +- 0.000134  [mm/(mm*grado)]
+    a23 (D*theta)      = 0.0000017 +- 0.0000011  [mm/(cm*grado)]
+    chi2/dof           = 18.9395
+
+    Significancia (|coef/err|):
+      a0: 7.0σ 
+      a1: 6.8σ 
+      a2: 5.3σ 
+      a3: 0.7σ <-- DESPRECIABLE
+      a12: 8.7σ 
+      a13: 1.2σ <-- DESPRECIABLE
+      a23: 1.6σ <-- DESPRECIABLE
+
+  Tramo D<=20cm (excluye solo NaN, incluye theta=60°):
+  gamma1 D<=20cm soloNaN  (N=46):
+    a0  (cte)         = 0.003824 +- 0.000655 mm
+    a1  (sigma)        = 0.0536 +- 0.0069  [adim]
+    a2  (D)            = -0.00014 +- 0.00004  [mm/cm]
+    a3  (theta)        = 0.000013 +- 0.000014  [mm/grado]
+    a12 (sigma*D)      = 0.00303 +- 0.00039  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000433 +- 0.000108  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000008 +- 0.0000008  [mm/(cm*grado)]
+    chi2/dof           = 16.5779
+
+    Significancia (|coef/err|):
+      a0: 5.8σ 
+      a1: 7.7σ 
+      a2: 3.6σ 
+      a3: 0.9σ <-- DESPRECIABLE
+      a12: 7.7σ 
+      a13: 4.0σ 
+      a23: 0.9σ <-- DESPRECIABLE
+
+  Tramo D>=20cm (excluye theta=60°):
+  gamma1 D>=20cm excl60  (N=24):
+    a0  (cte)         = 0.001181 +- 0.000830 mm
+    a1  (sigma)        = 0.1637 +- 0.0097  [adim]
+    a2  (D)            = -0.00003 +- 0.00003  [mm/cm]
+    a3  (theta)        = 0.000113 +- 0.000025  [mm/grado]
+    a12 (sigma*D)      = -0.00246 +- 0.00036  [mm/(mm*cm)]
+    a13 (sigma*theta)  = -0.000218 +- 0.000114  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000034 +- 0.0000008  [mm/(cm*grado)]
+    chi2/dof           = 1.2049
+
+    Significancia (|coef/err|):
+      a0: 1.4σ <-- DESPRECIABLE
+      a1: 16.9σ 
+      a2: 1.0σ <-- DESPRECIABLE
+      a3: 4.6σ 
+      a12: 6.8σ 
+      a13: 1.9σ <-- DESPRECIABLE
+      a23: 4.1σ 
+
+  Tramo D>=20cm (excluye solo NaN, incluye theta=60°):
+  gamma1 D>=20cm soloNaN  (N=27):
+    a0  (cte)         = 0.000887 +- 0.000821 mm
+    a1  (sigma)        = 0.1667 +- 0.0096  [adim]
+    a2  (D)            = -0.00002 +- 0.00003  [mm/cm]
+    a3  (theta)        = 0.000117 +- 0.000025  [mm/grado]
+    a12 (sigma*D)      = -0.00261 +- 0.00036  [mm/(mm*cm)]
+    a13 (sigma*theta)  = -0.000121 +- 0.000107  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000037 +- 0.0000008  [mm/(cm*grado)]
+    chi2/dof           = 1.3295
+
+    Significancia (|coef/err|):
+      a0: 1.1σ <-- DESPRECIABLE
+      a1: 17.3σ 
+      a2: 0.5σ <-- DESPRECIABLE
+      a3: 4.8σ 
+      a12: 7.3σ 
+      a13: 1.1σ <-- DESPRECIABLE
+      a23: 4.6σ 
+
+
+--- gamma2 ---
+
+  Tramo D<=20cm (excluye theta=60°):
+  gamma2 D<=20cm excl60  (N=36):
+    a0  (cte)         = 0.004463 +- 0.000588 mm
+    a1  (sigma)        = 0.2302 +- 0.0058  [adim]
+    a2  (D)            = 0.00017 +- 0.00005  [mm/cm]
+    a3  (theta)        = 0.000019 +- 0.000021  [mm/grado]
+    a12 (sigma*D)      = 0.02092 +- 0.00053  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000715 +- 0.000148  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000002 +- 0.0000014  [mm/(cm*grado)]
+    chi2/dof           = 8.6290
+
+    Significancia (|coef/err|):
+      a0: 7.6σ 
+      a1: 39.6σ 
+      a2: 3.4σ 
+      a3: 0.9σ <-- DESPRECIABLE
+      a12: 39.6σ 
+      a13: 4.8σ 
+      a23: 0.2σ <-- DESPRECIABLE
+
+  Tramo D<=20cm (excluye solo NaN, incluye theta=60°):
+  gamma2 D<=20cm soloNaN  (N=48):
+    a0  (cte)         = 0.002460 +- 0.000534 mm
+    a1  (sigma)        = 0.2256 +- 0.0052  [adim]
+    a2  (D)            = 0.00020 +- 0.00005  [mm/cm]
+    a3  (theta)        = 0.000237 +- 0.000015  [mm/grado]
+    a12 (sigma*D)      = 0.02220 +- 0.00049  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000361 +- 0.000120  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000104 +- 0.0000008  [mm/(cm*grado)]
+    chi2/dof           = 33.7583
+
+    Significancia (|coef/err|):
+      a0: 4.6σ 
+      a1: 43.2σ 
+      a2: 4.3σ 
+      a3: 15.9σ 
+      a12: 45.7σ 
+      a13: 3.0σ 
+      a23: 13.6σ 
+
+  Tramo D>=20cm (excluye theta=60°):
+  gamma2 D>=20cm excl60  (N=24):
+    a0  (cte)         = 0.006534 +- 0.002152 mm
+    a1  (sigma)        = 0.5153 +- 0.0245  [adim]
+    a2  (D)            = 0.00002 +- 0.00008  [mm/cm]
+    a3  (theta)        = 0.000209 +- 0.000063  [mm/grado]
+    a12 (sigma*D)      = 0.00640 +- 0.00094  [mm/(mm*cm)]
+    a13 (sigma*theta)  = -0.000027 +- 0.000308  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000074 +- 0.0000022  [mm/(cm*grado)]
+    chi2/dof           = 0.5624
+
+    Significancia (|coef/err|):
+      a0: 3.0σ 
+      a1: 21.0σ 
+      a2: 0.2σ <-- DESPRECIABLE
+      a3: 3.3σ 
+      a12: 6.8σ 
+      a13: 0.1σ <-- DESPRECIABLE
+      a23: 3.3σ 
+
+  Tramo D>=20cm (excluye solo NaN, incluye theta=60°):
+  gamma2 D>=20cm soloNaN  (N=30):
+    a0  (cte)         = 0.002658 +- 0.001980 mm
+    a1  (sigma)        = 0.5658 +- 0.0228  [adim]
+    a2  (D)            = 0.00018 +- 0.00007  [mm/cm]
+    a3  (theta)        = 0.000226 +- 0.000035  [mm/grado]
+    a12 (sigma*D)      = 0.00431 +- 0.00086  [mm/(mm*cm)]
+    a13 (sigma*theta)  = 0.000175 +- 0.000201  [mm/(mm*grado)]
+    a23 (D*theta)      = -0.0000092 +- 0.0000015  [mm/(cm*grado)]
+    chi2/dof           = 2.0453
+
+    Significancia (|coef/err|):
+      a0: 1.3σ <-- DESPRECIABLE
+      a1: 24.8σ 
+      a2: 2.5σ 
+      a3: 6.4σ 
+      a12: 5.0σ 
+      a13: 0.9σ <-- DESPRECIABLE
+      a23: 6.0σ 
+
+

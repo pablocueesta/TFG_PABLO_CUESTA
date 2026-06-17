@@ -53,18 +53,21 @@ def get_nominal(valores):
     return np.nan
 
 def matriz_mapas(valores, titulo_base, nombre_base):
-    v_nom = get_nominal(valores)
-    if np.isnan(v_nom):
-        print(f"  AVISO: sin nominal para {titulo_base}"); return
-
     fig, axes = plt.subplots(1, 4, figsize=(20,5))
     fig.suptitle(f"{titulo_base} — mapa D×θ para cada σ_hit\n"
-                 f"(normalizado a σ_hit={S_NOM:.3f}mm, D={D_NOM:.0f}cm, θ=0°)")
+                 f"(cada mapa normalizado a su propio nominal: D={D_NOM:.0f}cm, θ=0°)")
 
     for idx, s in enumerate(sigma_vals):
         ax = axes[idx]
         ax.set_facecolor('#f5f5f5')
-        ax.set_title(f"σ_hit={s:.3f} mm", fontsize=10)
+
+        # nominal propio de este sigma_hit
+        mask_nom = (sigma==s)&(D==D_NOM)&(ang==A_NOM)
+        if mask_nom.sum()==1 and np.isfinite(valores[mask_nom][0]) and valores[mask_nom][0]>0:
+            v_nom_s = valores[mask_nom][0]
+        else:
+            print(f"  AVISO: sin nominal para sigma={s} en {titulo_base}"); continue
+        ax.set_title(f"σ_hit={s:.3f} mm\n(nom={v_nom_s:.4f} mm)", fontsize=9)
 
         xs,ys,vs,ns = [],[],[],[]
         for d in D_vals:
@@ -74,7 +77,7 @@ def matriz_mapas(valores, titulo_base, nombre_base):
                     v = valores[mask][0]
                     if np.isfinite(v) and v>0:
                         xs.append(d); ys.append(a)
-                        vs.append(v); ns.append(v/v_nom)
+                        vs.append(v); ns.append(v/v_nom_s)
 
         if len(xs)==0: continue
         xs=np.array(xs); ys=np.array(ys); vs=np.array(vs); ns=np.array(ns)
