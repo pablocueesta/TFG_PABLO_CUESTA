@@ -135,8 +135,8 @@ plot_Ang_comb(Ang, Z_gs, Z_es, Z_g1, Z_e1, Z_g2, Z_e2, Z_ge, Z_p95_ancho,
             "Anchura resolución combinada Z", "Ang_Z_combinado")
 
 # graficas separadas de chi2/dof vs D
-plot_chi2(Ang, X_chi2s, X_chi2dl, "Ángulo rotación, Eje X", "D_X_combinado")
-plot_chi2(Ang, Z_chi2s, Z_chi2dl, "Ángulo rotación, Eje Z", "D_Z_combinado")
+plot_chi2(Ang, X_chi2s, X_chi2dl, "Ángulo rotación, Eje X", "Ang_X_combinado")
+plot_chi2(Ang, Z_chi2s, Z_chi2dl, "Ángulo rotación, Eje Z", "Ang_Z_combinado")
 
 f_out.close()
 print(f"\nPendientes en: {carpeta}\\pendientes_angulos.txt")

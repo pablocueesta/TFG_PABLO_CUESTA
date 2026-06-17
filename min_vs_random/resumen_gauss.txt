@@ -1,0 +1,34 @@
+Resumen ajuste gaussiano — seleccion minimo vs aleatoria vs 3 hits
+sigma_hit = 0.085 mm, percentil 95%
+=================================================================
+
+--- 3 hits ---
+  p95:               [-0.5734, 0.5324] mm
+  Gauss simple:
+    sigma            = 0.1214 mm
+  Doble Gauss:
+    sigma1 (core)    = 0.1147 mm
+    sigma2 (cola)    = 0.2709 mm
+    A1/A2            = 15.709
+    corr(s1,s2)      = 0.8214
+
+--- 4 hits mínimo ---
+  p95:               [-0.1324, 0.1328] mm
+  Gauss simple:
+    sigma            = 0.0362 mm
+  Doble Gauss:
+    sigma1 (core)    = 0.0145 mm
+    sigma2 (cola)    = 0.0560 mm
+    A1/A2            = 1.235
+    corr(s1,s2)      = 0.5696
+
+--- 4 hits aleatorio ---
+  p95:               [-0.3083, 0.3060] mm
+  Gauss simple:
+    sigma            = 0.1209 mm
+  Doble Gauss:
+    sigma1 (core)    = 0.1141 mm
+    sigma2 (cola)    = 0.2518 mm
+    A1/A2            = 12.990
+    corr(s1,s2)      = 0.9707
+

@@ -161,7 +161,7 @@ ax.legend()
 ax.grid()
 plt.tight_layout()
 plt.savefig(
-    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\PreAnalisis\Cut\comparativo_min_vs_random.png",
+    r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\comparativo_min_vs_random.png",
     dpi=300
 )
 plt.show()
