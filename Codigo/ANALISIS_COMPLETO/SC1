@@ -1,0 +1,190 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+import os
+
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     '..', '..'))
+
+valores_D     = [7.0, 13.0, 20.0, 30.0]
+valores_ang   = [0,   20,   40,   60]
+valores_sigma = [0.050, 0.085, 0.130, 0.200]
+
+def aplicar_percentil(data, p=95):
+    low  = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100-(100-p)/2)
+    return data[(data > low) & (data < high)]
+
+def lorentz(x, A, mu, gamma):
+    return A / (1 + ((x-mu)/gamma)**2)
+
+def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
+    return (A1/(1+((x-mu)/gamma1)**2) + A2/(1+((x-mu)/gamma2)**2))
+
+def ejecutar_analisis(D, ang, sigma_hit):
+
+    np.random.seed(42)
+    D_TAG   = f"D{D:.1f}".replace(".", "_")
+    Ang_TAG = f"Ang{ang:.0f}"
+    COMBO   = f"{D_TAG}_{Ang_TAG}"
+
+    archivo    = os.path.join(BASE, f"coordenadas_{COMBO}_total.csv")
+    salida_fit = os.path.join(BASE, "Datos", "Estudio", "D_Ang_Sigma_Lorentz",
+                              f"fits_s{sigma_hit:.3f}_{D:.1f}_{ang:.0f}.txt")
+    RUTA_PLOTS = os.path.join(BASE, "Plots", "D_Ang_Sigma_Lorentz")
+    os.makedirs(os.path.dirname(salida_fit), exist_ok=True)
+    os.makedirs(RUTA_PLOTS, exist_ok=True)
+
+    print(f"\n  D={D:.1f}cm  ang={ang}°  sigma={sigma_hit:.3f}mm")
+
+    df     = pd.read_csv(archivo)
+    coords = df[['X','Y','Z']].to_numpy().reshape(-1,4,3)
+
+    coords_smeared = coords.copy()
+    valid = coords[:,:,0] != -99999
+    coords_smeared[:,:,0][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords_smeared[:,:,2][valid] += np.random.normal(0, sigma_hit, np.sum(valid))
+    coords = coords_smeared
+
+    mask     = np.all(coords != -99999, axis=2)
+    hits     = mask.sum(axis=1)
+    eventos3 = np.where(hits == 3)[0]
+    eventos4 = np.where(hits == 4)[0]
+
+    # 3 HITS
+    coords3 = coords[eventos3]; mask3 = mask[eventos3]
+    coords_validos = np.array([ev[m] for ev,m in zip(coords3,mask3)])
+    coords_validos = np.array([ev[np.argsort(ev[:,1])] for ev in coords_validos])
+    x3,y3,z3 = coords_validos[:,:,0],coords_validos[:,:,1],coords_validos[:,:,2]
+    x_izq,x_mid,x_der = x3.T; y_izq,y_mid,y_der = y3.T; z_izq,z_mid,z_der = z3.T
+    m_x = (x_izq-x_der)/(y_izq-y_der); x_teo = m_x*y_mid+(x_izq-m_x*y_izq)
+    resX3 = x_mid-x_teo; resX3_cut = aplicar_percentil(resX3)
+    m_z = (z_izq-z_der)/(y_izq-y_der); z_teo = m_z*y_mid+(z_izq-m_z*y_izq)
+    resZ3 = z_mid-z_teo; resZ3_cut = aplicar_percentil(resZ3)
+
+    # 4 HITS
+    combos  = np.array([[0,1,2],[0,1,3],[0,2,3],[1,2,3]])
+    coords4 = coords[eventos4]
+    coords4 = np.array([ev[np.argsort(ev[:,1])] for ev in coords4])
+    coords4 = coords4[:,combos]
+    x4,y4,z4 = coords4[:,:,:,0],coords4[:,:,:,1],coords4[:,:,:,2]
+    m_x = (x4[:,:,0]-x4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    x_teo = m_x*y4[:,:,1]+(x4[:,:,0]-m_x*y4[:,:,0])
+    resX_all = x4[:,:,1]-x_teo
+    resX4 = resX_all[np.arange(len(resX_all)), np.argmin(np.abs(resX_all),axis=1)]
+    resX4_cut = aplicar_percentil(resX4)
+    m_z = (z4[:,:,0]-z4[:,:,2])/(y4[:,:,0]-y4[:,:,2])
+    z_teo = m_z*y4[:,:,1]+(z4[:,:,0]-m_z*y4[:,:,0])
+    resZ_all = z4[:,:,1]-z_teo
+    resZ4 = resZ_all[np.arange(len(resZ_all)), np.argmin(np.abs(resZ_all),axis=1)]
+    resZ4_cut = aplicar_percentil(resZ4)
+
+    cp95_X3 = (np.percentile(resX3,2.5), np.percentile(resX3,97.5))
+    cp95_Z3 = (np.percentile(resZ3,2.5), np.percentile(resZ3,97.5))
+    cp95_X4 = (np.percentile(resX4,2.5), np.percentile(resX4,97.5))
+    cp95_Z4 = (np.percentile(resZ4,2.5), np.percentile(resZ4,97.5))
+
+    f_info = open(salida_fit, "w", encoding="utf-8")
+    f_info.write(f"D={D:.1f}cm  ang={ang}°  sigma_hit={sigma_hit:.3f}mm\n")
+    f_info.write(f"Eventos 3 hits: {len(eventos3)}  Eventos 4 hits: {len(eventos4)}\n")
+
+    def hacer_plots(data, x_fit, hist, centers, bins, fits, corte_p95, titulo, ruta_base):
+        margen = max(abs(corte_p95[0]), abs(corte_p95[1])) * 1.05
+        for escala in ['lineal', 'log']:
+            fig, ax = plt.subplots(figsize=(8,6))
+            if escala == 'lineal':
+                ax.hist(data, bins=60, alpha=0.6, label=f"Datos (p95) N={len(data)}")
+            else:
+                w = bins[1]-bins[0]; mp = hist>0
+                ax.bar(centers[mp], hist[mp], width=w, alpha=0.6,
+                       label=f"Datos (p95) N={len(data)}")
+                ax.set_yscale('log')
+            for (xf,yf,kw) in fits:
+                ax.plot(xf, yf, **kw)
+            ax.axvline(corte_p95[0], color='magenta', linewidth=1.5,
+                       label=f"p95: [{corte_p95[0]:.3f},{corte_p95[1]:.3f}] mm")
+            ax.axvline(corte_p95[1], color='magenta', linewidth=1.5)
+            ax.set_xlim(-margen, margen)
+            ax.set_title(f"{titulo}\nD={D:.1f}cm ang={ang}° sigma={sigma_hit:.3f}mm")
+            ax.set_xlabel("Residual [mm]")
+            ax.set_ylabel("Counts" if escala=='lineal' else "Counts (log)")
+            ax.legend(fontsize=7); ax.grid(which='both', linestyle='--', alpha=0.5)
+            fig.savefig(f"{ruta_base}_{escala}.png", dpi=150); plt.close(fig)
+
+    def analizar_3hits(data, data_full, corte_p95, titulo):
+        hist, bins = np.histogram(data, bins=60)
+        centers    = (bins[:-1]+bins[1:])/2
+        gamma0     = np.std(data)*0.5
+        x_fit      = np.linspace(corte_p95[0], corte_p95[1], 300)
+        try:
+            pl, cl = curve_fit(lorentz, centers, hist,
+                               p0=[max(hist),0,gamma0],
+                               bounds=([0,-0.5,0],[np.inf,0.5,np.inf]), maxfev=10000)
+            A_l,mu_l,gamma_l = [float(p) for p in pl]
+            err_gl = float(np.sqrt(np.diag(cl))[2])
+        except RuntimeError:
+            print(f"  Fit fallido: {titulo}"); return
+        fits = [(x_fit, lorentz(x_fit,A_l,mu_l,gamma_l),
+                 {'color':'blue','linewidth':2,
+                  'label':f"Lorentz: gamma={gamma_l:.3f}+-{err_gl:.3f} mu={mu_l:.3f}"})]
+        nombre = titulo.replace(" ","_").replace("(","").replace(")","")
+        hacer_plots(data, x_fit, hist, centers, bins, fits, corte_p95, titulo,
+                    os.path.join(RUTA_PLOTS, f"{nombre}_{D:.1f}_{ang:.0f}_{sigma_hit:.3f}"))
+        f_info.write(f"\n--- {titulo} ---\n")
+        f_info.write(f"N total: {len(data_full)}  N tras p95: {len(data)}\n")
+        f_info.write(f"Corte p95: [{corte_p95[0]:.4f},{corte_p95[1]:.4f}] mm\n")
+        f_info.write(f"Lorentz simple: mu={mu_l:.4f} gamma={gamma_l:.4f}+-{err_gl:.4f}\n")
+
+    def analizar_4hits(data, data_full, corte_p95, titulo):
+        hist, bins = np.histogram(data, bins=60)
+        centers    = (bins[:-1]+bins[1:])/2
+        gamma0     = np.std(data)*0.5
+        x_fit      = np.linspace(corte_p95[0], corte_p95[1], 300)
+        try:
+            pdl, cdl = curve_fit(double_lorentz, centers, hist,
+                                 p0=[max(hist),gamma0*0.3,max(hist)/5,gamma0*1.5,0],
+                                 bounds=([0,0,0,0,-0.1],[np.inf,np.inf,np.inf,np.inf,0.1]),
+                                 maxfev=10000)
+        except RuntimeError:
+            print(f"  Fit doble fallido: {titulo}"); return
+        A1,g1,A2,g2,mu_dl = [float(p) for p in pdl]
+        errs = np.sqrt(np.diag(cdl))
+        eg1,eg2 = float(errs[1]),float(errs[3])
+        if g1>g2: A1,A2=A2,A1; g1,g2=g2,g1; eg1,eg2=eg2,eg1
+        if g1<=0 or g2<=0 or g1>5 or g2>5:
+            print(f"  Fit doble no fisico: {titulo}"); return
+        gamma_eff = (A1*g1+A2*g2)/(A1+A2)
+        fits = [(x_fit, double_lorentz(x_fit,A1,g1,A2,g2,mu_dl),
+                 {'color':'red','linewidth':2,
+                  'label':f"Doble: g1={g1:.3f}, g2={g2:.3f}"}),
+                (x_fit, lorentz(x_fit,A1,mu_dl,g1),
+                 {'linestyle':'--','color':'blue','linewidth':1.5,
+                  'label':f"Core: g1={g1:.3f}"}),
+                (x_fit, lorentz(x_fit,A2,mu_dl,g2),
+                 {'linestyle':'--','color':'orange','linewidth':1.5,
+                  'label':f"Cola: g2={g2:.3f}"})]
+        nombre = titulo.replace(" ","_").replace("(","").replace(")","")
+        hacer_plots(data, x_fit, hist, centers, bins, fits, corte_p95, titulo,
+                    os.path.join(RUTA_PLOTS, f"{nombre}_{D:.1f}_{ang:.0f}_{sigma_hit:.3f}"))
+        f_info.write(f"\n--- {titulo} ---\n")
+        f_info.write(f"N total: {len(data_full)}  N tras p95: {len(data)}\n")
+        f_info.write(f"Corte p95: [{corte_p95[0]:.4f},{corte_p95[1]:.4f}] mm\n")
+        f_info.write(f"Doble Lorentz: mu={mu_dl:.4f}\n")
+        f_info.write(f"   gamma1 (core)={g1:.4f}+-{eg1:.4f}\n")
+        f_info.write(f"   gamma2 (cola)={g2:.4f}+-{eg2:.4f}\n")
+        f_info.write(f"   gamma_eff={gamma_eff:.4f}\n")
+
+    analizar_3hits(resX3_cut, resX3, cp95_X3, "Residual X (3 hits)")
+    analizar_3hits(resZ3_cut, resZ3, cp95_Z3, "Residual Z (3 hits)")
+    analizar_4hits(resX4_cut, resX4, cp95_X4, "Residual X (4 hits)")
+    analizar_4hits(resZ4_cut, resZ4, cp95_Z4, "Residual Z (4 hits)")
+    f_info.close()
+
+for sigma_hit in valores_sigma:
+    for D in valores_D:
+        for ang in valores_ang:
+            try:
+                ejecutar_analisis(D, ang, sigma_hit)
+            except Exception as e:
+                print(f"  Error D={D} ang={ang} sigma={sigma_hit}: {e}")

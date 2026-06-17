@@ -1,0 +1,68 @@
+import os, re
+import numpy as np
+
+BASE    = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        '..', '..'))
+carpeta = os.path.join(BASE, "Datos", "Estudio", "D_Ang_Sigma_Combinado_Lorentz")
+
+valores_D     = [7.0, 13.0, 20.0, 30.0]
+valores_ang   = [0,   20,   40,   60]
+valores_sigma = [0.050, 0.085, 0.130, 0.200]
+
+pat_gs  = r'Lorentz simple: mu=[\d\.\-]+ gamma=([\d\.]+)\+\-([\d\.]+)'
+pat_g1  = r'gamma1 \(core\)=([\d\.]+)\+\-([\d\.]+)'
+pat_g2  = r'gamma2 \(cola\)=([\d\.]+)\+\-([\d\.]+)'
+pat_ge  = r'gamma_eff=([\d\.]+)'
+pat_p95 = r'Corte p95: \[([-\d\.]+),([\d\.]+)\] mm'
+
+def extraer_bloque(cont, titulo):
+    m = re.search(rf'--- {re.escape(titulo)} ---(.*?)(?=\n---|$)', cont, re.DOTALL)
+    return m.group(1) if m else None
+
+def get_gs(b):
+    if not b: return "NaN","NaN"
+    m = re.search(pat_gs,b); return (m.group(1),m.group(2)) if m else ("NaN","NaN")
+
+def get_doble(b):
+    if not b: return "NaN","NaN","NaN","NaN","NaN"
+    g1=re.search(pat_g1,b); g2=re.search(pat_g2,b); ge=re.search(pat_ge,b)
+    return (g1.group(1) if g1 else "NaN", g1.group(2) if g1 else "NaN",
+            g2.group(1) if g2 else "NaN", g2.group(2) if g2 else "NaN",
+            ge.group(1) if ge else "NaN")
+
+def get_p95(b):
+    if not b: return "NaN","NaN"
+    m = re.search(pat_p95,b); return (m.group(1),m.group(2)) if m else ("NaN","NaN")
+
+salida = os.path.join(carpeta, "todos_D_ang_sigma.txt")
+with open(salida,"w",encoding="utf-8") as sal:
+    sal.write(
+        "sigma\tD\tang\t"
+        "X_gamma_s\tX_err_s\tX_gamma1\tX_err1\tX_gamma2\tX_err2\tX_gamma_eff\tX_p95_lo\tX_p95_hi\t"
+        "Z_gamma_s\tZ_err_s\tZ_gamma1\tZ_err1\tZ_gamma2\tZ_err2\tZ_gamma_eff\tZ_p95_lo\tZ_p95_hi\n"
+    )
+    for sigma in valores_sigma:
+        for D in valores_D:
+            for ang in valores_ang:
+                arch = os.path.join(carpeta,
+                                    f"fits_s{sigma:.3f}_{D:.1f}_{ang:.0f}.txt")
+                print(f"sigma={sigma}  D={D}  ang={ang}")
+                try:
+                    with open(arch,"r",encoding="utf-8",errors="ignore") as f:
+                        cont = f.read()
+                    bX = extraer_bloque(cont,"Combinado X (3+4 hits)")
+                    bZ = extraer_bloque(cont,"Combinado Z (3+4 hits)")
+                    xgs,xes=get_gs(bX); xp=get_p95(bX)
+                    xg1,xe1,xg2,xe2,xge=get_doble(bX)
+                    zgs,zes=get_gs(bZ); zp=get_p95(bZ)
+                    zg1,ze1,zg2,ze2,zge=get_doble(bZ)
+                    sal.write(
+                        f"{sigma}\t{D}\t{ang}\t"
+                        f"{xgs}\t{xes}\t{xg1}\t{xe1}\t{xg2}\t{xe2}\t{xge}\t{xp[0]}\t{xp[1]}\t"
+                        f"{zgs}\t{zes}\t{zg1}\t{ze1}\t{zg2}\t{ze2}\t{zge}\t{zp[0]}\t{zp[1]}\n"
+                    )
+                except FileNotFoundError:
+                    print(f"  AVISO: no encontrado")
+                    sal.write(f"{sigma}\t{D}\t{ang}\t"+"NaN\t"*18+"\n")
+
+print(f"\nGuardado: {salida}")

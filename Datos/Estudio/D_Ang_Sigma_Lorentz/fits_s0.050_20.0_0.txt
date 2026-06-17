@@ -1,0 +1,28 @@
+D=20.0cm  ang=0°  sigma_hit=0.050mm
+Eventos 3 hits: 35702  Eventos 4 hits: 105690
+
+--- Residual X (3 hits) ---
+N total: 35702  N tras p95: 33916
+Corte p95: [-0.8803,0.9122] mm
+Lorentz simple: mu=-0.0001 gamma=0.0751+-0.0021
+
+--- Residual Z (3 hits) ---
+N total: 35702  N tras p95: 33916
+Corte p95: [-0.9060,0.8628] mm
+Lorentz simple: mu=0.0006 gamma=0.0764+-0.0023
+
+--- Residual X (4 hits) ---
+N total: 105690  N tras p95: 100404
+Corte p95: [-0.1241,0.1227] mm
+Doble Lorentz: mu=0.0002
+   gamma1 (core)=0.0065+-0.0005
+   gamma2 (cola)=0.0322+-0.0010
+   gamma_eff=0.0202
+
+--- Residual Z (4 hits) ---
+N total: 105690  N tras p95: 100404
+Corte p95: [-0.1216,0.1232] mm
+Doble Lorentz: mu=0.0000
+   gamma1 (core)=0.0067+-0.0006
+   gamma2 (cola)=0.0328+-0.0012
+   gamma_eff=0.0203
