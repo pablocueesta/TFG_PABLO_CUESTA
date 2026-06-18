@@ -54,8 +54,9 @@ def get_nominal(valores):
 
 def matriz_mapas(valores, titulo_base, nombre_base):
     fig, axes = plt.subplots(1, 4, figsize=(20,5))
-    fig.suptitle(f"{titulo_base} — mapa D×θ para cada σ_hit\n"
-                 f"(cada mapa normalizado a su propio nominal: D={D_NOM:.0f}cm, θ=0°)")
+    fig.suptitle(f"{titulo_base} — Mapa D×θ para cada σ_hit\n"
+                 #f"(cada mapa normalizado a su propio nominal: D={D_NOM:.0f}cm, θ=0°)"
+                )
 
     for idx, s in enumerate(sigma_vals):
         ax = axes[idx]
@@ -87,7 +88,7 @@ def matriz_mapas(valores, titulo_base, nombre_base):
 
         sc=ax.scatter(xs,ys,c=ns,cmap=CMAP,norm=norm,
                       s=800,zorder=3,edgecolors='gray',linewidths=0.5)
-        fig.colorbar(sc,ax=ax,label="Valor norm.")
+        fig.colorbar(sc,ax=ax,label="Valor nominal normalizado")
 
         for xi,yi,vi,ni in zip(xs,ys,vs,ns):
             pct=(ni-1)*100; sign='+' if pct>=0 else ''
@@ -100,7 +101,7 @@ def matriz_mapas(valores, titulo_base, nombre_base):
         ax.set_yticks(ang_vals); ax.set_yticklabels([f"{a:.0f}" for a in ang_vals])
         ax.set_xlim(D_vals[0]-4,D_vals[-1]+4)
         ax.set_ylim(ang_vals[0]-8,ang_vals[-1]+8)
-        ax.set_xlabel("D [cm]"); ax.set_ylabel("θ [grados]")
+        ax.set_xlabel("D [cm]"); ax.set_ylabel("θ (°)")
 
     fig.tight_layout()
     fig.savefig(os.path.join(out_mapas,f"{nombre_base}_matriz.png"),dpi=200)
@@ -159,21 +160,21 @@ def evolucion_vs_D(valores, err, titulo_base, nombre_base, label_y):
     print(f"Guardado: {nombre_base}_vs_D.png")
 
 # matriz de mapas D×theta para cada sigma
-matriz_mapas(X_g1, "gamma1 core X combinado", "comb_X_g1")
-matriz_mapas(X_g2, "gamma2 cola X combinado", "comb_X_g2")
-matriz_mapas(Z_g1, "gamma1 core Z combinado", "comb_Z_g1")
-matriz_mapas(Z_g2, "gamma2 cola Z combinado", "comb_Z_g2")
+matriz_mapas(X_g1, "Mapas gamma1 (mm) eje X", "comb_X_g1")
+matriz_mapas(X_g2, "Mapas gamma2 (mm) eje X", "comb_X_g2")
+matriz_mapas(Z_g1, "Mapas gamma1 (mm) eje Z", "comb_Z_g1")
+matriz_mapas(Z_g2, "Mapas gamma2 (mm) eje Z", "comb_Z_g2")
 
 # evolución vs sigma_hit
-evolucion_vs_sigma(X_g1, X_e1, "gamma1 core X combinado", "comb_X_g1", "γ₁ [mm]")
-evolucion_vs_sigma(X_g2, X_e2, "gamma2 cola X combinado", "comb_X_g2", "γ₂ [mm]")
-evolucion_vs_sigma(Z_g1, Z_e1, "gamma1 core Z combinado", "comb_Z_g1", "γ₁ [mm]")
-evolucion_vs_sigma(Z_g2, Z_e2, "gamma2 cola Z combinado", "comb_Z_g2", "γ₂ [mm]")
+evolucion_vs_sigma(X_g1, X_e1, "Evolución gamma1 (mm) eje X", "comb_X_g1", "γ₁ [mm]")
+evolucion_vs_sigma(X_g2, X_e2, "Evolución gamma2 (mm) eje X", "comb_X_g2", "γ₂ [mm]")
+evolucion_vs_sigma(Z_g1, Z_e1, "Evolución gamma1 (mm) eje Z", "comb_Z_g1", "γ₁ [mm]")
+evolucion_vs_sigma(Z_g2, Z_e2, "Evolución gamma2 (mm) eje Z", "comb_Z_g2", "γ₂ [mm]")
 
 # evolución vs D para cada sigma (theta=0)
-evolucion_vs_D(X_g1, X_e1, "gamma1 core X combinado", "comb_X_g1", "γ₁ [mm]")
-evolucion_vs_D(X_g2, X_e2, "gamma2 cola X combinado", "comb_X_g2", "γ₂ [mm]")
-evolucion_vs_D(Z_g1, Z_e1, "gamma1 core Z combinado", "comb_Z_g1", "γ₁ [mm]")
-evolucion_vs_D(Z_g2, Z_e2, "gamma2 cola Z combinado", "comb_Z_g2", "γ₂ [mm]")
+evolucion_vs_D(X_g1, X_e1, "Evolución gamma1 (mm) eje X", "comb_X_g1", "γ₁ [mm]")
+evolucion_vs_D(X_g2, X_e2, "Evolución gamma2 (mm) eje X", "comb_X_g2", "γ₂ [mm]")
+evolucion_vs_D(Z_g1, Z_e1, "Evolución gamma1 (mm) eje Z", "comb_Z_g1", "γ₁ [mm]")
+evolucion_vs_D(Z_g2, Z_e2, "Evolución gamma2 (mm) eje Z", "comb_Z_g2", "γ₂ [mm]")
 
 print("\nSC3 combinado completado.")
