@@ -66,7 +66,7 @@ def hacer_figura(indices, titulo, nombre_archivo):
             err = coefs[caso][ci][1] * escala
             color = colores_caso[caso]
             ax.bar(ki, val, color=color, alpha=0.85, width=0.7)
-            ax.errorbar(ki, val, yerr=err, fmt='none', color='black',
+            ax.errorbar(ki, val, yerr=2*err, fmt='none', color='black',
                         capsize=3, linewidth=1.2)
         ax.axhline(0, color='black', linewidth=0.8)
         ax.set_title(f"{nombre}\n{unidad}", fontsize=8)
@@ -86,10 +86,10 @@ def hacer_figura(indices, titulo, nombre_archivo):
 
 # figura 1: efectos principales (a0, a1, a2, a3)
 hacer_figura([0, 1, 2, 3],
-             r"Efectos principales: $a_0$, $a_1$ ($\sigma$), $a_2$ ($D$), $a_3$ ($\theta$)",
+             r"Efectos principales: $a_0$, $a_1$ ($\sigma_{hit}$), $a_2$ ($D$), $a_3$ ($\theta$)",
              "coeficientes_principales.png")
 
 # figura 2: interacciones (a12, a13, a23)
 hacer_figura([4, 5, 6],
-             r"Términos de interacción: $a_{12}$ ($\sigma D$), $a_{13}$ ($\sigma\theta$), $a_{23}$ ($D\theta$)",
+             r"Términos de interacción: $a_{12}$ ($\sigma_{hit} D$), $a_{13}$ ($\sigma_{hit}\theta$), $a_{23}$ ($D\theta$)",
              "coeficientes_interacciones.png")
