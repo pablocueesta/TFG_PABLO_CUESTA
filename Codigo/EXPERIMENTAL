@@ -1,0 +1,311 @@
+import os
+import re
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+# --------------------------------------------------
+# RUTAS
+# --------------------------------------------------
+
+CARPETA_DATOS   = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Experimentales"
+CARPETA_SALIDA  = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Resolucion_Experimental_Multivariable"
+ARCHIVO_RESUMEN = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\resolucion_experimental_multivariable.txt"
+
+os.makedirs(CARPETA_SALIDA, exist_ok=True)
+
+N_BINS = 100
+LIMITE = 10.0   # mm, truncado fisico del detector
+D_FIJO = 13.0   # cm, separacion experimental de los tres detectores (tramo D<=20cm)
+
+# --------------------------------------------------
+# MODELO MULTIVARIABLE: coeficientes (tramo D<=20cm, excl. theta=60)
+# gamma = a0 + a1*sigma + a2*D + a3*theta + a12*sigma*D + a13*sigma*theta + a23*D*theta
+# --------------------------------------------------
+
+# eje X simulado (= eje Y experimental, el que se rota)
+COEF_G1_SIM_X = dict(a0=0.006359, a1=0.0247, a2=-0.00029, a3=0.0,
+                      a12=0.00502, a13=0.0,      a23=0.0)
+COEF_G2_SIM_X = dict(a0=0.006427, a1=0.2087, a2=0.0,      a3=0.0,
+                      a12=0.02280, a13=0.000655, a23=0.0)
+
+# eje Z simulado (= eje X experimental, recibe el efecto de rotar X_sim)
+COEF_G1_SIM_Z = dict(a0=0.004853, a1=0.0484, a2=-0.00021, a3=0.0,
+                      a12=0.00354, a13=0.0,      a23=0.0)
+COEF_G2_SIM_Z = dict(a0=0.004463, a1=0.2302, a2=0.00017,  a3=0.0,
+                      a12=0.02092, a13=0.000715, a23=0.0)
+
+def gamma_modelo(sigma, D, theta, c):
+    return (c['a0'] + c['a1']*sigma + c['a2']*D + c['a3']*theta
+            + c['a12']*sigma*D + c['a13']*sigma*theta + c['a23']*D*theta)
+
+def despejar_sigma(gamma_exp, err_gamma_exp, D, theta, c):
+    """
+    gamma = a0 + a1*sigma + a2*D + a3*theta + a12*sigma*D + a13*sigma*theta + a23*D*theta
+    Agrupando terminos en sigma:
+      gamma - (a0 + a2*D + a3*theta + a23*D*theta) = sigma*(a1 + a12*D + a13*theta)
+      sigma = [gamma - a0 - a2*D - a3*theta - a23*D*theta] / (a1 + a12*D + a13*theta)
+    Propagacion de error simple (solo error de gamma_exp, los coeficientes se asumen fijos):
+      err_sigma = err_gamma_exp / (a1 + a12*D + a13*theta)
+    """
+    denom = c['a1'] + c['a12']*D + c['a13']*theta
+    if denom == 0 or not np.isfinite(gamma_exp):
+        return np.nan, np.nan
+    num = gamma_exp - c['a0'] - c['a2']*D - c['a3']*theta - c['a23']*D*theta
+    sigma_est = num / denom
+    err_sigma = err_gamma_exp / abs(denom)
+    return sigma_est, err_sigma
+
+# --------------------------------------------------
+# FUNCIONES DE AJUSTE LORENTZIANO
+# --------------------------------------------------
+
+def lorentz(x, A, mu, gamma):
+    return A / (1 + ((x - mu) / gamma)**2)
+
+def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
+    return (A1 / (1 + ((x - mu) / gamma1)**2)
+            + A2 / (1 + ((x - mu) / gamma2)**2))
+
+def chi2_reducido(y_data, y_fit, n_params):
+    mask = y_data > 0
+    r    = y_data[mask] - y_fit[mask]
+    chi2 = np.sum(r**2 / y_data[mask])
+    ndf  = np.sum(mask) - n_params
+    return np.nan if ndf <= 0 else chi2 / ndf
+
+def aplicar_percentil(data, p=95):
+    """Recorta los datos al percentil p central, igual que en las simulaciones."""
+    low  = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100-(100-p)/2)
+    return data[(data > low) & (data < high)], low, high
+
+# --------------------------------------------------
+# ARCHIVOS Y CORRESPONDENCIA DE EJES
+# --------------------------------------------------
+# X_exp <-> Z_sim   (recibe el efecto de rotar en X_sim)
+# Y_exp <-> X_sim   (eje que se rota experimentalmente, equivalente a rotar X_sim)
+# Z_exp <-> Y_sim   (vertical/zenith, no medido en el residual)
+
+archivos = {
+    'resx_einstein': ('einstein', 'X', 0),
+    'resy_einstein': ('einstein', 'Y', 0),
+    'resx_fermi':    ('fermi',    'X', 0),
+    'resy_fermi':    ('fermi',    'Y', 0),
+    'resx_fert':     ('fert',     'X', 30),
+    'resy_fert':     ('fert',     'Y', 30),
+}
+
+with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
+
+    f_res.write("ESTIMACION DE RESOLUCION INTRINSECA - MODELO MULTIVARIABLE\n")
+    f_res.write("="*70 + "\n")
+    f_res.write("Modelo: gamma = a0+a1*sigma+a2*D+a3*theta+a12*sigma*D+a13*sigma*theta+a23*D*theta\n")
+    f_res.write(f"D fijo = {D_FIJO} cm (tramo D<=20cm)\n")
+    f_res.write("Correspondencia de ejes: X_exp<->Z_sim, Y_exp<->X_sim, Z_exp<->Y_sim\n\n")
+
+    for nombre, (det, coord_exp, theta) in archivos.items():
+
+        print(f"\n{'='*50}")
+        print(f"Procesando: {nombre}  (det={det}, coord_exp={coord_exp}, theta={theta}°)")
+
+        ruta = os.path.join(CARPETA_DATOS, f"{nombre}.txt")
+
+        # correspondencia: coord_exp 'X' -> eje Z simulado ; coord_exp 'Y' -> eje X simulado
+        if coord_exp == 'X':
+            coef_g1, coef_g2 = COEF_G1_SIM_Z, COEF_G2_SIM_Z
+            eje_sim = 'Z'
+        else:  # 'Y'
+            coef_g1, coef_g2 = COEF_G1_SIM_X, COEF_G2_SIM_X
+            eje_sim = 'X'
+
+        nota = f" [X_exp<->Z_sim]" if coord_exp == 'X' else f" [Y_exp<->X_sim]"
+
+        # leer datos (solo residuales, una columna)
+        data_full = np.loadtxt(ruta)
+        data_full = data_full[np.isfinite(data_full)]
+        data_full = data_full[np.abs(data_full) <= LIMITE]
+        N_full = len(data_full)
+
+        # aplicar percentil 95% real de la distribucion (igual que en las simulaciones)
+        # en lugar de usar el corte fisico fijo de +-10mm para el ajuste
+        data, p95_lo, p95_hi = aplicar_percentil(data_full, p=95)
+        N = len(data)
+        margen_p95 = max(abs(p95_lo), abs(p95_hi))
+
+        print(f"  N_total={N_full}  N_tras_p95={N}  p95=[{p95_lo:.4f}, {p95_hi:.4f}] mm")
+        print(f"  std(total)={data_full.std():.4f} mm  std(p95)={data.std():.4f} mm  mediana={np.median(data):.4f} mm")
+
+        # histograma SOLO sobre los datos recortados al percentil 95
+        hist, bins = np.histogram(data, bins=N_BINS, range=(-margen_p95, margen_p95))
+        centers    = (bins[:-1] + bins[1:]) / 2
+        width      = bins[1] - bins[0]
+        gamma0     = data.std() * 0.5
+
+        # ---- fit Lorentz simple (referencia) ----
+        simple_ok = False
+        try:
+            ps, covs = curve_fit(
+                lorentz, centers, hist,
+                p0=[max(hist), np.median(data), gamma0],
+                bounds=([0, -margen_p95, 0.001], [np.inf, margen_p95, margen_p95*2]),
+                maxfev=20000)
+            A_s, mu_s, gamma_s = [float(p) for p in ps]
+            err_gs = float(np.sqrt(np.diag(covs))[2])
+            chi2_s = chi2_reducido(hist, lorentz(centers, A_s, mu_s, gamma_s), 3)
+            simple_ok = True
+            print(f"  Lorentz simple: gamma={gamma_s:.4f}+-{err_gs:.4f}  chi2/ndf={chi2_s:.2f}")
+        except RuntimeError:
+            print(f"  Fit Lorentz simple fallido")
+            gamma_s = err_gs = chi2_s = np.nan
+
+        # ---- fit doble Lorentz (el que se usa para el modelo) ----
+        double_ok = False
+        try:
+            pd0 = [max(hist), gamma0*0.3, max(hist)/5, gamma0*2.0, float(np.median(data))]
+            pdl, covdl = curve_fit(
+                double_lorentz, centers, hist,
+                p0=pd0,
+                bounds=([0,0.001,0,0.001,-margen_p95],[np.inf,margen_p95*2,np.inf,margen_p95*2,margen_p95]),
+                maxfev=20000)
+            A1,g1,A2,g2,mu_dl = [float(p) for p in pdl]
+            errs = np.sqrt(np.diag(covdl))
+            eg1, eg2 = float(errs[1]), float(errs[3])
+            if g1 > g2:
+                A1,A2 = A2,A1; g1,g2 = g2,g1; eg1,eg2 = eg2,eg1
+            if 0 < g1 < margen_p95*2 and 0 < g2 < margen_p95*2:
+                double_ok = True
+                chi2_dl   = chi2_reducido(hist, double_lorentz(centers,A1,g1,A2,g2,mu_dl), 5)
+                print(f"  Doble Lorentz: gamma1={g1:.4f}  gamma2={g2:.4f}  chi2/ndf={chi2_dl:.2f}")
+        except RuntimeError:
+            print(f"  Fit doble Lorentz fallido")
+
+        # ---- estimacion de sigma_hit con el modelo multivariable ----
+        resultados = {}
+
+        if double_ok:
+            sh1, esh1 = despejar_sigma(g1, eg1, D_FIJO, theta, coef_g1)
+            resultados['gamma1 (core)'] = (g1, eg1, sh1, esh1)
+            print(f"  -> sigma_hit (core, gamma1):  {sh1:.4f} +- {esh1:.4f} mm")
+
+            sh2, esh2 = despejar_sigma(g2, eg2, D_FIJO, theta, coef_g2)
+            resultados['gamma2 (cola)'] = (g2, eg2, sh2, esh2)
+            print(f"  -> sigma_hit (cola, gamma2):  {sh2:.4f} +- {esh2:.4f} mm  <-- RESULTADO ESPERADO")
+
+        # ---- PLOT 1: curva del modelo (gamma vs sigma a D,theta fijos) + punto experimental ----
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+        fig.suptitle(f"{nombre}{nota}  (eje_sim={eje_sim}, D={D_FIJO}cm, θ={theta}°)", fontsize=11)
+
+        ax = axes[0]
+        sigma_max = 0.30
+        if 'gamma2 (cola)' in resultados and np.isfinite(resultados['gamma2 (cola)'][2]):
+            sigma_max = max(sigma_max, resultados['gamma2 (cola)'][2] * 1.4)
+
+        sf = np.linspace(0, sigma_max, 300)
+
+        # curva gamma1 del modelo
+        g1_curva = gamma_modelo(sf, D_FIJO, theta, coef_g1)
+        ax.plot(sf, g1_curva, color='blue', linewidth=2,
+                label=f'Modelo γ1 (D={D_FIJO}, θ={theta}°)')
+
+        # curva gamma2 del modelo
+        g2_curva = gamma_modelo(sf, D_FIJO, theta, coef_g2)
+        ax.plot(sf, g2_curva, color='red', linewidth=2,
+                label=f'Modelo γ2 (D={D_FIJO}, θ={theta}°)')
+
+        if double_ok:
+            # punto gamma1
+            ax.axhline(g1, color='blue', linestyle='--', linewidth=1.2,
+                       label=f'γ1_exp = {g1:.4f} mm')
+            sh1, esh1 = resultados['gamma1 (core)'][2:]
+            if np.isfinite(sh1) and sh1 > 0:
+                ax.axvline(sh1, color='blue', linestyle=':', linewidth=1.2,
+                           label=f'σ_hit (γ1) = {sh1:.4f}+-{esh1:.4f} mm')
+                ax.plot(sh1, g1, 's', color='darkblue', markersize=10, zorder=5)
+
+            # punto gamma2 (resultado principal)
+            ax.axhline(g2, color='red', linestyle='--', linewidth=1.5,
+                       label=f'γ2_exp = {g2:.4f} mm')
+            sh2, esh2 = resultados['gamma2 (cola)'][2:]
+            if np.isfinite(sh2) and sh2 > 0:
+                ax.axvline(sh2, color='red', linestyle=':', linewidth=1.5,
+                           label=f'σ_hit (γ2) = {sh2:.4f}+-{esh2:.4f} mm')
+                ax.plot(sh2, g2, 'o', color='darkred', markersize=12, zorder=5,
+                        label='Punto resolución (γ2, esperado)')
+
+        ax.set_xlim(left=0, right=sigma_max)
+        ax.set_ylim(bottom=0)
+        ax.set_xlabel("σ_hit [mm]")
+        ax.set_ylabel("γ [mm]")
+        ax.set_title("Modelo multivariable: γ(σ_hit, D, θ) fijos D y θ\ne interpolación inversa")
+        ax.legend(fontsize=7)
+        ax.grid()
+
+        # ---- PLOT 2: histograma experimental con fits ----
+        ax2 = axes[1]
+        mask_pos = hist > 0
+        ax2.bar(centers[mask_pos], hist[mask_pos], width=width,
+                alpha=0.6, color='steelblue', label=f"Datos (p95) N={N:,}")
+
+        x_fit = np.linspace(-margen_p95, margen_p95, 800)
+        if simple_ok:
+            ax2.plot(x_fit, lorentz(x_fit, A_s, mu_s, gamma_s),
+                     color='orange', linewidth=2,
+                     label=f"Lorentz simple: γ={gamma_s:.3f}")
+        if double_ok:
+            ax2.plot(x_fit, double_lorentz(x_fit, A1, g1, A2, g2, mu_dl),
+                     color='red', linewidth=2,
+                     label=f"Doble Lorentz: g1={g1:.3f}, g2={g2:.3f}")
+            ax2.plot(x_fit, lorentz(x_fit, A1, mu_dl, g1),
+                     '--', color='blue', linewidth=1.5, label=f"Core: g1={g1:.3f}")
+            ax2.plot(x_fit, lorentz(x_fit, A2, mu_dl, g2),
+                     '--', color='green', linewidth=1.5, label=f"Cola: g2={g2:.3f}")
+
+        ax2.axvline(p95_lo, color='magenta', linestyle='-', linewidth=1.5,
+                   label=f"p95: [{p95_lo:.3f},{p95_hi:.3f}] mm (N_total={N_full:,})")
+        ax2.axvline(p95_hi, color='magenta', linestyle='-', linewidth=1.5)
+
+        ax2.set_yscale('log')
+        ax2.set_xlabel("Residual [mm]")
+        ax2.set_ylabel("Counts (log)")
+        ax2.set_title("Distribución experimental [log]\n(recortada al percentil 95%)")
+        ax2.legend(fontsize=7)
+        ax2.grid(which='both', linestyle='--', alpha=0.5)
+
+        plt.tight_layout()
+        fig.savefig(os.path.join(CARPETA_SALIDA, f"{nombre}_resolucion_multivariable.png"), dpi=150)
+        plt.close(fig)
+        print(f"  Plot guardado: {nombre}_resolucion_multivariable.png")
+
+        # ---- escribir resumen ----
+        f_res.write(f"\n{'='*50}\n")
+        f_res.write(f"Detector: {det.upper()}  Coord_exp: {coord_exp}  -> eje_sim: {eje_sim}"
+                    f"  Theta: {theta}°  D: {D_FIJO}cm\n")
+        f_res.write(f"N total: {N_full}   N tras p95: {N}\n")
+        f_res.write(f"Corte p95: [{p95_lo:.4f}, {p95_hi:.4f}] mm\n")
+        f_res.write(f"Std: {data.std():.4f} mm  Mediana: {np.median(data):.4f} mm\n\n")
+
+        if simple_ok:
+            f_res.write(f"Lorentz simple:  gamma = {gamma_s:.4f} +- {err_gs:.4f} mm"
+                        f"  chi2/ndf = {chi2_s:.2f}\n")
+        else:
+            f_res.write("Lorentz simple: fallido\n")
+
+        if double_ok:
+            f_res.write(f"Doble Lorentz:   gamma1 = {g1:.4f} +- {eg1:.4f} mm"
+                        f"  gamma2 = {g2:.4f} +- {eg2:.4f} mm"
+                        f"  chi2/ndf = {chi2_dl:.2f}\n")
+        else:
+            f_res.write("Doble Lorentz: fallido\n")
+
+        f_res.write("\nEstimacion sigma_hit (modelo multivariable, D=13cm):\n")
+        for metodo, (g_exp, eg_exp, sh, esh) in resultados.items():
+            destacar = "  <-- RESULTADO ESPERADO (colas)" if "cola" in metodo else ""
+            if np.isfinite(sh):
+                f_res.write(f"  [{metodo}]: gamma_exp={g_exp:.4f}+-{eg_exp:.4f}"
+                            f"  =>  sigma_hit = {sh:.4f} +- {esh:.4f} mm{destacar}\n")
+            else:
+                f_res.write(f"  [{metodo}]: no se pudo estimar\n")
+
+print(f"\nResumen guardado en: {ARCHIVO_RESUMEN}")
+print(f"Plots en: {CARPETA_SALIDA}")
