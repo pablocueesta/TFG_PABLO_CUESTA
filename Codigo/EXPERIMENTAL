@@ -251,15 +251,15 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
         if simple_ok:
             ax2.plot(x_fit, lorentz(x_fit, A_s, mu_s, gamma_s),
                      color='orange', linewidth=2,
-                     label=f"Lorentz simple: γ={gamma_s:.3f}")
+                     label=f"Lorentz simple: γ={gamma_s:.3f}±{err_gs:.3f} mm")
         if double_ok:
             ax2.plot(x_fit, double_lorentz(x_fit, A1, g1, A2, g2, mu_dl),
                      color='red', linewidth=2,
-                     label=f"Doble Lorentz: g1={g1:.3f}, g2={g2:.3f}")
+                     label=f"Doble Lorentz: γ1, γ2")
             ax2.plot(x_fit, lorentz(x_fit, A1, mu_dl, g1),
-                     '--', color='blue', linewidth=1.5, label=f"Core: g1={g1:.3f}")
+                     '--', color='blue', linewidth=1.5, label=f"Core: γ1={g1:.3f}±{eg1:.3f} mm")
             ax2.plot(x_fit, lorentz(x_fit, A2, mu_dl, g2),
-                     '--', color='green', linewidth=1.5, label=f"Cola: g2={g2:.3f}")
+                     '--', color='green', linewidth=1.5, label=f"Cola: γ2={g2:.3f}±{eg2:.3f} mm")
 
         ax2.axvline(p95_lo, color='magenta', linestyle='-', linewidth=1.5,
                    label=f"p95: [{p95_lo:.3f},{p95_hi:.3f}] mm (N_total={N_full:,})")
