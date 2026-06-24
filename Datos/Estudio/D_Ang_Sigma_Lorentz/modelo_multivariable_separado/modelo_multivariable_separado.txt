@@ -1,0 +1,267 @@
+Modelo lineal multivariable SEPARADO (3 hits y 4 hits independientes)
+gamma = a0 + a1*sigma + a2*D + a3*theta + a12*sigma*D + a13*sigma*theta + a23*D*theta
+Sin division por tramos de D (un unico ajuste global)
+================================================================================
+
+
+================================================================================
+COORDENADA X
+================================================================================
+
+--- 3 hits (Lorentz simple) ---
+
+  Ajuste global (excluye theta=60°):
+  3hits excl60  (N=48):
+    a0  (cte)         = 0.004272 +- 0.003288 mm
+    a1  (sigma)        = 1.2459 +- 0.0363
+    a2  (D)            = 0.00037 +- 0.00017  [mm/cm]
+    a3  (theta)        = 0.000227 +- 0.000098  [mm/grado]
+    a12 (sigma*D)      = 0.00019 +- 0.00177
+    a13 (sigma*theta)  = -0.001366 +- 0.000921
+    a23 (D*theta)      = -0.0000019 +- 0.0000041
+    chi2/dof           = 0.3297
+
+    Significancia (|coef/err|):
+      a0: 1.3σ <-- DESPRECIABLE
+      a1: 34.3σ 
+      a2: 2.2σ 
+      a3: 2.3σ 
+      a12: 0.1σ <-- DESPRECIABLE
+      a13: 1.5σ <-- DESPRECIABLE
+      a23: 0.5σ <-- DESPRECIABLE
+
+  Ajuste global (excluye solo NaN, incluye theta=60°):
+  3hits soloNaN  (N=61):
+    a0  (cte)         = 0.007647 +- 0.003212 mm
+    a1  (sigma)        = 1.2466 +- 0.0362
+    a2  (D)            = 0.00032 +- 0.00016  [mm/cm]
+    a3  (theta)        = -0.000147 +- 0.000083  [mm/grado]
+    a12 (sigma*D)      = -0.00150 +- 0.00171
+    a13 (sigma*theta)  = 0.000588 +- 0.000784
+    a23 (D*theta)      = 0.0000091 +- 0.0000036
+    chi2/dof           = 3.2406
+
+    Significancia (|coef/err|):
+      a0: 2.4σ 
+      a1: 34.4σ 
+      a2: 2.0σ <-- DESPRECIABLE
+      a3: 1.8σ <-- DESPRECIABLE
+      a12: 0.9σ <-- DESPRECIABLE
+      a13: 0.8σ <-- DESPRECIABLE
+      a23: 2.5σ 
+
+--- 4 hits gamma1 ---
+
+  Ajuste global (excluye theta=60°):
+  4hits_gamma1 excl60  (N=48):
+    a0  (cte)         = 0.001731 +- 0.000993 mm
+    a1  (sigma)        = 0.0982 +- 0.0094
+    a2  (D)            = -0.00002 +- 0.00004  [mm/cm]
+    a3  (theta)        = -0.000092 +- 0.000027  [mm/grado]
+    a12 (sigma*D)      = -0.00009 +- 0.00038
+    a13 (sigma*theta)  = 0.000331 +- 0.000178
+    a23 (D*theta)      = 0.0000024 +- 0.0000010
+    chi2/dof           = 6.9881
+
+    Significancia (|coef/err|):
+      a0: 1.7σ <-- DESPRECIABLE
+      a1: 10.5σ 
+      a2: 0.5σ <-- DESPRECIABLE
+      a3: 3.4σ 
+      a12: 0.2σ <-- DESPRECIABLE
+      a13: 1.9σ <-- DESPRECIABLE
+      a23: 2.4σ 
+
+  Ajuste global (excluye solo NaN, incluye theta=60°):
+  4hits_gamma1 soloNaN  (N=64):
+    a0  (cte)         = 0.002643 +- 0.000903 mm
+    a1  (sigma)        = 0.0923 +- 0.0087
+    a2  (D)            = -0.00009 +- 0.00004  [mm/cm]
+    a3  (theta)        = -0.000058 +- 0.000021  [mm/grado]
+    a12 (sigma*D)      = 0.00059 +- 0.00034
+    a13 (sigma*theta)  = -0.000517 +- 0.000134
+    a23 (D*theta)      = 0.0000031 +- 0.0000007
+    chi2/dof           = 7.0824
+
+    Significancia (|coef/err|):
+      a0: 2.9σ 
+      a1: 10.6σ 
+      a2: 2.4σ 
+      a3: 2.8σ 
+      a12: 1.8σ <-- DESPRECIABLE
+      a13: 3.9σ 
+      a23: 4.1σ 
+
+--- 4 hits gamma2 ---
+
+  Ajuste global (excluye theta=60°):
+  4hits_gamma2 excl60  (N=48):
+    a0  (cte)         = 0.004005 +- 0.000704 mm
+    a1  (sigma)        = 0.2106 +- 0.0070
+    a2  (D)            = 0.00003 +- 0.00005  [mm/cm]
+    a3  (theta)        = -0.000019 +- 0.000022  [mm/grado]
+    a12 (sigma*D)      = 0.01586 +- 0.00054
+    a13 (sigma*theta)  = 0.000416 +- 0.000208
+    a23 (D*theta)      = -0.0000007 +- 0.0000013
+    chi2/dof           = 2.8015
+
+    Significancia (|coef/err|):
+      a0: 5.7σ 
+      a1: 29.9σ 
+      a2: 0.5σ <-- DESPRECIABLE
+      a3: 0.9σ <-- DESPRECIABLE
+      a12: 29.6σ 
+      a13: 2.0σ <-- DESPRECIABLE
+      a23: 0.6σ <-- DESPRECIABLE
+
+  Ajuste global (excluye solo NaN, incluye theta=60°):
+  4hits_gamma2 soloNaN  (N=64):
+    a0  (cte)         = 0.003389 +- 0.000657 mm
+    a1  (sigma)        = 0.2164 +- 0.0066
+    a2  (D)            = 0.00008 +- 0.00005  [mm/cm]
+    a3  (theta)        = 0.000011 +- 0.000017  [mm/grado]
+    a12 (sigma*D)      = 0.01550 +- 0.00051
+    a13 (sigma*theta)  = 0.000199 +- 0.000143
+    a23 (D*theta)      = -0.0000030 +- 0.0000011
+    chi2/dof           = 2.5027
+
+    Significancia (|coef/err|):
+      a0: 5.2σ 
+      a1: 32.6σ 
+      a2: 1.6σ <-- DESPRECIABLE
+      a3: 0.6σ <-- DESPRECIABLE
+      a12: 30.5σ 
+      a13: 1.4σ <-- DESPRECIABLE
+      a23: 2.8σ 
+
+
+================================================================================
+COORDENADA Z
+================================================================================
+
+--- 3 hits (Lorentz simple) ---
+
+  Ajuste global (excluye theta=60°):
+  3hits excl60  (N=48):
+    a0  (cte)         = 0.011047 +- 0.003305 mm
+    a1  (sigma)        = 1.2404 +- 0.0369
+    a2  (D)            = -0.00034 +- 0.00017  [mm/cm]
+    a3  (theta)        = 0.000027 +- 0.000097  [mm/grado]
+    a12 (sigma*D)      = 0.00316 +- 0.00179
+    a13 (sigma*theta)  = -0.002491 +- 0.000913
+    a23 (D*theta)      = 0.0000180 +- 0.0000042
+    chi2/dof           = 2.2236
+
+    Significancia (|coef/err|):
+      a0: 3.3σ 
+      a1: 33.7σ 
+      a2: 2.0σ <-- DESPRECIABLE
+      a3: 0.3σ <-- DESPRECIABLE
+      a12: 1.8σ <-- DESPRECIABLE
+      a13: 2.7σ 
+      a23: 4.3σ 
+
+  Ajuste global (excluye solo NaN, incluye theta=60°):
+  3hits soloNaN  (N=62):
+    a0  (cte)         = -0.057294 +- 0.002685 mm
+    a1  (sigma)        = 1.8737 +- 0.0270
+    a2  (D)            = 0.00346 +- 0.00014  [mm/cm]
+    a3  (theta)        = 0.002818 +- 0.000072  [mm/grado]
+    a12 (sigma*D)      = -0.02195 +- 0.00145
+    a13 (sigma*theta)  = -0.020321 +- 0.000554
+    a23 (D*theta)      = -0.0001159 +- 0.0000024
+    chi2/dof           = 43.4487
+
+    Significancia (|coef/err|):
+      a0: 21.3σ 
+      a1: 69.3σ 
+      a2: 24.2σ 
+      a3: 38.9σ 
+      a12: 15.1σ 
+      a13: 36.7σ 
+      a23: 48.7σ 
+
+--- 4 hits gamma1 ---
+
+  Ajuste global (excluye theta=60°):
+  4hits_gamma1 excl60  (N=48):
+    a0  (cte)         = -0.000065 +- 0.001005 mm
+    a1  (sigma)        = 0.1083 +- 0.0098
+    a2  (D)            = 0.00002 +- 0.00004  [mm/cm]
+    a3  (theta)        = 0.000048 +- 0.000031  [mm/grado]
+    a12 (sigma*D)      = -0.00017 +- 0.00039
+    a13 (sigma*theta)  = -0.000142 +- 0.000196
+    a23 (D*theta)      = -0.0000015 +- 0.0000011
+    chi2/dof           = 7.9477
+
+    Significancia (|coef/err|):
+      a0: 0.1σ <-- DESPRECIABLE
+      a1: 11.1σ 
+      a2: 0.5σ <-- DESPRECIABLE
+      a3: 1.6σ <-- DESPRECIABLE
+      a12: 0.4σ <-- DESPRECIABLE
+      a13: 0.7σ <-- DESPRECIABLE
+      a23: 1.4σ <-- DESPRECIABLE
+
+  Ajuste global (excluye solo NaN, incluye theta=60°):
+  4hits_gamma1 soloNaN  (N=63):
+    a0  (cte)         = 0.000077 +- 0.000960 mm
+    a1  (sigma)        = 0.1143 +- 0.0094
+    a2  (D)            = 0.00001 +- 0.00004  [mm/cm]
+    a3  (theta)        = 0.000020 +- 0.000023  [mm/grado]
+    a12 (sigma*D)      = -0.00033 +- 0.00038
+    a13 (sigma*theta)  = -0.000342 +- 0.000158
+    a23 (D*theta)      = 0.0000006 +- 0.0000008
+    chi2/dof           = 6.5738
+
+    Significancia (|coef/err|):
+      a0: 0.1σ <-- DESPRECIABLE
+      a1: 12.1σ 
+      a2: 0.2σ <-- DESPRECIABLE
+      a3: 0.9σ <-- DESPRECIABLE
+      a12: 0.9σ <-- DESPRECIABLE
+      a13: 2.2σ 
+      a23: 0.7σ <-- DESPRECIABLE
+
+--- 4 hits gamma2 ---
+
+  Ajuste global (excluye theta=60°):
+  4hits_gamma2 excl60  (N=48):
+    a0  (cte)         = 0.003073 +- 0.000624 mm
+    a1  (sigma)        = 0.2195 +- 0.0064
+    a2  (D)            = 0.00007 +- 0.00005  [mm/cm]
+    a3  (theta)        = 0.000035 +- 0.000023  [mm/grado]
+    a12 (sigma*D)      = 0.01531 +- 0.00054
+    a13 (sigma*theta)  = 0.000175 +- 0.000201
+    a23 (D*theta)      = -0.0000031 +- 0.0000013
+    chi2/dof           = 3.3743
+
+    Significancia (|coef/err|):
+      a0: 4.9σ 
+      a1: 34.4σ 
+      a2: 1.4σ <-- DESPRECIABLE
+      a3: 1.5σ <-- DESPRECIABLE
+      a12: 28.3σ 
+      a13: 0.9σ <-- DESPRECIABLE
+      a23: 2.3σ 
+
+  Ajuste global (excluye solo NaN, incluye theta=60°):
+  4hits_gamma2 soloNaN  (N=64):
+    a0  (cte)         = 0.002745 +- 0.000595 mm
+    a1  (sigma)        = 0.2240 +- 0.0062
+    a2  (D)            = 0.00009 +- 0.00005  [mm/cm]
+    a3  (theta)        = 0.000049 +- 0.000017  [mm/grado]
+    a12 (sigma*D)      = 0.01502 +- 0.00052
+    a13 (sigma*theta)  = -0.000041 +- 0.000141
+    a23 (D*theta)      = -0.0000029 +- 0.0000011
+    chi2/dof           = 2.8672
+
+    Significancia (|coef/err|):
+      a0: 4.6σ 
+      a1: 36.3σ 
+      a2: 1.9σ <-- DESPRECIABLE
+      a3: 2.9σ 
+      a12: 29.1σ 
+      a13: 0.3σ <-- DESPRECIABLE
+      a23: 2.7σ 
+

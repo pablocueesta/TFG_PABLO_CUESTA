@@ -1,0 +1,58 @@
+ESTIMACION RESOLUCION - ANALISIS SEPARADO 3 Y 4 HITS
+======================================================================
+Modelo: gamma = a0+a1*sigma+a2*D+a3*theta+a12*sigma*D+a13*sigma*theta+a23*D*theta
+D fijo = 13.0 cm  Percentil 95%
+Correspondencia de ejes: X_exp<->Z_sim, Y_exp<->X_sim, Z_exp<->Y_sim
+
+
+==================================================
+Detector: EINSTEIN  Coord: X->eje_sim:Z  θ=0°  D:13.0cm
+N3 total: 751163  N3 p95: 713603  p95:[-7.1273,6.8968]
+N4 total: 1771093  N4 p95: 1682537  p95:[-2.9541,2.8793]
+
+3hits Lorentz: gamma=0.9598+-0.0215  chi2=360.22
+4hits Doble:   g1=0.0948+-0.0030  g2=0.3772+-0.0094  chi2=47.35
+
+Estimacion sigma_hit:
+  [3hits gamma_s]: gamma=0.9598+-0.0215  =>  sigma_hit=0.7649+-0.0173 mm
+  [4hits gamma1]: gamma=0.0948+-0.0030  =>  sigma_hit=0.8752+-0.0276 mm
+  [4hits gamma2]: gamma=0.3772+-0.0094  =>  sigma_hit=0.8939+-0.0226 mm  <-- RESULTADO ESPERADO (colas)
+
+==================================================
+Detector: EINSTEIN  Coord: Y->eje_sim:X  θ=0°  D:13.0cm
+N3 total: 750803  N3 p95: 713261  p95:[-7.3697,7.0266]
+N4 total: 1771453  N4 p95: 1682879  p95:[-2.7546,2.7342]
+
+3hits Lorentz: gamma=1.3300+-0.0233  chi2=149.83
+4hits Doble:   g1=0.0987+-0.0020  g2=0.4253+-0.0055  chi2=12.80
+
+Estimacion sigma_hit:
+  [3hits gamma_s]: gamma=1.3300+-0.0233  =>  sigma_hit=1.0636+-0.0187 mm
+  [4hits gamma1]: gamma=0.0987+-0.0020  =>  sigma_hit=1.0056+-0.0207 mm
+  [4hits gamma2]: gamma=0.4253+-0.0055  =>  sigma_hit=1.0108+-0.0131 mm  <-- RESULTADO ESPERADO (colas)
+
+==================================================
+Detector: FERMI  Coord: X->eje_sim:Z  θ=0°  D:13.0cm
+N3 total: 869012  N3 p95: 825560  p95:[-6.3033,6.3583]
+N4 total: 1447348  N4 p95: 1374980  p95:[-2.9758,2.9813]
+
+3hits Lorentz: gamma=1.2254+-0.0096  chi2=35.92
+4hits Doble:   g1=0.1222+-0.0018  g2=0.4932+-0.0042  chi2=6.51
+
+Estimacion sigma_hit:
+  [3hits gamma_s]: gamma=1.2254+-0.0096  =>  sigma_hit=0.9790+-0.0077 mm
+  [4hits gamma1]: gamma=0.1222+-0.0018  =>  sigma_hit=1.1280+-0.0162 mm
+  [4hits gamma2]: gamma=0.4932+-0.0042  =>  sigma_hit=1.1711+-0.0101 mm  <-- RESULTADO ESPERADO (colas)
+
+==================================================
+Detector: FERMI  Coord: Y->eje_sim:X  θ=0°  D:13.0cm
+N3 total: 829976  N3 p95: 788476  p95:[-6.4612,6.7102]
+N4 total: 1486384  N4 p95: 1412062  p95:[-2.9591,2.9361]
+
+3hits Lorentz: gamma=1.6475+-0.0109  chi2=94.94
+4hits Doble:   g1=0.1316+-0.0028  g2=0.5424+-0.0060  chi2=21.86
+
+Estimacion sigma_hit:
+  [3hits gamma_s]: gamma=1.6475+-0.0109  =>  sigma_hit=1.3185+-0.0088 mm
+  [4hits gamma1]: gamma=0.1316+-0.0028  =>  sigma_hit=1.3400+-0.0283 mm
+  [4hits gamma2]: gamma=0.5424+-0.0060  =>  sigma_hit=1.2917+-0.0145 mm  <-- RESULTADO ESPERADO (colas)

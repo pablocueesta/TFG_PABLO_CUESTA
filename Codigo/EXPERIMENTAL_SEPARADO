@@ -1,0 +1,307 @@
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+CARPETA_DATOS   = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Experimentales"
+CARPETA_SALIDA  = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Resolucion_Experimental_Separado"
+ARCHIVO_RESUMEN = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Estudio\resolucion_experimental_separado.txt"
+
+os.makedirs(CARPETA_SALIDA, exist_ok=True)
+
+N_BINS = 100
+LIMITE = 10.0
+D_FIJO = 13.0
+
+# --------------------------------------------------
+# COEFICIENTES MODELO SEPARADO (excl. theta=60)
+# gamma = a0 + a1*sigma + a2*D + a3*theta + a12*sigma*D + a13*sigma*theta + a23*D*theta
+# --------------------------------------------------
+
+# 3 hits X (eje_sim=Z)
+COEF_G3_SIM_Z = dict(a0=0.011047, a1=1.2404, a2=0.0, a3=0.0, a12=0.0, a13=-0.002491, a23=0.0)
+
+# 3 hits Y (eje_sim=X)
+COEF_G3_SIM_X = dict(a0=0.0, a1=1.2459, a2=0.00037, a3=0.000227, a12=0.0, a13=0.0, a23=0.0)
+
+# 4 hits gamma1 X (eje_sim=Z)
+COEF_G1_SIM_Z = dict(a0=0.0, a1=0.1083, a2=0.0, a3=0.0, a12=0.0, a13=0.0, a23=0.0)
+
+# 4 hits gamma2 X (eje_sim=Z)
+COEF_G2_SIM_Z = dict(a0=0.003073, a1=0.2195, a2=0.0, a3=0.0, a12=0.01531, a13=0.0, a23=0.0)
+
+# 4 hits gamma1 Y (eje_sim=X)
+COEF_G1_SIM_X = dict(a0=0.0, a1=0.0982, a2=0.0, a3=-0.000092, a12=0.0, a13=0.0, a23=0.0)
+
+# 4 hits gamma2 Y (eje_sim=X)
+COEF_G2_SIM_X = dict(a0=0.004005, a1=0.2106, a2=0.0, a3=0.0, a12=0.01586, a13=0.0, a23=0.0)
+
+def gamma_modelo(sigma, D, theta, c):
+    return (c['a0'] + c['a1']*sigma + c['a2']*D + c['a3']*theta
+            + c['a12']*sigma*D + c['a13']*sigma*theta + c['a23']*D*theta)
+
+def despejar_sigma(gamma_exp, err_gamma_exp, D, theta, c):
+    denom = c['a1'] + c['a12']*D + c['a13']*theta
+    if denom == 0 or not np.isfinite(gamma_exp): return np.nan, np.nan
+    num = gamma_exp - c['a0'] - c['a2']*D - c['a3']*theta - c['a23']*D*theta
+    return num/denom, err_gamma_exp/abs(denom)
+
+def lorentz(x, A, mu, gamma):
+    return A / (1 + ((x-mu)/gamma)**2)
+
+def double_lorentz(x, A1, gamma1, A2, gamma2, mu):
+    return (A1/(1+((x-mu)/gamma1)**2) + A2/(1+((x-mu)/gamma2)**2))
+
+def chi2_reducido(y_data, y_fit, n_params):
+    mask = y_data > 0
+    r    = y_data[mask] - y_fit[mask]
+    chi2 = np.sum(r**2/y_data[mask])
+    ndf  = np.sum(mask) - n_params
+    return np.nan if ndf <= 0 else chi2/ndf
+
+def aplicar_percentil(data, p=95):
+    low  = np.percentile(data, (100-p)/2)
+    high = np.percentile(data, 100-(100-p)/2)
+    return data[(data>low)&(data<high)], low, high
+
+# --------------------------------------------------
+# ARCHIVOS Y CORRESPONDENCIA DE EJES
+# --------------------------------------------------
+# X_exp <-> Z_sim   (recibe el efecto de rotar en X_sim)
+# Y_exp <-> X_sim   (eje que se rota experimentalmente, equivalente a rotar X_sim)
+
+archivos = {
+    'resx_einstein_nhits_P3': ('einstein', 'X', 0),
+    'resy_einstein_nhits_P3': ('einstein', 'Y', 0),
+    'resx_fermi_nhits_P3':    ('fermi',    'X', 0),
+    'resy_fermi_nhits_P3':    ('fermi',    'Y', 0),
+}
+
+with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
+    f_res.write("ESTIMACION RESOLUCION - ANALISIS SEPARADO 3 Y 4 HITS\n")
+    f_res.write("="*70 + "\n")
+    f_res.write("Modelo: gamma = a0+a1*sigma+a2*D+a3*theta+a12*sigma*D+a13*sigma*theta+a23*D*theta\n")
+    f_res.write(f"D fijo = {D_FIJO} cm  Percentil 95%\n")
+    f_res.write("Correspondencia de ejes: X_exp<->Z_sim, Y_exp<->X_sim, Z_exp<->Y_sim\n\n")
+
+    for nombre, (det, coord_exp, theta) in archivos.items():
+        print(f"\n{'='*50}")
+        print(f"Procesando: {nombre}  (det={det}, coord_exp={coord_exp}, theta={theta}°)")
+
+        ruta = os.path.join(CARPETA_DATOS, f"{nombre}.txt")
+
+        if coord_exp == 'X':
+            coef_g3 = COEF_G3_SIM_Z
+            coef_g1 = COEF_G1_SIM_Z
+            coef_g2 = COEF_G2_SIM_Z
+            eje_sim = 'Z'
+        else:
+            coef_g3 = COEF_G3_SIM_X
+            coef_g1 = COEF_G1_SIM_X
+            coef_g2 = COEF_G2_SIM_X
+            eje_sim = 'X'
+
+        nota = f" [X_exp<->Z_sim]" if coord_exp == 'X' else f" [Y_exp<->X_sim]"
+
+        # leer datos: dos columnas (residual, nhits)
+        raw = np.loadtxt(ruta)
+        residuals_all = raw[:,0]; nhits_all = raw[:,1].astype(int)
+
+        mask3 = (nhits_all==3) & np.isfinite(residuals_all) & (np.abs(residuals_all)<=LIMITE)
+        mask4 = (nhits_all==4) & np.isfinite(residuals_all) & (np.abs(residuals_all)<=LIMITE)
+        data3_full = residuals_all[mask3]
+        data4_full = residuals_all[mask4]
+        print(f"  N3={len(data3_full)}  N4={len(data4_full)}")
+
+        # percentil 95 por separado
+        data3, p95_lo3, p95_hi3 = aplicar_percentil(data3_full)
+        data4, p95_lo4, p95_hi4 = aplicar_percentil(data4_full)
+        margen3 = max(abs(p95_lo3), abs(p95_hi3))
+        margen4 = max(abs(p95_lo4), abs(p95_hi4))
+
+        # ── FIT 3 HITS: Lorentz simple ───────────────────────────────────────
+        gamma0_3 = data3.std()*0.5
+        hist3, bins3 = np.histogram(data3, bins=N_BINS, range=(-margen3, margen3))
+        centers3 = (bins3[:-1]+bins3[1:])/2; width3 = bins3[1]-bins3[0]
+
+        simple3_ok = False
+        try:
+            ps3, covs3 = curve_fit(lorentz, centers3, hist3,
+                                   p0=[max(hist3), np.median(data3), gamma0_3],
+                                   bounds=([0,-margen3,0.001],[np.inf,margen3,margen3*2]),
+                                   maxfev=20000)
+            A3s, mu3s, gamma3s = [float(p) for p in ps3]
+            err_g3s = float(np.sqrt(np.diag(covs3))[2])
+            chi2_3s = chi2_reducido(hist3, lorentz(centers3,A3s,mu3s,gamma3s), 3)
+            simple3_ok = True
+            print(f"  3hits Lorentz: gamma={gamma3s:.4f}+-{err_g3s:.4f}  chi2={chi2_3s:.2f}")
+        except RuntimeError:
+            print("  3hits fit fallido"); gamma3s=err_g3s=chi2_3s=np.nan
+
+        # ── FIT 4 HITS: Doble Lorentz ────────────────────────────────────────
+        gamma0_4 = data4.std()*0.5
+        hist4, bins4 = np.histogram(data4, bins=N_BINS, range=(-margen4, margen4))
+        centers4 = (bins4[:-1]+bins4[1:])/2; width4 = bins4[1]-bins4[0]
+
+        double4_ok = False
+        try:
+            pd0 = [max(hist4),gamma0_4*0.3,max(hist4)/5,gamma0_4*2.0,float(np.median(data4))]
+            pdl4, covdl4 = curve_fit(double_lorentz, centers4, hist4,
+                                     p0=pd0,
+                                     bounds=([0,0.001,0,0.001,-margen4],
+                                             [np.inf,margen4*2,np.inf,margen4*2,margen4]),
+                                     maxfev=20000)
+            A1_4,g1_4,A2_4,g2_4,mu4 = [float(p) for p in pdl4]
+            errs4 = np.sqrt(np.diag(covdl4))
+            eg1_4, eg2_4 = float(errs4[1]), float(errs4[3])
+            if g1_4>g2_4:
+                A1_4,A2_4=A2_4,A1_4; g1_4,g2_4=g2_4,g1_4; eg1_4,eg2_4=eg2_4,eg1_4
+            if 0<g1_4<margen4*2 and 0<g2_4<margen4*2:
+                double4_ok = True
+                chi2_4dl = chi2_reducido(hist4,double_lorentz(centers4,A1_4,g1_4,A2_4,g2_4,mu4),5)
+                print(f"  4hits Doble: g1={g1_4:.4f} g2={g2_4:.4f} chi2={chi2_4dl:.2f}")
+        except RuntimeError:
+            print("  4hits doble fit fallido")
+
+        # ── ESTIMACION sigma_hit ─────────────────────────────────────────────
+        resultados = {}
+        if simple3_ok:
+            sh3, esh3 = despejar_sigma(gamma3s, err_g3s, D_FIJO, theta, coef_g3)
+            resultados['3hits gamma_s'] = (gamma3s, err_g3s, sh3, esh3)
+            print(f"  -> sigma_hit (3hits): {sh3:.4f}+-{esh3:.4f} mm")
+        if double4_ok:
+            sh1_4, esh1_4 = despejar_sigma(g1_4, eg1_4, D_FIJO, theta, coef_g1)
+            sh2_4, esh2_4 = despejar_sigma(g2_4, eg2_4, D_FIJO, theta, coef_g2)
+            resultados['4hits gamma1'] = (g1_4, eg1_4, sh1_4, esh1_4)
+            resultados['4hits gamma2'] = (g2_4, eg2_4, sh2_4, esh2_4)
+            print(f"  -> sigma_hit (4hits g1): {sh1_4:.4f}+-{esh1_4:.4f} mm")
+            print(f"  -> sigma_hit (4hits g2): {sh2_4:.4f}+-{esh2_4:.4f} mm  <-- RESULTADO ESPERADO")
+
+        # ── PLOTS: 3 paneles ─────────────────────────────────────────────────
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+        fig.suptitle(f"{nombre}{nota} [eje_sim={eje_sim}, D={D_FIJO}cm, θ={theta}°]", fontsize=11)
+
+        # panel izquierdo: histograma 3 hits
+        ax3 = axes[0]
+        ax3.bar(centers3[hist3>0], hist3[hist3>0], width=width3,
+                alpha=0.6, color='steelblue', label=f"3 hits (p95) N={len(data3):,}")
+        xf3 = np.linspace(-margen3, margen3, 600)
+        if simple3_ok:
+            ax3.plot(xf3, lorentz(xf3,A3s,mu3s,gamma3s), color='orange', linewidth=2,
+                     label=f"Lorentz: γ={gamma3s:.3f}±{err_g3s:.3f} mm")
+        ax3.axvline(p95_lo3, color='magenta', linewidth=1.5,
+                    label=f"p95:[{p95_lo3:.2f},{p95_hi3:.2f}] (N_tot={len(data3_full):,})")
+        ax3.axvline(p95_hi3, color='magenta', linewidth=1.5)
+        ax3.set_yscale('log')
+        ax3.set_xlabel("Residual [mm]"); ax3.set_ylabel("Counts (log)")
+        ax3.set_title("3 hits — Lorentz simple\n(percentil 95%)")
+        ax3.legend(fontsize=7); ax3.grid(which='both', linestyle='--', alpha=0.5)
+
+        # panel central: histograma 4 hits
+        ax4 = axes[1]
+        ax4.bar(centers4[hist4>0], hist4[hist4>0], width=width4,
+                alpha=0.6, color='salmon', label=f"4 hits (p95) N={len(data4):,}")
+        xf4 = np.linspace(-margen4, margen4, 600)
+        if double4_ok:
+            ax4.plot(xf4, double_lorentz(xf4,A1_4,g1_4,A2_4,g2_4,mu4),
+                     color='red', linewidth=2, label="Doble Lorentz: γ1, γ2")
+            ax4.plot(xf4, lorentz(xf4,A1_4,mu4,g1_4),
+                     '--', color='blue', linewidth=1.5,
+                     label=f"Core: γ1={g1_4:.3f}±{eg1_4:.3f} mm")
+            ax4.plot(xf4, lorentz(xf4,A2_4,mu4,g2_4),
+                     '--', color='green', linewidth=1.5,
+                     label=f"Cola: γ2={g2_4:.3f}±{eg2_4:.3f} mm")
+
+        ax4.axvline(p95_lo4, color='magenta', linewidth=1.5,
+                    label=f"p95:[{p95_lo4:.2f},{p95_hi4:.2f}] (N_tot={len(data4_full):,})")
+        ax4.axvline(p95_hi4, color='magenta', linewidth=1.5)
+        ax4.set_yscale('log')
+        ax4.set_xlabel("Residual [mm]")
+        ax4.set_title("4 hits — Doble Lorentz\n(percentil 95%)")
+        ax4.legend(fontsize=7); ax4.grid(which='both', linestyle='--', alpha=0.5)
+
+        # panel derecho: curvas del modelo + interpolacion (igual que EXPERIMENTAL)
+        ax_mod = axes[2]
+        sigma_max = 0.30
+        for k,v in resultados.items():
+            if np.isfinite(v[2]) and v[2]>0:
+                sigma_max = max(sigma_max, v[2]*1.4)
+        sf = np.linspace(0, sigma_max, 300)
+
+        g3_curva = gamma_modelo(sf, D_FIJO, theta, coef_g3)
+        ax_mod.plot(sf, g3_curva, color='steelblue', linewidth=2,
+                    label=f'Modelo γ (3hits, D={D_FIJO}, θ={theta}°)')
+
+        g1_curva = gamma_modelo(sf, D_FIJO, theta, coef_g1)
+        ax_mod.plot(sf, g1_curva, color='blue', linewidth=2,
+                    label=f'Modelo γ1 (4hits, D={D_FIJO}, θ={theta}°)')
+
+        g2_curva = gamma_modelo(sf, D_FIJO, theta, coef_g2)
+        ax_mod.plot(sf, g2_curva, color='red', linewidth=2,
+                    label=f'Modelo γ2 (4hits, D={D_FIJO}, θ={theta}°)')
+
+        if simple3_ok and '3hits gamma_s' in resultados:
+            sh3, esh3 = resultados['3hits gamma_s'][2:]
+            if np.isfinite(sh3) and sh3>0:
+                ax_mod.axhline(gamma3s, color='steelblue', linestyle='--', linewidth=1.2,
+                               label=f'γ_exp (3h) = {gamma3s:.4f}±{err_g3s:.4f} mm')
+                ax_mod.axvline(sh3, color='steelblue', linestyle=':', linewidth=1.2)
+                ax_mod.errorbar(sh3, gamma3s, xerr=esh3, fmt='o', color='steelblue',
+                                markersize=6, capsize=6, linewidth=1.5, zorder=5,
+                                label=f'σ_hit (3h) = {sh3:.4f}±{esh3:.4f} mm')
+
+        if double4_ok and '4hits gamma1' in resultados:
+            sh1v, esh1v = resultados['4hits gamma1'][2:]
+            if np.isfinite(sh1v) and sh1v>0:
+                ax_mod.axhline(g1_4, color='blue', linestyle='--', linewidth=1.2,
+                               label=f'γ1_exp = {g1_4:.4f}±{eg1_4:.4f} mm')
+                ax_mod.axvline(sh1v, color='blue', linestyle=':', linewidth=1.2)
+                ax_mod.errorbar(sh1v, g1_4, xerr=esh1v, fmt='s', color='darkblue',
+                                markersize=5, capsize=6, linewidth=1.5, zorder=5,
+                                label=f'σ_hit (4h γ1) = {sh1v:.4f}±{esh1v:.4f} mm')
+
+        if double4_ok and '4hits gamma2' in resultados:
+            sh2v, esh2v = resultados['4hits gamma2'][2:]
+            if np.isfinite(sh2v) and sh2v>0:
+                ax_mod.axhline(g2_4, color='red', linestyle='--', linewidth=1.5,
+                               label=f'γ2_exp = {g2_4:.4f}±{eg2_4:.4f} mm')
+                ax_mod.axvline(sh2v, color='red', linestyle=':', linewidth=1.5)
+                ax_mod.errorbar(sh2v, g2_4, xerr=esh2v, fmt='o', color='darkred',
+                                markersize=8, capsize=6, linewidth=1.5, zorder=5,
+                                label=f'σ_hit (4h γ2) = {sh2v:.4f}±{esh2v:.4f} mm')
+
+        ax_mod.set_xlim(left=0, right=sigma_max)
+        ax_mod.set_ylim(bottom=0)
+        ax_mod.set_xlabel("σ_hit [mm]"); ax_mod.set_ylabel("γ [mm]")
+        ax_mod.set_title("γ(σ_hit, D, θ) para D y θ fijos:\nInterpolación inversa")
+        ax_mod.legend(fontsize=7); ax_mod.grid()
+
+        plt.tight_layout()
+        fig.savefig(os.path.join(CARPETA_SALIDA, f"{nombre}_resolucion_separado.png"), dpi=150)
+        plt.close(fig)
+        print(f"  Plot guardado: {nombre}_resolucion_separado.png")
+
+        # resumen txt
+        f_res.write(f"\n{'='*50}\n")
+        f_res.write(f"Detector: {det.upper()}  Coord: {coord_exp}->eje_sim:{eje_sim}  θ={theta}°  D:{D_FIJO}cm\n")
+        f_res.write(f"N3 total: {len(data3_full)}  N3 p95: {len(data3)}  p95:[{p95_lo3:.4f},{p95_hi3:.4f}]\n")
+        f_res.write(f"N4 total: {len(data4_full)}  N4 p95: {len(data4)}  p95:[{p95_lo4:.4f},{p95_hi4:.4f}]\n\n")
+        if simple3_ok:
+            f_res.write(f"3hits Lorentz: gamma={gamma3s:.4f}+-{err_g3s:.4f}  chi2={chi2_3s:.2f}\n")
+        else:
+            f_res.write("3hits Lorentz: fallido\n")
+        if double4_ok:
+            f_res.write(f"4hits Doble:   g1={g1_4:.4f}+-{eg1_4:.4f}  g2={g2_4:.4f}+-{eg2_4:.4f}  chi2={chi2_4dl:.2f}\n")
+        else:
+            f_res.write("4hits Doble: fallido\n")
+        f_res.write("\nEstimacion sigma_hit:\n")
+        for metodo, (g_exp,eg_exp,sh,esh) in resultados.items():
+            esp = "  <-- RESULTADO ESPERADO (colas)" if "gamma2" in metodo else ""
+            if np.isfinite(sh):
+                f_res.write(f"  [{metodo}]: gamma={g_exp:.4f}+-{eg_exp:.4f}"
+                            f"  =>  sigma_hit={sh:.4f}+-{esh:.4f} mm{esp}\n")
+            else:
+                f_res.write(f"  [{metodo}]: no se pudo estimar\n")
+
+print(f"\nResumen: {ARCHIVO_RESUMEN}")
+print(f"Plots: {CARPETA_SALIDA}")

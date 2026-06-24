@@ -1,0 +1,162 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+import os
+
+BASE    = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        '..', '..'))
+carpeta = os.path.join(BASE, "Datos", "Estudio", "D_Ang_Sigma_Lorentz")
+out_dir = os.path.join(carpeta, "modelo_multivariable_separado")
+os.makedirs(out_dir, exist_ok=True)
+
+data = np.loadtxt(os.path.join(carpeta, "todos_D_ang_sigma.txt"), skiprows=1)
+
+# columnas:
+# [0] sigma  [1] D  [2] ang
+# [3] X3_gamma [4] X3_err  [7] Z3_gamma [8] Z3_err
+# [11] X4_gamma1 [12] X4_err1 [13] X4_gamma2 [14] X4_err2
+# [18] Z4_gamma1 [19] Z4_err1 [20] Z4_gamma2 [21] Z4_err2
+
+sigma = data[:,0]; D = data[:,1]; ang = data[:,2]
+X3_g  = data[:,3];  X3_e = data[:,4]
+Z3_g  = data[:,7];  Z3_e = data[:,8]
+X4_g1 = data[:,11]; X4_e1= data[:,12]
+X4_g2 = data[:,13]; X4_e2= data[:,14]
+Z4_g1 = data[:,18]; Z4_e1= data[:,19]
+Z4_g2 = data[:,20]; Z4_e2= data[:,21]
+
+def preparar_datos(gamma, err, sigma, D, ang, excluir_60=True):
+    mask = (np.isfinite(gamma) & np.isfinite(err) &
+            (err > 0) & (gamma > 0) & (gamma < 5))
+    if excluir_60:
+        mask = mask & (ang < 60)
+    return sigma[mask], D[mask], ang[mask], gamma[mask], err[mask]
+
+def modelo(X, a0, a1, a2, a3, a12, a13, a23):
+    s, d, t = X
+    return a0 + a1*s + a2*d + a3*t + a12*s*d + a13*s*t + a23*d*t
+
+def ajustar_modelo(s, d, t, gamma, err, nombre, f_out):
+    if len(gamma) < 7:
+        f_out.write(f"  {nombre}: insuficientes puntos ({len(gamma)})\n\n")
+        return None, None
+    try:
+        popt, pcov = curve_fit(modelo, (s,d,t), gamma,
+                               sigma=err, absolute_sigma=True,
+                               p0=[0.01,0.3,0.001,0.0001,0.001,0.0001,0.00001],
+                               maxfev=50000)
+        perr = np.sqrt(np.diag(pcov))
+    except RuntimeError:
+        f_out.write(f"  {nombre}: ajuste no convergido\n\n"); return None, None
+
+    a0,a1,a2,a3,a12,a13,a23 = popt
+    e0,e1,e2,e3,e12,e13,e23 = perr
+    gamma_pred = modelo((s,d,t), *popt)
+    residuos   = (gamma - gamma_pred) / err
+    chi2_red_v = np.sum(residuos**2) / (len(gamma) - 7)
+
+    f_out.write(f"  {nombre}  (N={len(gamma)}):\n")
+    f_out.write(f"    a0  (cte)         = {a0:.6f} +- {e0:.6f} mm\n")
+    f_out.write(f"    a1  (sigma)        = {a1:.4f} +- {e1:.4f}\n")
+    f_out.write(f"    a2  (D)            = {a2:.5f} +- {e2:.5f}  [mm/cm]\n")
+    f_out.write(f"    a3  (theta)        = {a3:.6f} +- {e3:.6f}  [mm/grado]\n")
+    f_out.write(f"    a12 (sigma*D)      = {a12:.5f} +- {e12:.5f}\n")
+    f_out.write(f"    a13 (sigma*theta)  = {a13:.6f} +- {e13:.6f}\n")
+    f_out.write(f"    a23 (D*theta)      = {a23:.7f} +- {e23:.7f}\n")
+    f_out.write(f"    chi2/dof           = {chi2_red_v:.4f}\n\n")
+    f_out.write(f"    Significancia (|coef/err|):\n")
+    for nc, c, e in zip(['a0','a1','a2','a3','a12','a13','a23'], popt, perr):
+        sig = abs(c/e) if e > 0 else np.inf
+        f_out.write(f"      {nc}: {sig:.1f}σ {'<-- DESPRECIABLE' if sig < 2 else ''}\n")
+    f_out.write("\n")
+    return popt, pcov
+
+def plot_residuos(s, d, t, gamma, err, popt, nombre, coord):
+    gamma_pred = modelo((s,d,t), *popt)
+    residuos   = (gamma - gamma_pred) / err
+    fig, (ax1,ax2) = plt.subplots(1,2,figsize=(12,5))
+    fig.suptitle(f"Modelo multivariable separado — {nombre} ({coord})")
+    lim = max(gamma.max(), gamma_pred.max())*1.05
+    ax1.scatter(gamma, gamma_pred, c=d, cmap='viridis', s=40, alpha=0.8)
+    ax1.plot([0,lim],[0,lim],'r--',linewidth=1.5,label='y=x')
+    ax1.set_xlabel("γ medido [mm]"); ax1.set_ylabel("γ predicho [mm]")
+    ax1.set_title("Prediccion vs medida"); ax1.legend(); ax1.grid()
+    ax2.scatter(gamma_pred, residuos, c=s, cmap='plasma', s=40, alpha=0.8)
+    ax2.axhline(0, color='red', linestyle='--', linewidth=1.5)
+    ax2.axhline( 2, color='gray', linestyle=':', linewidth=1)
+    ax2.axhline(-2, color='gray', linestyle=':', linewidth=1)
+    ax2.set_xlabel("γ predicho [mm]"); ax2.set_ylabel("Residuo normalizado")
+    ax2.set_title("Residuos normalizados"); ax2.grid()
+    fig.tight_layout()
+    nombre_arch = nombre.replace(" ","_").replace("<=","le").replace(">=","ge")
+    fig.savefig(os.path.join(out_dir, f"residuos_{coord}_{nombre_arch}.png"), dpi=150)
+    plt.close(fig)
+
+def plot_prediccion_vs_sigma(s, d, t, gamma, err, popt, nombre, coord):
+    colores_D = {7.0:'blue', 13.0:'red', 20.0:'green', 30.0:'orange'}
+    D_vals_plot = np.unique(d)
+    fig, ax = plt.subplots(figsize=(9,6))
+    ax.set_title(f"Medida vs modelo — {nombre} ({coord})")
+    for dv in D_vals_plot:
+        mask = d == dv
+        s_m, g_m, e_m = s[mask], gamma[mask], err[mask]
+        t_m = t[mask]
+        orden = np.argsort(s_m)
+        s_m,g_m,e_m,t_m = s_m[orden],g_m[orden],e_m[orden],t_m[orden]
+        color = colores_D.get(dv, 'black')
+        ax.errorbar(s_m, g_m, yerr=e_m, fmt='o', color=color,
+                    capsize=3, label=f"D={dv:.0f}cm (medida)")
+        s_pred = np.linspace(s_m.min(), s_m.max(), 100)
+        g_pred = modelo((s_pred, np.full_like(s_pred,dv), np.zeros_like(s_pred)), *popt)
+        ax.plot(s_pred, g_pred, '--', color=color, linewidth=1.5)
+    ax.set_xlabel("σ_hit [mm]"); ax.set_ylabel("γ [mm]")
+    ax.legend(fontsize=8); ax.grid(linestyle='--', alpha=0.5)
+    fig.tight_layout()
+    nombre_arch = nombre.replace(" ","_").replace("<=","le").replace(">=","ge")
+    fig.savefig(os.path.join(out_dir, f"pred_vs_sigma_{coord}_{nombre_arch}.png"), dpi=150)
+    plt.close(fig)
+
+f_out = open(os.path.join(out_dir, "modelo_multivariable_separado.txt"), "w", encoding="utf-8")
+f_out.write("Modelo lineal multivariable SEPARADO (3 hits y 4 hits independientes)\n")
+f_out.write("gamma = a0 + a1*sigma + a2*D + a3*theta + a12*sigma*D + a13*sigma*theta + a23*D*theta\n")
+f_out.write("Sin division por tramos de D (un unico ajuste global)\n")
+f_out.write("="*80 + "\n\n")
+
+for coord, g3, e3, g1_4, e1_4, g2_4, e2_4 in [
+    ("X", X3_g, X3_e, X4_g1, X4_e1, X4_g2, X4_e2),
+    ("Z", Z3_g, Z3_e, Z4_g1, Z4_e1, Z4_g2, Z4_e2)]:
+
+    f_out.write(f"\n{'='*80}\nCOORDENADA {coord}\n{'='*80}\n\n")
+
+    # --- 3 HITS ---
+    f_out.write("--- 3 hits (Lorentz simple) ---\n\n")
+    f_out.write("  Ajuste global (excluye theta=60°):\n")
+    s,d,t,g,e = preparar_datos(g3, e3, sigma, D, ang, excluir_60=True)
+    nombre = f"3hits excl60"
+    popt, pcov = ajustar_modelo(s,d,t,g,e, nombre, f_out)
+    if popt is not None:
+        plot_residuos(s,d,t,g,e, popt, nombre, coord)
+        plot_prediccion_vs_sigma(s,d,t,g,e, popt, nombre, coord)
+
+    f_out.write("  Ajuste global (excluye solo NaN, incluye theta=60°):\n")
+    s,d,t,g,e = preparar_datos(g3, e3, sigma, D, ang, excluir_60=False)
+    ajustar_modelo(s,d,t,g,e, f"3hits soloNaN", f_out)
+
+    # --- 4 HITS: gamma1 y gamma2 ---
+    for param, gv, ev in [("gamma1", g1_4, e1_4), ("gamma2", g2_4, e2_4)]:
+        f_out.write(f"--- 4 hits {param} ---\n\n")
+
+        f_out.write("  Ajuste global (excluye theta=60°):\n")
+        s,d,t,g,e = preparar_datos(gv, ev, sigma, D, ang, excluir_60=True)
+        nombre = f"4hits_{param} excl60"
+        popt, pcov = ajustar_modelo(s,d,t,g,e, nombre, f_out)
+        if popt is not None:
+            plot_residuos(s,d,t,g,e, popt, nombre, coord)
+            plot_prediccion_vs_sigma(s,d,t,g,e, popt, nombre, coord)
+
+        f_out.write("  Ajuste global (excluye solo NaN, incluye theta=60°):\n")
+        s,d,t,g,e = preparar_datos(gv, ev, sigma, D, ang, excluir_60=False)
+        ajustar_modelo(s,d,t,g,e, f"4hits_{param} soloNaN", f_out)
+
+f_out.close()
+print(f"Resultados en: {out_dir}")
