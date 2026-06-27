@@ -54,9 +54,14 @@ def hacer_figura(indices, titulo, nombre_archivo):
             val = coefs[caso][ci][0] * escala
             err = coefs[caso][ci][1] * escala
             color = colores_caso[caso]
-            ax.bar(ki, val, color=color, alpha=0.85, width=0.7)
-            ax.errorbar(ki, val, yerr=2*err, fmt='none', color='black',
-                        capsize=3, linewidth=1.2)
+            #barras
+            #ax.bar(ki, val, color=color, alpha=0.85, width=0.7)
+            #ax.errorbar(ki, val, yerr=2*err, fmt='none', color='black',
+            #            capsize=3, linewidth=1.2)
+            #puntos
+            ax.errorbar(ki, val, yerr=2*err, fmt='o', color=color,
+                markersize=10, capsize=4, linewidth=1.5,
+                markeredgecolor='black', markeredgewidth=0.5)
         ax.axhline(0, color='black', linewidth=0.8)
         ax.set_title(f"{nombre}\n{unidad}", fontsize=8)
         ax.set_xticks(x_pos)

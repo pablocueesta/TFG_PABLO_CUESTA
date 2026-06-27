@@ -110,6 +110,10 @@ def ejecutar_analisis_D(D):
 
     f_info = open(salida_fit, "w", encoding="utf-8")
     f_info.write(f"D={D:.1f} cm  sigma_hit={sigma_hit:.3f} mm\n")
+    #para ver si aumenta la proporcion de trayectorias de 4 hits con D
+    N_total = len(eventos3) + len(eventos4)
+    f_info.write(f"Eventos 3 hits: {len(eventos3)} ({100*len(eventos3)/N_total:.1f}%)  "
+                 f"Eventos 4 hits: {len(eventos4)} ({100*len(eventos4)/N_total:.1f}%)\n")
 
     #RUTA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\D_Combinado_Lorentz"
     RUTA = os.path.join(BASE, "Plots", "D_Combinado_Lorentz")

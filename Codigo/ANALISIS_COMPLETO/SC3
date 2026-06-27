@@ -98,9 +98,9 @@ def matriz_mapas(valores, err, titulo_base, nombre_base):
             pct = (ni-1)*100
             sign = '+' if pct>=0 else ''
             ax.text(xi, yi+1.5, f"{vi:.3f}", ha='center', va='center',
-                    fontsize=6.5, fontweight='bold', zorder=4)
+                    fontsize=6.5, fontweight='bold', color='white', zorder=4) #añadimos , color='white' para que sea blanco tmb
             ax.text(xi, yi-1.5, f"({sign}{pct:.1f}%)", ha='center', va='center',
-                    fontsize=5.5, color='#333333', zorder=4)
+                    fontsize=5.5, color='white', zorder=4) #cambio color de '#333333' a blanco {sign}{pct:.1f}%
 
         ax.set_xticks(D_vals); ax.set_xticklabels([f"{d:.0f}" for d in D_vals])
         ax.set_yticks(ang_vals); ax.set_yticklabels([f"{a:.0f}" for a in ang_vals])

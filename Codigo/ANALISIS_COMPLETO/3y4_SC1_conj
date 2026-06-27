@@ -82,7 +82,7 @@ def ejecutar_analisis(D, ang, sigma_hit):
 
     f_info=open(salida_fit,"w",encoding="utf-8")
     f_info.write(f"D={D:.1f}cm  ang={ang}°  sigma_hit={sigma_hit:.3f}mm\n")
-
+    
     def analizar_combinado(data, data_full, corte_p95, frac_p95, titulo):
         hist,bins=np.histogram(data,bins=N_BINS)
         centers=(bins[:-1]+bins[1:])/2

@@ -1,4 +1,5 @@
 D=10.0 cm  sigma_hit=0.085 mm
+Eventos 3 hits: 39741 (23.3%)  Eventos 4 hits: 130518 (76.7%)
 
 --- Combinado X (3+4 hits) ---
 N para fit (p95): 161745  N total: 170259
