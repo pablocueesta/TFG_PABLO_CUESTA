@@ -14,6 +14,10 @@ def aplicar_percentil(data, p=95):
 def gauss(x, A, mu, sigma):
     return A * np.exp(-(x-mu)**2 / (2*sigma**2))
 
+def double_gauss(x, A1, sigma1, A2, sigma2, mu):
+    return (A1*np.exp(-(x-mu)**2/(2*sigma1**2)) +
+            A2*np.exp(-(x-mu)**2/(2*sigma2**2)))
+
 def lorentz(x, A, mu, gamma):
     return A / (1 + ((x-mu)/gamma)**2)
 
@@ -114,8 +118,8 @@ def ejecutar_analisis(sigma_hit):
         ax.set_xlim(-margen, margen)
         #ax.set_title(titulo); 
         ax.set_title(f"{titulo}" + rf" $\sigma_{{\text{{hit}}}}$={sigma_hit:.3f} mm")
-        ax.set_xlabel("Residual (mm)"); ax.set_ylabel("Cuentas")
-        ax.legend(fontsize=9); ax.grid()
+        ax.set_xlabel("Residual (mm)", fontsize=10); ax.set_ylabel("Cuentas", fontsize=10)
+        ax.legend(fontsize=8.40); ax.grid()
         fig.savefig(ruta_base + "_lineal.png", dpi=150); plt.close(fig)
 
         # --- logaritmico ---
@@ -224,6 +228,20 @@ def ejecutar_analisis(sigma_hit):
             print(f"  Fit doble no fisico en {titulo}"); return
         gamma_eff = (A1*g1+A2*g2)/(A1+A2)
 
+        double_gauss_ok = False
+        try:
+            pdg, cdg = curve_fit(double_gauss, centers, hist,
+                                 p0=[max(hist), gamma0*0.3, max(hist)/5, gamma0*1.5, 0],
+                                 bounds=([0,0,0,0,-0.1],[np.inf,np.inf,np.inf,np.inf,0.1]),
+                                 maxfev=10000)
+        
+            A1g,s1g,A2g,s2g,mu_dg = [float(p) for p in pdg]
+            if s1g>s2g: A1g,A2g=A2g,A1g; s1g,s2g=s2g,s1g
+            if 0<s1g<5 and 0<s2g<5:
+                double_gauss_ok = True
+        except RuntimeError:
+            pass
+
         fits = []
         #if gauss_ok:
         #    fits.append((x_fit, gauss(x_fit,*pg),
@@ -233,6 +251,12 @@ def ejecutar_analisis(sigma_hit):
             fits.append((x_fit, lorentz(x_fit,A_l,mu_l,gamma_l),
                          {'linestyle':':','color':'green','linewidth':1.5,
                           'label':rf"Lorentz simple: $\gamma_s$={gamma_l:.3f} mm"}))
+            
+        if double_gauss_ok:
+            fits.append((x_fit, double_gauss(x_fit,A1g,s1g,A2g,s2g,mu_dg),
+                         {'color':'purple','linewidth':2,'linestyle':'-.',
+                          'label':rf"Doble Gauss: $\sigma_1$={s1g:.3f}, $\sigma_2$={s2g:.3f} mm"}))            
+            
         fits.append((x_fit, double_lorentz(x_fit,A1,g1,A2,g2,mu_dl),
                      {'color':'red','linewidth':2,
                       'label':rf"Doble Lorentz"}))
@@ -270,8 +294,8 @@ def ejecutar_analisis(sigma_hit):
     print(f"Resultados guardados para sigma={sigma_hit:.3f}")
 
 
-#sigmas = np.arange(0.050, 0.205, 0.005)
-sigmas = [0.0, 0.085]
+sigmas = np.arange(0.050, 0.205, 0.005)
+#sigmas = [0.0, 0.085]
 for sigma in sigmas:
     try:
         ejecutar_analisis(round(sigma, 3)) 

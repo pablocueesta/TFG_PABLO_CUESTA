@@ -60,10 +60,10 @@ f_out = open(os.path.join(carpeta, "pendientes.txt"), "w", encoding="utf-8")
 
 def plot_3hits(s_hit, g, e, p95_ancho, titulo, nombre):
     fig, (ax1, ax2) = plt.subplots(2,1,figsize=(8,10),sharex=True)
-    fig.suptitle(titulo)
+    fig.suptitle(titulo, fontsize=12)
 
     x,y,err = limpiar(s_hit,g,e)
-    ax1.errorbar(x,y,yerr=err,fmt='o',color='blue',capsize=3,label='gamma (Lorentz simple)')
+    ax1.errorbar(x,y,yerr=err,fmt='o',color='blue',capsize=3,label=rf"$\gamma_s$ (Lorentz simple)")
     f_out.write(f"\n--- {titulo} ---\n")
     res = fit_lineal(x,y,err)
     if res:
@@ -72,7 +72,7 @@ def plot_3hits(s_hit, g, e, p95_ancho, titulo, nombre):
         ax1.plot(xf,a*xf+b,color='blue',linewidth=2,
                  label=f'Fit: a={a:.3f}+-{ea:.3f}, b={b:.4f}+-{eb:.4f}')
         f_out.write(f"gamma: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
-    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
+    ax1.set_ylabel(rf"$\gamma_s$ (mm)", fontsize=12); ax1.legend(fontsize=12); ax1.grid()
 
     xc,yc = limpiar(s_hit,p95_ancho)
     ax2.plot(xc,yc,'o-',color='orange',linewidth=2,label='Corte percentil 95')
@@ -83,22 +83,24 @@ def plot_3hits(s_hit, g, e, p95_ancho, titulo, nombre):
         #ax2.plot(xf,p2[0]*xf+p2[1],'--',color='darkorange',linewidth=2,
                  #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
-    ax2.set_xlabel("Smearing [mm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
-    ax2.set_title("Ventana de ajuste (percentil 95) vs smearing")
-    ax2.legend(fontsize=8); ax2.grid()
+    ax2.set_xlabel(rf"$\sigma_{{\text{{hit}}}}$ (mm)", fontsize=12); ax2.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=12)
+    ax2.set_title("Ventana de ajuste (percentil 95) vs smearing", fontsize=12)
+    ax2.legend(fontsize=12); ax2.grid()
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir,f"{nombre}.png"),dpi=300); plt.close()
     print(f"Guardado: {nombre}.png")
 
+etiq_latex = {'gamma1': r'$\gamma_1$ (core)', 'gamma2': r'$\gamma_2$ (cola)'}
+
 def plot_4hits(s_hit, g1,e1,g2,e2, p95_ancho, titulo, nombre):
     fig, (ax1, ax2) = plt.subplots(2,1,figsize=(8,10),sharex=True)
-    fig.suptitle(titulo)
+    fig.suptitle(titulo, fontsize=12)
 
     x1,y1,ee1 = limpiar(s_hit,g1,e1)
     x2,y2,ee2 = limpiar(s_hit,g2,e2)
-    ax1.errorbar(x1,y1,yerr=ee1,fmt='o',color='blue',capsize=3,label='gamma1 (core)')
-    ax1.errorbar(x2,y2,yerr=ee2,fmt='s',color='red', capsize=3,label='gamma2 (cola)')
+    ax1.errorbar(x1,y1,yerr=ee1,fmt='o',color='blue',capsize=3,label=rf"$\gamma_1$ (core)")
+    ax1.errorbar(x2,y2,yerr=ee2,fmt='s',color='red', capsize=3,label=rf"$\gamma_2$ (cola)")
     f_out.write(f"\n--- {titulo} ---\n")
     for (x,y,e,color,etiq) in [(x1,y1,ee1,'blue','gamma1'),(x2,y2,ee2,'red','gamma2')]:
         res = fit_lineal(x,y,e)
@@ -106,9 +108,9 @@ def plot_4hits(s_hit, g1,e1,g2,e2, p95_ancho, titulo, nombre):
             a,b,ea,eb = res
             xf = np.linspace(min(x),max(x),200)
             ax1.plot(xf,a*xf+b,color=color,linewidth=2,
-                     label=f'Fit {etiq}: a={a:.3f}+-{ea:.3f}')
+                     label=rf'Fit {etiq_latex[etiq]}: a={a:.3f}+-{ea:.3f}')
             f_out.write(f"{etiq}: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
-    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
+    ax1.set_ylabel(rf"$\gamma_s$ (mm)", fontsize=12); ax1.legend(fontsize=12); ax1.grid()
 
     xc,yc = limpiar(s_hit,p95_ancho)
     ax2.plot(xc,yc,'s-',color='green',linewidth=2,label='Corte percentil 95')
@@ -118,9 +120,9 @@ def plot_4hits(s_hit, g1,e1,g2,e2, p95_ancho, titulo, nombre):
         #ax2.plot(xf,p2[0]*xf+p2[1],'--',color='darkgreen',linewidth=2,
                  #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
-    ax2.set_xlabel("Smearing [mm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
-    ax2.set_title("Ventana de ajuste (percentil 95) vs smearing")
-    ax2.legend(fontsize=8); ax2.grid()
+    ax2.set_xlabel(rf"$\sigma_{{\text{{hit}}}}$ (mm)", fontsize=12); ax2.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=12)
+    ax2.set_title("Ventana de ajuste (percentil 95) vs smearing", fontsize=12)
+    ax2.legend(fontsize=12); ax2.grid()
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir,f"{nombre}.png"),dpi=300); plt.close()

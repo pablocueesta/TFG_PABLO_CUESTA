@@ -38,6 +38,12 @@ Z_p95_lo = data[:,21]; Z_p95_hi= data[:,22] # antes [19],[20]
 X_p95_ancho = (X_p95_hi - X_p95_lo) / 2
 Z_p95_ancho = (Z_p95_hi - Z_p95_lo) / 2
 
+etiq_latex = {
+    'gamma_simple': r'$\gamma_s$',
+    'gamma1': r'$\gamma_1$ (core)',
+    'gamma2': r'$\gamma_2$ (cola)'
+}
+
 def limpiar(x, y, e=None):
     if e is not None:
         mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<2.0)
@@ -75,10 +81,10 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, ge, chi2s,chi2dl, p95_ancho, ti
     xge, yge = limpiar(s_hit, ge)
 
     # panel 1: gammas
-    ax1.errorbar(xs,ys,yerr=ees,fmt='o',color='orange',capsize=3,label='gamma simple')
-    ax1.errorbar(x1,y1,yerr=ee1,fmt='o',color='blue',  capsize=3,label='gamma1 (core)')
-    ax1.errorbar(x2,y2,yerr=ee2,fmt='s',color='red',   capsize=3,label='gamma2 (cola)')
-    ax1.plot(xge, yge, 'D--', color='green', label='gamma_eff')
+    ax1.errorbar(xs,ys,yerr=ees,fmt='o',color='orange',capsize=3,label=rf"$\gamma_s$ (Lorentz simple)")
+    ax1.errorbar(x1,y1,yerr=ee1,fmt='o',color='blue',  capsize=3,label=rf"$\gamma_1$ (core)")
+    ax1.errorbar(x2,y2,yerr=ee2,fmt='s',color='red',   capsize=3,label=rf"$\gamma_2$ (cola)")
+    ax1.plot(xge, yge, 'D--', color='green', label=rf"$\gamma_{{\text{{eff}}}}$")
     f_out.write(f"\n--- {titulo} ---\n")
     for (x,y,e,color,etiq) in [(xs,ys,ees,'orange','gamma_simple'),
                                 (x1,y1,ee1,'blue','gamma1'),
@@ -88,28 +94,28 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, ge, chi2s,chi2dl, p95_ancho, ti
             a,b,ea,eb = res
             xf = np.linspace(min(x),max(x),200)
             ax1.plot(xf,a*xf+b,color=color,linewidth=2,
-                     label=f'Fit {etiq}: a={a:.3f}+-{ea:.3f}')
+                     label=f'Fit {etiq_latex[etiq]}: a={a:.3f}+-{ea:.3f}')
             f_out.write(f"{etiq}: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
-    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
+    ax1.set_ylabel("Anchuras (mm)", fontsize=14); ax1.legend(fontsize=11); ax1.grid()
 
     # panel 2: chi2
-    ax2.plot(xcs,ycs,'o-',color='orange',label='chi2/dof Lorentz simple')
-    ax2.plot(xcd,ycd,'s-',color='red',   label='chi2/dof Doble Lorentz')
-    ax2.axhline(1.0,color='black',linestyle='--',linewidth=1,label='chi2/dof=1')
-    ax2.set_ylabel("chi2/dof"); ax2.set_title("Calidad del ajuste")
-    ax2.legend(fontsize=8); ax2.grid()
+    ax2.plot(xcs,ycs,'o-',color='orange',label=rf"$\chi^2/\nu$ Lorentz simple")
+    ax2.plot(xcd,ycd,'s-',color='red',   label=rf"$\chi^2/\nu$ Doble Lorentz")
+    ax2.axhline(1.0,color='black',linestyle='--',linewidth=1,label=rf"$\chi^2/\nu=1$")
+    ax2.set_ylabel(rf"$\chi^2/\nu$", fontsize=14); ax2.set_title("Calidad del ajuste", fontsize=12)
+    ax2.legend(fontsize=14); ax2.grid()
 
     # panel 3: ventana p95
-    ax3.plot(xc,yc,'D-',color='magenta',linewidth=2,label='Semianchura del percentil 95')
+    ax3.plot(xc,yc,'D-',color='magenta',linewidth=2,label=rf"Semianchura del percentil 95")
     if len(xc)>=3:
         #p2 = np.polyfit(xc,yc,1)
         xf = np.linspace(min(xc),max(xc),200)
         #ax3.plot(xf,p2[0]*xf+p2[1],'--',color='darkviolet',linewidth=2,
                  #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
-    ax3.set_xlabel("Smearing [mm]"); ax3.set_ylabel("Semianchura del percentil 95 [mm]")
-    ax3.set_title("Ventana de ajuste (semianchura del percentil 95) vs smearing")
-    ax3.legend(fontsize=8); ax3.grid()
+    ax3.set_xlabel(rf"$\sigma_{{\text{{hit}}}}$ (mm)", fontsize=14); ax3.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=14)
+    ax3.set_title("Ventana de ajuste (semianchura del percentil 95) vs smearing", fontsize=12)
+    ax3.legend(fontsize=14); ax3.grid()
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir,f"{nombre}.png"),dpi=200); plt.close()

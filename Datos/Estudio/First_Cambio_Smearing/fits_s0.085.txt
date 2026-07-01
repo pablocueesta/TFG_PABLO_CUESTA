@@ -1,0 +1,16 @@
+Sigma ResX 3 hits: 0.1369 mm
+Sigma ResZ 3 hits: 0.1383 mm
+Sigma ResX 4 hits: 0.8501 mm
+Sigma ResZ 4 hits: 0.8295 mm
+Eventos 3 hits total: 38910
+Eventos 3 hits tras cut: 36964
+Eventos 4 hits total: 122939
+Eventos 4 hits tras cut: 116791
+
+--- Residual X (4 hits) ---
+Gauss simple: mu = -0.0001, sigma = 0.0361
+Doble Gauss:
+   mu = -0.0001
+   sigma1 (core) = 0.0142 +- 0.0004
+   sigma2 (cola) = 0.0556 +- 0.0009
+   mu = -0.0001 +- 0.0002
