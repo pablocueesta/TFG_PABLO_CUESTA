@@ -11,21 +11,21 @@ os.makedirs(out_dir, exist_ok=True)
 # Todos los coeficientes con sus valores y errores reales (excl60)
 # Orden: a0, a1, a2, a3, a12, a13, a23
 coefs = {
-    "X g1 D<=20": [( 0.006359, 0.000666), ( 0.0247,  0.0070),  (-0.00029, 0.00004),
+    rf"X $\gamma_1$ $D\leq20$": [( 0.006359, 0.000666), ( 0.0247,  0.0070),  (-0.00029, 0.00004),
                    (-0.000001, 0.000020), ( 0.00502, 0.00041),  ( 0.000113,0.000132), (-0.0000012,0.0000010)],
-    "X g1 D>=20": [( 0.000492, 0.000889), ( 0.1869,  0.0098),  ( 0.00002, 0.00003),
+    rf"X $\gamma_1$ $D\geq20$": [( 0.000492, 0.000889), ( 0.1869,  0.0098),  ( 0.00002, 0.00003),
                    (-0.000061, 0.000023), (-0.00349, 0.00036),  ( 0.000029,0.000120), ( 0.0000021,0.0000008)],
-    "X g2 D<=20": [( 0.006427, 0.000601), ( 0.2087,  0.0058),  ( 0.00003, 0.00005),
+    rf"X $\gamma_2$ $D\leq20$": [( 0.006427, 0.000601), ( 0.2087,  0.0058),  ( 0.00003, 0.00005),
                    ( 0.000040, 0.000021), ( 0.02280, 0.00053),  ( 0.000655,0.000152), (-0.0000041,0.0000013)],
-    "X g2 D>=20": [( 0.002583, 0.002210), ( 0.5763,  0.0256),  ( 0.00018, 0.00008),
+    rf"X $\gamma_2$ $D\geq20$": [( 0.002583, 0.002210), ( 0.5763,  0.0256),  ( 0.00018, 0.00008),
                    ( 0.000019, 0.000057), ( 0.00410, 0.00095),  ( 0.000208,0.000313), (-0.0000014,0.0000021)],
-    "Z g1 D<=20": [( 0.004853, 0.000690), ( 0.0484,  0.0071),  (-0.00021, 0.00004),
+    rf"Z $\gamma_1$ $D\leq20$": [( 0.004853, 0.000690), ( 0.0484,  0.0071),  (-0.00021, 0.00004),
                    (-0.000015, 0.000021), ( 0.00354, 0.00041),  ( 0.000163,0.000134), ( 0.0000017,0.0000011)],
-    "Z g1 D>=20": [( 0.001181, 0.000830), ( 0.1637,  0.0097),  (-0.00003, 0.00003),
+    rf"Z $\gamma_1$ $D\geq20$": [( 0.001181, 0.000830), ( 0.1637,  0.0097),  (-0.00003, 0.00003),
                    ( 0.000113, 0.000025), (-0.00246, 0.00036),  (-0.000218,0.000114), (-0.0000034,0.0000008)],
-    "Z g2 D<=20": [( 0.004463, 0.000588), ( 0.2302,  0.0058),  ( 0.00017, 0.00005),
+    rf"Z $\gamma_2$ $D\leq20$": [( 0.004463, 0.000588), ( 0.2302,  0.0058),  ( 0.00017, 0.00005),
                    ( 0.000019, 0.000021), ( 0.02092, 0.00053),  ( 0.000715,0.000148), (-0.0000002,0.0000014)],
-    "Z g2 D>=20": [( 0.006534, 0.002152), ( 0.5153,  0.0245),  ( 0.00002, 0.00008),
+    rf"Z $\gamma_2$ $D\geq20$": [( 0.006534, 0.002152), ( 0.5153,  0.0245),  ( 0.00002, 0.00008),
                    ( 0.000209, 0.000063), ( 0.00640, 0.00094),  (-0.000027,0.000308), (-0.0000074,0.0000022)],
 }
 
@@ -35,14 +35,21 @@ nombres_coef    = [r"$a_0$", r"$a_1$", r"$a_2$", r"$a_3$",
 
 # escalas para hacer comparables visualmente
 escalas = [1000, 1, 1000, 10000, 100, 10000, 1e6]
-unidades= ["(mm·10³)", "(adim)", "(mm/cm·10³)", "(mm/°·10⁴)",
-           "(10²·mm/(mm·cm))", "(10⁴·mm/(mm·°))", "(10⁶·mm/(cm·°))"]
+unidades = [
+    r"($10^3$ mm)",
+    r"(adim.)",
+    r"($10^3$ mm/cm)",
+    r"($10^4$ mm/°)",
+    r"($10^2$ mm/(mm·cm))",
+    r"($10^4$ mm/(mm·°))",
+    r"($10^6$ mm/(cm·°))",
+]
 
 colores_caso = {
-    "X g1 D<=20": '#1f77b4', "X g1 D>=20": '#aec7e8',
-    "X g2 D<=20": '#d62728', "X g2 D>=20": '#ff9896',
-    "Z g1 D<=20": '#2ca02c', "Z g1 D>=20": '#98df8a',
-    "Z g2 D<=20": '#ff7f0e', "Z g2 D>=20": '#ffbb78',
+    rf"X $\gamma_1$ $D\leq20$": '#1f77b4', rf"X $\gamma_1$ $D\geq20$": '#aec7e8',
+    rf"X $\gamma_2$ $D\leq20$": '#d62728', rf"X $\gamma_2$ $D\geq20$": '#ff9896',
+    rf"Z $\gamma_1$ $D\leq20$": '#2ca02c', rf"Z $\gamma_1$ $D\geq20$": '#98df8a',
+    rf"Z $\gamma_2$ $D\leq20$": '#ff7f0e', rf"Z $\gamma_2$ $D\geq20$": '#ffbb78',
 }
 
 from matplotlib.patches import Patch
@@ -55,7 +62,7 @@ def hacer_figura(indices, titulo, nombre_archivo):
     n = len(indices)
     fig, axes = plt.subplots(1, n, figsize=(n*3.2, 6))
     if n == 1: axes = [axes]
-    fig.suptitle(titulo, fontsize=10)
+    fig.suptitle(titulo, fontsize=14)
 
     for ax, ci in zip(axes, indices):
         nombre = nombres_coef[ci]
@@ -74,14 +81,14 @@ def hacer_figura(indices, titulo, nombre_archivo):
                 markersize=10, capsize=4, linewidth=1.5,
                 markeredgecolor='black', markeredgewidth=0.5)
         ax.axhline(0, color='black', linewidth=0.8)
-        ax.set_title(f"{nombre}\n{unidad}", fontsize=8)
+        ax.set_title(f"{nombre}\n{unidad}", fontsize=12)
         ax.set_xticks(x_pos)
-        ax.set_xticklabels(etiquetas_casos, rotation=45, ha='right', fontsize=6.5)
+        ax.set_xticklabels(etiquetas_casos, rotation=45, ha='right', fontsize=8)
         ax.grid(axis='y', linestyle='--', alpha=0.4)
         ax.tick_params(axis='y', labelsize=7)
 
     handles = [Patch(color=colores_caso[c], alpha=0.85, label=c) for c in etiquetas_casos]
-    fig.legend(handles=handles, loc='lower center', ncol=4, fontsize=7.5,
+    fig.legend(handles=handles, loc='lower center', ncol=4, fontsize=12,
                bbox_to_anchor=(0.5, -0.02))
     fig.tight_layout(rect=[0, 0.10, 1, 1])
     ruta = os.path.join(out_dir, nombre_archivo)
