@@ -38,6 +38,12 @@ Z3_p95_ancho = (Z3_p95_hi - Z3_p95_lo) / 2
 X4_p95_ancho = (X4_p95_hi - X4_p95_lo) / 2
 Z4_p95_ancho = (Z4_p95_hi - Z4_p95_lo) / 2
 
+etiq_latex = {
+    '3hits gamma':  r'$\gamma_s$',
+    '4hits gamma1': r'$\gamma_1$ (core)',
+    '4hits gamma2': r'$\gamma_2$ (cola)'
+}
+
 def limpiar(x, y, e=None):
     if e is not None:
         mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<5)
@@ -59,10 +65,10 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
     x2, y2, ee2 = limpiar(D, g2,  e2)
     #xge, yge    = limpiar(D, ge)
 
-    ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='blue',   capsize=3, label='3 hits gamma simple')
-    ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='green',  capsize=3, label='4 hits gamma1 (core)')
-    ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='4 hits gamma2 (cola)')
-    #ax1.plot(xge, yge, 'D--', color='orange', label='4 hits gamma_eff')
+    ax1.errorbar(xs, ys, yerr=ees, fmt='o', color='blue',   capsize=3, label=rf"3 hits $\gamma_s$")
+    ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='green',  capsize=3, label=rf"4 hits $\gamma_1$ (core)")
+    ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label=rf"4 hits $\gamma_2$ (cola)")
+    #ax1.plot(xge, yge, 'D--', color='orange', label=rf"4 hits $\gamma_{{\text{{eff}}}}$")
 
     f_out.write(f"\n--- {titulo} ---\n")
     for (x, y, e, color, etiq) in [
@@ -74,19 +80,19 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
             p, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
             xf = np.linspace(min(x), max(x), 200)
             ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2,
-                     label=f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
-            f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
+                     label=f'Fit {etiq_latex[etiq]}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}')
+            f_out.write(f"{etiq_latex[etiq]}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
                         f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
 
     ax1.axvline(7.0, color='gray', linestyle=':', linewidth=1, label='D=d=7cm')
-    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
+    ax1.set_ylabel("Anchura (mm)"); ax1.legend(fontsize=9); ax1.grid()
 
     # --- panel 2: semiancho corte p95 vs D (3 hits y 4 hits) ---
     xc3, yc3 = limpiar(D, p95_3)
     xc4, yc4 = limpiar(D, p95_4)
 
-    ax2.plot(xc3, yc3, 'o-', color='blue',  linewidth=2, label='Semianchura del percentil 95 — 3 hits')
-    ax2.plot(xc4, yc4, 's-', color='green', linewidth=2, label='Semianchura del percentil 95 — 4 hits')
+    ax2.plot(xc3, yc3, 'o-', color='blue',  linewidth=2, label=rf"Semianchura del percentil 95 — 3 hits")
+    ax2.plot(xc4, yc4, 's-', color='green', linewidth=2, label=rf"Semianchura del percentil 95 — 4 hits")
 
     for (xc, yc, color, etiq) in [(xc3, yc3, 'blue', 'p95_3hits'),
                                    (xc4, yc4, 'green','p95_4hits')]:
@@ -98,9 +104,9 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
             #f_out.write(f"{etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
-    ax2.set_xlabel("D [cm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax2.set_xlabel("D (cm)"); ax2.set_ylabel("Semianchura del percentil 95 (mm)")
     ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs D")
-    ax2.legend(fontsize=8); ax2.grid()
+    ax2.legend(fontsize=10); ax2.grid()
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=200)

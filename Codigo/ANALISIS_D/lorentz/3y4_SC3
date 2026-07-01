@@ -46,6 +46,11 @@ Z_p95lo = data[:,21]; Z_p95hi = data[:,22]
 X_p95_ancho = (X_p95hi - X_p95lo) / 2
 Z_p95_ancho = (Z_p95hi - Z_p95lo) / 2
 
+etiq_latex = {
+    'gamma1': r'$\gamma_1$ (core)',
+    'gamma2': r'$\gamma_2$ (cola)'
+}
+
 def limpiar(x, y, e=None):
     if e is not None:
         mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<5)
@@ -62,12 +67,12 @@ def plot_chi2(D, chi2s, chi2dl, titulo, nombre):
     xcd, ycd = limpiar(D, chi2dl)
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(xcs, ycs, 'o-', color='orange', label='chi2/dof Lorentz simple')
-    ax.plot(xcd, ycd, 's-', color='red',    label='chi2/dof Doble Lorentz')
-    ax.axhline(1.0, color='black', linestyle='--', linewidth=1, label='chi2/dof=1')
-    ax.set_xlabel("D [cm]"); ax.set_ylabel("chi2/dof")
+    ax.plot(xcs, ycs, 'o-', color='orange', label=rf"$\chi^2/\nu$ Lorentz simple")
+    ax.plot(xcd, ycd, 's-', color='red',    label=rf"$\chi^2/\nu$ Doble Lorentz")
+    ax.axhline(1.0, color='black', linestyle='--', linewidth=1, label=rf"$\chi^2/\nu$=1")
+    ax.set_xlabel("D (cm)"); ax.set_ylabel(rf"$\chi^2/\nu$")
     ax.set_title("Calidad del ajuste — " + titulo)
-    ax.legend(fontsize=8); ax.grid()
+    ax.legend(fontsize=11); ax.grid()
     fig.tight_layout()
     fig.savefig(os.path.join(out_dir, f"{nombre}_chi2.png"), dpi=200)
     plt.close(fig)
@@ -82,8 +87,8 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     x1, y1, ee1 = limpiar(D, g1, e1)
     x2, y2, ee2 = limpiar(D, g2, e2)
 
-    ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='blue',   capsize=3, label='gamma1 core')
-    ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label='gamma2 cola')
+    ax1.errorbar(x1, y1, yerr=ee1, fmt='s', color='blue',   capsize=3, label=etiq_latex['gamma1'])
+    ax1.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',    capsize=3, label=etiq_latex['gamma2'])
 
     f_out.write(f"\n--- {titulo} ---\n")
     for (x, y, e, color, etiq) in [
@@ -102,7 +107,7 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
             p1, cov1 = np.polyfit(x_t1, y_t1, 1, w=1/e_t1, cov=True)
             xf1 = np.linspace(min(x_t1), 20, 200)
             ax1.plot(xf1, p1[0]*xf1+p1[1], color=color, linewidth=2, linestyle='-',
-                     label=f'Fit {etiq} (D≤20): a={p1[0]:.4f}±{np.sqrt(cov1[0,0]):.4f}')
+                     label=f'Fit {etiq_latex[etiq]} (D≤20): a={p1[0]:.4f}±{np.sqrt(cov1[0,0]):.4f}')
             f_out.write(f"    a={p1[0]:.4f}+-{np.sqrt(cov1[0,0]):.4f}"
                         f", b={p1[1]:.4f}+-{np.sqrt(cov1[1,1]):.4f}\n")
 
@@ -111,24 +116,24 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
             p2, cov2 = np.polyfit(x_t2, y_t2, 1, w=1/e_t2, cov=True)
             xf2 = np.linspace(20, max(x_t2), 200)
             ax1.plot(xf2, p2[0]*xf2+p2[1], color=color, linewidth=2, linestyle='--',
-                     label=f'Fit {etiq} (D≥20): a={p2[0]:.4f}±{np.sqrt(cov2[0,0]):.4f}')
+                     label=f'Fit {etiq_latex[etiq]} (D≥20): a={p2[0]:.4f}±{np.sqrt(cov2[0,0]):.4f}')
             f_out.write(f"    a={p2[0]:.4f}+-{np.sqrt(cov2[0,0]):.4f}"
                         f", b={p2[1]:.4f}+-{np.sqrt(cov2[1,1]):.4f}\n")
 
     ax1.axvline(7.0,  color='gray',   linestyle=':', linewidth=1, label='D=d=7cm')
     ax1.axvline(20.0, color='black',  linestyle=':', linewidth=1, label='D=20cm')
-    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=7); ax1.grid()
+    ax1.set_ylabel("Anchura (mm)"); ax1.legend(fontsize=11); ax1.grid()
 
     # --- panel inferior: ancho del corte p95 vs D ---
     xc, yc = limpiar(D, p95_ancho)
     ax2.plot(xc, yc, 'D-', color='magenta', linewidth=2,
-             label='Semianchura del percentil 95 [mm]')
+             label='Semianchura del percentil 95 (mm)')
 
     ax2.axvline(7.0,  color='gray',  linestyle=':', linewidth=1)
     ax2.axvline(20.0, color='black', linestyle=':', linewidth=1)
-    ax2.set_xlabel("D [cm]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
+    ax2.set_xlabel("D (cm)"); ax2.set_ylabel("Semianchura del percentil 95 (mm)")
     ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs D")
-    ax2.legend(fontsize=8); ax2.grid()
+    ax2.legend(fontsize=12); ax2.grid()
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=200)
