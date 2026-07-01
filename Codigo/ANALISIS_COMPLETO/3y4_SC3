@@ -99,7 +99,7 @@ def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
             v_nom_s = valores[mask_nom][0]
         else:
             print(f"  AVISO: sin nominal para sigma={s} en {titulo_base}"); continue
-        ax.set_title(rf"$\sigma_{{\text{{hit}}}}$={s:.3f} mm" +"\n"+ rf"(Anchura nominal={v_nom_s:.4f} mm)", fontsize=11)
+        ax.set_title(rf"$\sigma_{{\text{{hit}}}}$={s:.3f} mm" +"\n"+ rf"(Anchura nominal = {v_nom_s:.4f} mm)", fontsize=11)
 
         xs,ys,vs,ns = [],[],[],[]
         for d in D_vals:
@@ -133,8 +133,8 @@ def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
         fig.colorbar(sc,ax=ax,label="Valor nominal normalizado",extend='both')
 
         for xi,yi,vi,ni in zip(xs,ys,vs,ns):
-            pct=(ni-1)*100; sign='+' if pct>=0 else ''
-            ax.text(xi,yi,f"{sign}{pct:.1f}%",ha='center',va='center',
+            pct=(ni-1)*100#; sign='+' if pct>=0 else ''
+            ax.text(xi,yi,f"{pct:.1f}%",ha='center',va='center',
                     fontsize=7.0, fontweight='bold',color='white',zorder=4)
 
         ax.set_xticks(D_vals); ax.set_xticklabels([f"{d:.0f}" for d in D_vals])

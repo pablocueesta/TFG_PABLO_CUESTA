@@ -24,7 +24,6 @@ D_vals     = np.array([7.0, 13.0, 20.0, 30.0])
 ang_vals   = np.array([0,   20,   40,   60])
 sigma_vals = np.array([0.050, 0.085, 0.130, 0.200])
 
-# valor nominal: sigma=0.085, D=13, ang=0
 S_NOM, D_NOM, A_NOM = 0.085, 13.0, 0
 
 sigma = data[:,0]; D = data[:,1]; ang = data[:,2]
@@ -45,35 +44,45 @@ def limpiar(x, y, e=None):
     mask = np.isfinite(x)&np.isfinite(y)&(y>0)
     return x[mask],y[mask]
 
-def get_nominal(valores, s_nom, d_nom, a_nom):
-    mask = (sigma==s_nom)&(D==d_nom)&(ang==a_nom)
-    if mask.sum()==1 and np.isfinite(valores[mask][0]) and valores[mask][0]>0:
-        return valores[mask][0]
-    return np.nan
+def calcular_ns_grupo(lista_valores):
+    todos_ns = []
+    for valores in lista_valores:
+        for s in sigma_vals:
+            mask_nom = (sigma==s)&(D==D_NOM)&(ang==A_NOM)
+            if mask_nom.sum()==1 and np.isfinite(valores[mask_nom][0]) and valores[mask_nom][0]>0:
+                v_nom_s = valores[mask_nom][0]
+            else:
+                continue
+            for d in D_vals:
+                for a in ang_vals:
+                    mask = (sigma==s)&(D==d)&(ang==a)
+                    if mask.sum()==1:
+                        v = valores[mask][0]
+                        if np.isfinite(v) and v>0:
+                            todos_ns.append(v/v_nom_s)
+    todos_ns = np.array(todos_ns)
+    desv = np.percentile(np.abs(todos_ns - 1), 95)
+    if desv < 0.01: desv = 0.01
+    return desv
 
-# ── OPCION 1: matriz de mapas de color D×theta para cada sigma ───────────────
-def matriz_mapas(valores, err, titulo_base, nombre_base):
-    """
-    Para cada sigma_hit genera un mapa de color D×theta normalizado al nominal
-    propio de ese sigma (D=D_NOM, ang=A_NOM para cada sigma_hit).
-    Los 4 mapas se ponen en una figura de 1x4 para comparar directamente.
-    """
-    fig, axes = plt.subplots(1, 4, figsize=(20, 5))
-    fig.suptitle(f"{titulo_base} — mapa D×θ para cada σ_hit\n(cada mapa normalizado a su propio nominal: D={D_NOM:.0f}cm, θ=0°)")
+def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
+    fig, axes = plt.subplots(1, 4, figsize=(20,5))
+    fig.suptitle(rf"{titulo_base} — Mapa $D \times \theta$ para cada $\sigma_{{\text{{hit}}}}$" + "\n",
+                 fontsize=15)
 
     for idx, s in enumerate(sigma_vals):
         ax = axes[idx]
         ax.set_facecolor('#f5f5f5')
 
-        # nominal propio de este sigma_hit
         mask_nom = (sigma==s)&(D==D_NOM)&(ang==A_NOM)
         if mask_nom.sum()==1 and np.isfinite(valores[mask_nom][0]) and valores[mask_nom][0]>0:
             v_nom_s = valores[mask_nom][0]
         else:
             print(f"  AVISO: sin nominal para sigma={s} en {titulo_base}"); continue
-        ax.set_title(f"σ_hit={s:.3f} mm\n(nom={v_nom_s:.4f} mm)", fontsize=9)
+        ax.set_title(rf"$\sigma_{{\text{{hit}}}}$={s:.3f} mm" + "\n" +
+                     rf"(Anchura nominal = {v_nom_s:.4f} mm)", fontsize=11)
 
-        xs, ys, vs, ns = [], [], [], []
+        xs,ys,vs,ns = [],[],[],[]
         for d in D_vals:
             for a in ang_vals:
                 mask = (sigma==s)&(D==d)&(ang==a)
@@ -86,124 +95,112 @@ def matriz_mapas(valores, err, titulo_base, nombre_base):
         if len(xs)==0: continue
         xs=np.array(xs); ys=np.array(ys); vs=np.array(vs); ns=np.array(ns)
 
-        desv = max(abs(ns.max()-1), abs(ns.min()-1))
-        if desv<0.01: desv=0.01
-        norm = TwoSlopeNorm(vcenter=1.0, vmin=1-desv*1.1, vmax=1+desv*1.1)
+        if desv_compartida is not None:
+            desv = desv_compartida
+        else:
+            desv=max(abs(ns.max()-1),abs(ns.min()-1))
+            if desv<0.01: desv=0.01
 
-        sc = ax.scatter(xs, ys, c=ns, cmap=CMAP, norm=norm,
-                        s=800, zorder=3, edgecolors='gray', linewidths=0.5)
-        fig.colorbar(sc, ax=ax, label="Valor norm.")
+        norm=TwoSlopeNorm(vcenter=1.0, vmin=1-desv, vmax=1+desv)
+        ns_sat = np.clip(ns, 1-desv, 1+desv)
+
+        sc=ax.scatter(xs,ys,c=ns_sat,cmap=CMAP,norm=norm,
+                      s=800,zorder=3,edgecolors='gray',linewidths=0.5)
+        fig.colorbar(sc,ax=ax,label="Valor nominal normalizado",extend='both')
 
         for xi,yi,vi,ni in zip(xs,ys,vs,ns):
-            pct = (ni-1)*100
-            sign = '+' if pct>=0 else ''
-            ax.text(xi, yi+1.5, f"{vi:.3f}", ha='center', va='center',
-                    fontsize=6.5, fontweight='bold', color='white', zorder=4) #añadimos , color='white' para que sea blanco tmb
-            ax.text(xi, yi-1.5, f"({sign}{pct:.1f}%)", ha='center', va='center',
-                    fontsize=5.5, color='white', zorder=4) #cambio color de '#333333' a blanco {sign}{pct:.1f}%
+            pct=(ni-1)*100#; sign='+' if pct>=0 else ''
+            ax.text(xi,yi,f"{pct:.1f}%",ha='center',va='center',
+                    fontsize=7.0,fontweight='bold',color='white',zorder=4)
 
         ax.set_xticks(D_vals); ax.set_xticklabels([f"{d:.0f}" for d in D_vals])
         ax.set_yticks(ang_vals); ax.set_yticklabels([f"{a:.0f}" for a in ang_vals])
-        ax.set_xlim(D_vals[0]-4, D_vals[-1]+4)
-        ax.set_ylim(ang_vals[0]-8, ang_vals[-1]+8)
-        ax.set_xlabel("D [cm]"); ax.set_ylabel("θ [grados]")
+        ax.set_xlim(D_vals[0]-4,D_vals[-1]+4)
+        ax.set_ylim(ang_vals[0]-8,ang_vals[-1]+8)
+        ax.set_xlabel(r"$D\,\text{(cm)}$", fontsize=12)
+        ax.set_ylabel(r"$\theta$ (°)", fontsize=12)
 
     fig.tight_layout()
-    fig.savefig(os.path.join(out_mapas, f"{nombre_base}_matriz.png"), dpi=200)
+    fig.savefig(os.path.join(out_mapas,f"{nombre_base}_matriz.png"),dpi=200)
     plt.close(fig)
-    print(f"Guardado: {nombre_base}_matriz.png")
+    print(f"Guardado: {nombre_base}_matriz.png (desv: {desv_compartida if desv_compartida is not None else 'individual'})")
 
-# ── OPCION 3: evolucion vs sigma_hit fijando D y theta ───────────────────────
 def evolucion_vs_sigma(valores, err, titulo_base, nombre_base, label_y):
-    """
-    Para cada combinacion (D, theta), plotea gamma vs sigma_hit.
-    Colores para D, marcadores para theta.
-    """
-    colores_D   = {7.0:'blue', 13.0:'red', 20.0:'green', 30.0:'orange'}
-    markers_ang = {0:'o', 20:'s', 40:'^', 60:'D'}
-
-    fig, ax = plt.subplots(figsize=(10,6))
-    ax.set_title(f"{titulo_base} — evolución vs σ_hit")
-
+    colores_D   = {7.0:'blue',13.0:'red',20.0:'green',30.0:'orange'}
+    markers_ang = {0:'o',20:'s',40:'^',60:'D'}
+    fig,ax = plt.subplots(figsize=(10,6))
+    ax.set_title(rf"{titulo_base} — evolución vs $\sigma_{{\text{{hit}}}}$", fontsize=13)
     for d in D_vals:
         for a in ang_vals:
-            mask_da = (D==d)&(ang==a)
-            xs_raw = sigma[mask_da]; ys_raw = valores[mask_da]; es_raw = err[mask_da]
-            xc,yc,ec = limpiar(xs_raw, ys_raw, es_raw)
+            mask_da=(D==d)&(ang==a)
+            xc,yc,ec=limpiar(sigma[mask_da],valores[mask_da],err[mask_da])
             if len(xc)<2: continue
-            orden = np.argsort(xc)
-            xc,yc,ec = xc[orden],yc[orden],ec[orden]
-            ax.errorbar(xc, yc, yerr=ec,
-                        fmt=f"{markers_ang[a]}-",
-                        color=colores_D[d], capsize=3, linewidth=1.2,
-                        label=f"D={d:.0f}cm θ={a}°" if a==0 else None,
-                        alpha=0.8)
-
-    # leyendas manuales para D y theta
+            orden=np.argsort(xc); xc,yc,ec=xc[orden],yc[orden],ec[orden]
+            ax.errorbar(xc,yc,yerr=ec,fmt=f"{markers_ang[a]}-",
+                        color=colores_D[d],capsize=3,linewidth=1.2,
+                        label=f"D={d:.0f}cm" if a==0 else None,alpha=0.8)
     from matplotlib.lines import Line2D
-    leg_D   = [Line2D([0],[0],color=c,linewidth=2,label=f"D={d:.0f}cm")
-               for d,c in colores_D.items()]
-    leg_ang = [Line2D([0],[0],marker=m,color='gray',linestyle='None',
-                      markersize=6,label=f"θ={a}°")
-               for a,m in markers_ang.items()]
-    ax.legend(handles=leg_D+leg_ang, fontsize=7, ncol=2)
-    ax.set_xlabel("σ_hit [mm]"); ax.set_ylabel(label_y)
-    ax.grid(linestyle='--', alpha=0.5)
+    leg_D  =[Line2D([0],[0],color=c,linewidth=2,label=rf"$D={d:.0f}$ cm")
+             for d,c in colores_D.items()]
+    leg_ang=[Line2D([0],[0],marker=m,color='gray',linestyle='None',
+                    markersize=6,label=rf"$\theta={a}$°")
+             for a,m in markers_ang.items()]
+    ax.legend(handles=leg_D+leg_ang,fontsize=7,ncol=2)
+    ax.set_xlabel(r"$\sigma_{\text{hit}}$ (mm)"); ax.set_ylabel(label_y)
+    ax.grid(linestyle='--',alpha=0.5)
     fig.tight_layout()
-    fig.savefig(os.path.join(out_evol, f"{nombre_base}_vs_sigma.png"), dpi=200)
+    fig.savefig(os.path.join(out_evol,f"{nombre_base}_vs_sigma.png"),dpi=200)
     plt.close(fig)
     print(f"Guardado: {nombre_base}_vs_sigma.png")
 
 def evolucion_vs_D(valores, err, titulo_base, nombre_base, label_y):
-    """
-    Para cada sigma_hit, plotea gamma vs D fijando theta=0.
-    """
-    colores_s = {0.050:'blue', 0.085:'red', 0.130:'green', 0.200:'orange'}
-
-    fig, ax = plt.subplots(figsize=(8,5))
-    ax.set_title(f"{titulo_base} — evolución vs D (θ=0°)")
-
+    colores_s={0.050:'blue',0.085:'red',0.130:'green',0.200:'orange'}
+    fig,ax=plt.subplots(figsize=(8,5))
+    ax.set_title(rf"{titulo_base} — evolución vs $D$ ($\theta=0$°)", fontsize=13)
     for s in sigma_vals:
-        mask_s = (sigma==s)&(ang==0)
-        xs_raw = D[mask_s]; ys_raw = valores[mask_s]; es_raw = err[mask_s]
-        xc,yc,ec = limpiar(xs_raw, ys_raw, es_raw)
+        mask_s=(sigma==s)&(ang==0)
+        xc,yc,ec=limpiar(D[mask_s],valores[mask_s],err[mask_s])
         if len(xc)<2: continue
-        orden = np.argsort(xc)
-        xc,yc,ec = xc[orden],yc[orden],ec[orden]
-        ax.errorbar(xc, yc, yerr=ec, fmt='o-', color=colores_s[s],
-                    capsize=3, label=f"σ_hit={s:.3f}mm")
-
-    ax.set_xlabel("D [cm]"); ax.set_ylabel(label_y)
-    ax.legend(fontsize=8); ax.grid(linestyle='--', alpha=0.5)
+        orden=np.argsort(xc); xc,yc,ec=xc[orden],yc[orden],ec[orden]
+        ax.errorbar(xc,yc,yerr=ec,fmt='o-',color=colores_s[s],
+                    capsize=3,label=rf"$\sigma_{{\text{{hit}}}}$={s:.3f} mm")
+    ax.set_xlabel(r"$D$ (cm)"); ax.set_ylabel(label_y)
+    ax.legend(fontsize=8); ax.grid(linestyle='--',alpha=0.5)
     fig.tight_layout()
-    fig.savefig(os.path.join(out_evol, f"{nombre_base}_vs_D.png"), dpi=200)
+    fig.savefig(os.path.join(out_evol,f"{nombre_base}_vs_D.png"),dpi=200)
     plt.close(fig)
     print(f"Guardado: {nombre_base}_vs_D.png")
 
-# ── EJECUTAR ──────────────────────────────────────────────────────────────────
+# --- escalas compartidas por grupo ---
+# gamma simple (3 hits): X y Z comparten escala
+desv_g3 = calcular_ns_grupo([X3g, Z3g])
+# gamma1 (4 hits): X y Z comparten escala
+desv_g1 = calcular_ns_grupo([X4g1, Z4g1])
+# gamma2 (4 hits): X y Z comparten escala (puede diferir de g1 y g3)
+desv_g2 = calcular_ns_grupo([X4g2, Z4g2])
 
 # matriz de mapas D×theta para cada sigma
-matriz_mapas(X3g,  X3e,  "gamma 3hits X",        "X3_gamma")
-matriz_mapas(X4g1, X4e1, "gamma1 core 4hits X",  "X4_gamma1")
-matriz_mapas(X4g2, X4e2, "gamma2 cola 4hits X",  "X4_gamma2")
-matriz_mapas(Z3g,  Z3e,  "gamma 3hits Z",         "Z3_gamma")
-matriz_mapas(Z4g1, Z4e1, "gamma1 core 4hits Z",  "Z4_gamma1")
-matriz_mapas(Z4g2, Z4e2, "gamma2 cola 4hits Z",  "Z4_gamma2")
+matriz_mapas(X3g,  r"Mapas $\gamma_s\,\text{(mm)}$ 3 hits eje X",       "X3_gamma",  desv_compartida=desv_g3)
+matriz_mapas(X4g1, r"Mapas $\gamma_1\,\text{(mm)}$ 4 hits eje X",     "X4_gamma1", desv_compartida=desv_g1)
+matriz_mapas(X4g2, r"Mapas $\gamma_2\,\text{(mm)}$ 4 hits eje X",     "X4_gamma2", desv_compartida=desv_g2)
+matriz_mapas(Z3g,  r"Mapas $\gamma_s\,\text{(mm)}$ 3 hits eje Z",       "Z3_gamma",  desv_compartida=desv_g3)
+matriz_mapas(Z4g1, r"Mapas $\gamma_1\,\text{(mm)}$ 4 hits eje Z",     "Z4_gamma1", desv_compartida=desv_g1)
+matriz_mapas(Z4g2, r"Mapas $\gamma_2\,\text{(mm)}$ 4 hits eje Z",     "Z4_gamma2", desv_compartida=desv_g2)
 
-# evolución vs sigma_hit (todas las D y theta)
-evolucion_vs_sigma(X3g,  X3e,  "gamma 3hits X",       "X3_gamma",  "γ [mm]")
-evolucion_vs_sigma(X4g1, X4e1, "gamma1 core 4hits X", "X4_gamma1", "γ₁ [mm]")
-evolucion_vs_sigma(X4g2, X4e2, "gamma2 cola 4hits X", "X4_gamma2", "γ₂ [mm]")
-evolucion_vs_sigma(Z3g,  Z3e,  "gamma 3hits Z",       "Z3_gamma",  "γ [mm]")
-evolucion_vs_sigma(Z4g1, Z4e1, "gamma1 core 4hits Z", "Z4_gamma1", "γ₁ [mm]")
-evolucion_vs_sigma(Z4g2, Z4e2, "gamma2 cola 4hits Z", "Z4_gamma2", "γ₂ [mm]")
+# evolución vs sigma_hit
+evolucion_vs_sigma(X3g,  X3e,  r"Evolución $\gamma_s\,\text{(mm)}$ 3 hits eje X",   "X3_gamma",  r"$\gamma_s$ (mm)")
+evolucion_vs_sigma(X4g1, X4e1, r"Evolución $\gamma_1\,\text{(mm)}$ 4 hits eje X", "X4_gamma1", r"$\gamma_1$ (mm)")
+evolucion_vs_sigma(X4g2, X4e2, r"Evolución $\gamma_2\,\text{(mm)}$ 4 hits eje X", "X4_gamma2", r"$\gamma_2$ (mm)")
+evolucion_vs_sigma(Z3g,  Z3e,  r"Evolución $\gamma_s\,\text{(mm)}$ 3 hits eje Z",   "Z3_gamma",  r"$\gamma_s$ (mm)")
+evolucion_vs_sigma(Z4g1, Z4e1, r"Evolución $\gamma_1\,\text{(mm)}$ 4 hits eje Z", "Z4_gamma1", r"$\gamma_1$ (mm)")
+evolucion_vs_sigma(Z4g2, Z4e2, r"Evolución $\gamma_2\,\text{(mm)}$ 4 hits eje Z", "Z4_gamma2", r"$\gamma_2$ (mm)")
 
 # evolución vs D para cada sigma (theta=0)
-evolucion_vs_D(X3g,  X3e,  "gamma 3hits X",       "X3_gamma",  "γ [mm]")
-evolucion_vs_D(X4g1, X4e1, "gamma1 core 4hits X", "X4_gamma1", "γ₁ [mm]")
-evolucion_vs_D(X4g2, X4e2, "gamma2 cola 4hits X", "X4_gamma2", "γ₂ [mm]")
-evolucion_vs_D(Z3g,  Z3e,  "gamma 3hits Z",       "Z3_gamma",  "γ [mm]")
-evolucion_vs_D(Z4g1, Z4e1, "gamma1 core 4hits Z", "Z4_gamma1", "γ₁ [mm]")
-evolucion_vs_D(Z4g2, Z4e2, "gamma2 cola 4hits Z", "Z4_gamma2", "γ₂ [mm]")
+evolucion_vs_D(X3g,  X3e,  r"Evolución $\gamma\,\text{(mm)}$ 3 hits eje X",   "X3_gamma",  r"$\gamma$ (mm)")
+evolucion_vs_D(X4g1, X4e1, r"Evolución $\gamma_1\,\text{(mm)}$ 4 hits eje X", "X4_gamma1", r"$\gamma_1$ (mm)")
+evolucion_vs_D(X4g2, X4e2, r"Evolución $\gamma_2\,\text{(mm)}$ 4 hits eje X", "X4_gamma2", r"$\gamma_2$ (mm)")
+evolucion_vs_D(Z3g,  Z3e,  r"Evolución $\gamma\,\text{(mm)}$ 3 hits eje Z",   "Z3_gamma",  r"$\gamma$ (mm)")
+evolucion_vs_D(Z4g1, Z4e1, r"Evolución $\gamma_1\,\text{(mm)}$ 4 hits eje Z", "Z4_gamma1", r"$\gamma_1$ (mm)")
+evolucion_vs_D(Z4g2, Z4e2, r"Evolución $\gamma_2\,\text{(mm)}$ 4 hits eje Z", "Z4_gamma2", r"$\gamma_2$ (mm)")
 
 print("\nSC3 separado completado.")
