@@ -102,7 +102,7 @@ def ejecutar_analisis(sigma_hit):
 
         # --- lineal ---
         fig, ax = plt.subplots(figsize=(8,6))
-        ax.hist(data, bins=60, alpha=0.6, label=f"Datos (p95)  N={len(data)}")
+        ax.hist(data, bins=60, alpha=0.6, label=f"Datos (p95)") #N={len(data)}
         for (xf, yf, kw) in fits_lineal:
             ax.plot(xf, yf, **kw)
         ax.axvline(corte_p95[0], color='magenta', linestyle='-', linewidth=1.5,
@@ -113,9 +113,9 @@ def ejecutar_analisis(sigma_hit):
         #ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
         ax.set_xlim(-margen, margen)
         #ax.set_title(titulo); 
-        ax.set_title(f"{titulo}  (sigma_hit={sigma_hit:.3f} mm)")
-        ax.set_xlabel("Residual [mm]"); ax.set_ylabel("Counts")
-        ax.legend(fontsize=7); ax.grid()
+        ax.set_title(f"{titulo}" + rf" $\sigma_{{\text{{hit}}}}$={sigma_hit:.3f} mm")
+        ax.set_xlabel("Residual (mm)"); ax.set_ylabel("Cuentas")
+        ax.legend(fontsize=9); ax.grid()
         fig.savefig(ruta_base + "_lineal.png", dpi=150); plt.close(fig)
 
         # --- logaritmico ---
@@ -225,23 +225,23 @@ def ejecutar_analisis(sigma_hit):
         gamma_eff = (A1*g1+A2*g2)/(A1+A2)
 
         fits = []
-        if gauss_ok:
-            fits.append((x_fit, gauss(x_fit,*pg),
-                         {'linestyle':'--','color':'gray','linewidth':1.5,
-                          'label':f"Gauss: sigma={sigma_g:.3f} (ref)"}))
+        #if gauss_ok:
+        #    fits.append((x_fit, gauss(x_fit,*pg),
+        #                 {'linestyle':'--','color':'gray','linewidth':1.5,
+        #                  'label':f"Gauss: sigma={sigma_g:.3f} (ref)"}))
         if lorentz_ok:
             fits.append((x_fit, lorentz(x_fit,A_l,mu_l,gamma_l),
                          {'linestyle':':','color':'green','linewidth':1.5,
-                          'label':f"Lorentz simple: gamma={gamma_l:.3f}"}))
+                          'label':rf"Lorentz simple: $\gamma_s$={gamma_l:.3f} mm"}))
         fits.append((x_fit, double_lorentz(x_fit,A1,g1,A2,g2,mu_dl),
                      {'color':'red','linewidth':2,
-                      'label':f"Doble Lorentz: g1={g1:.3f}, g2={g2:.3f}"}))
+                      'label':rf"Doble Lorentz"}))
         fits.append((x_fit, lorentz(x_fit,A1,mu_dl,g1),
                      {'linestyle':'--','color':'blue','linewidth':1.5,
-                      'label':f"Core: g1={g1:.3f}"}))
+                      'label':rf"Core: $\gamma_1$={g1:.3f} mm"}))
         fits.append((x_fit, lorentz(x_fit,A2,mu_dl,g2),
                      {'linestyle':'--','color':'orange','linewidth':1.5,
-                      'label':f"Cola: g2={g2:.3f}"}))
+                      'label':rf"Cola: $\gamma_2$={g2:.3f} mm"}))
 
         nombre = titulo.replace(" ","_").replace("(","").replace(")","")
         hacer_plots(data, x_fit, hist, centers, bins,
@@ -270,8 +270,8 @@ def ejecutar_analisis(sigma_hit):
     print(f"Resultados guardados para sigma={sigma_hit:.3f}")
 
 
-sigmas = np.arange(0.050, 0.205, 0.005)
-#sigmas = [0.0, 0.085]
+#sigmas = np.arange(0.050, 0.205, 0.005)
+sigmas = [0.0, 0.085]
 for sigma in sigmas:
     try:
         ejecutar_analisis(round(sigma, 3)) 

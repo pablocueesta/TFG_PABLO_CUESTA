@@ -208,7 +208,7 @@ def analizar_residuals(data, titulo):
     # PLOT
     # -------------------
     plt.figure()
-    plt.hist(data, bins=60, alpha=0.6, label="Datos")
+    plt.hist(data, bins=60, alpha=0.6, label="Datos (cut)")
     #plt.xlim(-50, 50)
     x_fit = np.linspace(min(centers), max(centers), 300)
 
@@ -219,12 +219,12 @@ def analizar_residuals(data, titulo):
              label=f"Doble Gauss:\nσ1={sigma1:.3f}, σ2={sigma2:.3f}", linewidth=2)
 
     plt.title(titulo + " - Cut 0.35 mm")
-    plt.xlabel("Residual [mm]")
+    plt.xlabel("Residual (mm)")
     plt.axvline(-0.35, color='magenta', linestyle='-', linewidth=1.5,
                    label=f"Cut 0.35 mm")
     plt.axvline(0.35, color='magenta', linestyle='-', linewidth=1.5)
     plt.xlim(-0.45, 0.45)
-    plt.ylabel("Counts")
+    plt.ylabel("Cuentas")
     plt.legend()
     plt.grid()
     

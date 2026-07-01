@@ -298,7 +298,7 @@ def ejecutar_analisis(sigma_hit):
             data,
             bins=60,
             alpha=0.6,
-            label="Datos"
+            label="Datos (p95)"
         )
 
         x_fit = np.linspace(
@@ -327,11 +327,11 @@ def ejecutar_analisis(sigma_hit):
 
         plt.title(titulo)
 
-        plt.xlabel("Residual [mm]")
+        plt.xlabel("Residual (mm)")
 
-        plt.ylabel("Counts")
+        plt.ylabel("Cuentas")
 
-        plt.legend()
+        plt.legend(fontsize=12)
 
         plt.grid()
 
@@ -409,7 +409,8 @@ def ejecutar_analisis(sigma_hit):
 # BARRIDO AUTOMÁTICO
 # --------------------------------------------------
 
-sigmas = np.arange(0.050, 0.205, 0.005)
+#sigmas = np.arange(0.050, 0.205, 0.005)
+sigmas = [0, 0.085]
 
 for sigma in sigmas:
 

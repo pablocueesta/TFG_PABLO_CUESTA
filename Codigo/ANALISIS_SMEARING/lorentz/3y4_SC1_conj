@@ -195,7 +195,7 @@ def ejecutar_analisis(sigma_hit):
         _dibujar(plt)
         plt.xlim(-margen, margen)
         plt.title(titulo+f" D={D:.1f}cm")
-        plt.xlabel("Residual [mm]"); plt.ylabel("Counts")
+        plt.xlabel("Residual (mm)"); plt.ylabel("Cuentas")
         plt.legend(fontsize=7); plt.grid()
         plt.savefig(base+"_lineal.png", dpi=150); plt.close()
 
