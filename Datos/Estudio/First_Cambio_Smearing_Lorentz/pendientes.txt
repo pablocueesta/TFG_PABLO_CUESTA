@@ -1,14 +1,14 @@
 
----  Anchura resolución 3 hits X  ---
+--- Anchura distribución residuales 3 hits vs smearing en X  ---
 gamma: a=1.2266+-0.0038, b=0.0110+-0.0004
 
----  Anchura resolución 3 hits Z  ---
+--- Anchura distribución residuales 3 hits vs smearing en Z  ---
 gamma: a=1.2479+-0.0024, b=0.0094+-0.0002
 
----  Anchura resolución 4 hits X  ---
+--- Anchura distribución residuales 4 hits vs smearing en X  ---
 gamma1: a=0.0975+-0.0032, b=0.0028+-0.0003
 gamma2: a=0.4107+-0.0017, b=0.0063+-0.0002
 
----  Anchura resolución 4 hits Z  ---
+--- Anchura distribución residuales 4 hits vs smearing en Z  ---
 gamma1: a=0.1010+-0.0042, b=0.0030+-0.0005
 gamma2: a=0.4149+-0.0037, b=0.0060+-0.0004

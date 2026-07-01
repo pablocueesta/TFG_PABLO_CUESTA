@@ -117,8 +117,8 @@ def ejecutar_analisis(sigma_hit):
         #ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
         ax.set_xlim(-margen, margen)
         #ax.set_title(titulo); 
-        ax.set_title(f"{titulo}" + rf" $\sigma_{{\text{{hit}}}}$={sigma_hit:.3f} mm")
-        ax.set_xlabel("Residual (mm)", fontsize=10); ax.set_ylabel("Cuentas", fontsize=10)
+        ax.set_title(f"{titulo}" + rf" $\sigma_{{\text{{hit}}}}$={sigma_hit:.3f} mm", fontsize=14)
+        ax.set_xlabel("Residual (mm)", fontsize=12); ax.set_ylabel("Cuentas", fontsize=12)
         ax.legend(fontsize=8.40); ax.grid()
         fig.savefig(ruta_base + "_lineal.png", dpi=150); plt.close(fig)
 
@@ -294,8 +294,8 @@ def ejecutar_analisis(sigma_hit):
     print(f"Resultados guardados para sigma={sigma_hit:.3f}")
 
 
-sigmas = np.arange(0.050, 0.205, 0.005)
-#sigmas = [0.0, 0.085]
+#sigmas = np.arange(0.050, 0.205, 0.005)
+sigmas = [0.0, 0.085]
 for sigma in sigmas:
     try:
         ejecutar_analisis(round(sigma, 3)) 

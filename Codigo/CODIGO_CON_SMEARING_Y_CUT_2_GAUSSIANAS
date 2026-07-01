@@ -218,13 +218,13 @@ def analizar_residuals(data, titulo):
     plt.plot(x_fit, double_gauss(x_fit, *params_double),
              label=f"Doble Gauss:\n" + rf"$\sigma_1$={sigma1:.3f}, $\sigma_2$={sigma2:.3f} mm", linewidth=2)
 
-    plt.title(titulo + " - Cut 0.35 mm")
-    plt.xlabel("Residual (mm)", fontsize=10)
+    plt.title(titulo + " - Cut 0.35 mm", fontsize=14)
+    plt.xlabel("Residual (mm)", fontsize=12)
     plt.axvline(-0.35, color='magenta', linestyle='-', linewidth=1.5,
                    label=f"Cut 0.35 mm")
     plt.axvline(0.35, color='magenta', linestyle='-', linewidth=1.5)
     plt.xlim(-0.45, 0.45)
-    plt.ylabel("Cuentas", fontsize=10)
+    plt.ylabel("Cuentas", fontsize=12)
     plt.legend()
     plt.grid()
     

@@ -1,10 +1,10 @@
 
---- Anchura resolución por separado X ---
+--- X ---
 $\gamma_s$: a=0.0005+-0.0001, b=0.1075+-0.0018
 $\gamma_1$ (core): a=-0.0001+-0.0001, b=0.0110+-0.0020
 $\gamma_2$ (cola): a=0.0014+-0.0001, b=0.0218+-0.0014
 
---- Anchura resolución por separado Z ---
+--- Z ---
 $\gamma_s$: a=0.0007+-0.0001, b=0.1057+-0.0025
 $\gamma_1$ (core): a=0.0001+-0.0001, b=0.0071+-0.0025
 $\gamma_2$ (cola): a=0.0014+-0.0001, b=0.0207+-0.0014

@@ -41,6 +41,11 @@ Z_ge    = data[:,18]
 Z_chi2s = data[:,19]; Z_chi2dl = data[:,20]
 Z_p95lo = data[:,21]; Z_p95hi = data[:,22]
 
+etiq_latex = {
+    'gamma1': r'$\gamma_1$ (core)',
+    'gamma2': r'$\gamma_2$ (cola)'
+}
+
 # ancho del corte p95 = p95_hi - p95_lo (simetrico aprox)
 X_p95_ancho = (X_p95hi - X_p95lo) / 2
 Z_p95_ancho = (Z_p95hi - Z_p95lo) / 2
@@ -60,12 +65,12 @@ def plot_chi2(D, chi2s, chi2dl, titulo, nombre):
     xcd, ycd = limpiar(D, chi2dl)
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(xcs, ycs, 'o-', color='orange', label='chi2/dof Lorentz simple')
-    ax.plot(xcd, ycd, 's-', color='red',    label='chi2/dof Doble Lorentz')
-    ax.axhline(1.0, color='black', linestyle='--', linewidth=1, label='chi2/dof=1')
-    ax.set_xlabel("Ángulo [grados]"); ax.set_ylabel("chi2/dof")
-    ax.set_title("Calidad del ajuste — " + titulo)
-    ax.legend(fontsize=8); ax.grid()
+    ax.plot(xcs, ycs, 'o-', color='orange', label=rf"$\chi^2/\nu$ Lorentz simple")
+    ax.plot(xcd, ycd, 's-', color='red',    label=rf"$\chi^2/\nu$ Doble Lorentz")
+    ax.axhline(1.0, color='black', linestyle='--', linewidth=1, label=rf"$\chi^2/\nu=1$")
+    ax.set_xlabel(rf"$\theta$ (°)", fontsize=14); ax.set_ylabel(rf"$\chi^2/\nu$", fontsize=14)
+    ax.set_title("Calidad del ajuste — " + titulo, fontsize=14)
+    ax.legend(fontsize=12); ax.grid()
     fig.tight_layout()
     fig.savefig(os.path.join(out_dir, f"{nombre}_chi2.png"), dpi=200)
     plt.close(fig)
@@ -75,7 +80,7 @@ def plot_chi2(D, chi2s, chi2dl, titulo, nombre):
 def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9,10), sharex=True)
-    fig.suptitle(titulo)
+    #fig.suptitle(titulo)
 
     # --- panel superior: gammas ---
     #xs, ys, ees = limpiar(Ang, gs, es)
@@ -96,22 +101,23 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
         if len(xm) >= 3:
             p, cov = np.polyfit(xm, ym, 1, w=1/em, cov=True)
             xf = np.linspace(min(xm), max(xm), 200)
-            label_fit = f'Fit {etiq} (0-50°): a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}' \
+            label_fit = f'Fit {etiq_latex[etiq]} (0-50°): a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}' \
                     if etiq == 'gamma2' else \
-                    f'Fit {etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}'
+                    f'Fit {etiq_latex[etiq]}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}'
             ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2, label=label_fit)
             f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
                         f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
 
     #ax1.axvline(7.0, color='gray', linestyle=':', linewidth=1, label='D=d=7cm')
-    ax1.set_ylabel("gamma [mm]"); ax1.legend(fontsize=8); ax1.grid()
+    ax1.set_ylabel("Anchuras Lorentz (mm)", fontsize=12); ax1.legend(fontsize=12); ax1.grid()
+    ax1.set_title(f"Anchuras distribuciones residuales combinadas vs Rotación", fontsize=14)
 
     # --- panel inferior: ancho del corte p95 vs D ---
     xc, yc = limpiar(Ang, p95_ancho)
     ax2.plot(xc, yc, 'D-',
          color='magenta',
          linewidth=2,
-         label='Semianchura del percentil 95 [mm]')
+         label='Semianchura del percentil 95 (mm)')
     if len(xc) >= 3:
         #p2 = np.polyfit(xc, yc, 1)
         xf = np.linspace(min(xc), max(xc), 200)
@@ -120,9 +126,9 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     #ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
-    ax2.set_xlabel("Ángulo [grados]"); ax2.set_ylabel("Semianchura del percentil 95 [mm]")
-    ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs Ángulo")
-    ax2.legend(fontsize=8); ax2.grid()
+    ax2.set_xlabel(rf"$\theta$ (°)", fontsize=14); ax2.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=12)
+    ax2.set_title(f"Ventana de ajuste (semianchura del percentil 95) vs Rotación en {titulo}", fontsize=14)
+    ax2.legend(fontsize=12); ax2.grid()
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=200)
@@ -130,13 +136,13 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
     print(f"Guardado: {nombre}.png")
 
 plot_Ang_comb(Ang, X_gs, X_es, X_g1, X_e1, X_g2, X_e2, X_ge, X_p95_ancho,
-            "Anchura resolución combinada X", "Ang_X_combinado")
+            "X", "Ang_X_combinado")
 plot_Ang_comb(Ang, Z_gs, Z_es, Z_g1, Z_e1, Z_g2, Z_e2, Z_ge, Z_p95_ancho,
-            "Anchura resolución combinada Z", "Ang_Z_combinado")
+            "Z", "Ang_Z_combinado")
 
 # graficas separadas de chi2/dof vs D
-plot_chi2(Ang, X_chi2s, X_chi2dl, "Ángulo rotación, Eje X", "Ang_X_combinado")
-plot_chi2(Ang, Z_chi2s, Z_chi2dl, "Ángulo rotación, Eje Z", "Ang_Z_combinado")
+plot_chi2(Ang, X_chi2s, X_chi2dl, "Rotación, Eje X", "Ang_X_combinado")
+plot_chi2(Ang, Z_chi2s, Z_chi2dl, "Rotación, Eje Z", "Ang_Z_combinado")
 
 f_out.close()
 print(f"\nPendientes en: {carpeta}\\pendientes_angulos.txt")

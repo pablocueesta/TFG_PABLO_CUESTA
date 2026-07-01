@@ -57,7 +57,7 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
                   p95_3, p95_4, titulo, nombre):
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9,10), sharex=True)
-    fig.suptitle(titulo)
+    #fig.suptitle(titulo)
 
     # --- panel 1: gammas vs D ---
     xs, ys, ees = limpiar(D, g3,  e3)
@@ -85,7 +85,8 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
                         f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
 
     ax1.axvline(7.0, color='gray', linestyle=':', linewidth=1, label='D=d=7cm')
-    ax1.set_ylabel("Anchura (mm)"); ax1.legend(fontsize=9); ax1.grid()
+    ax1.set_ylabel("Anchuras Lorentz (mm)", fontsize=12); ax1.legend(fontsize=10.75, loc='upper left', bbox_to_anchor=(0.0, 0.79)); ax1.grid()
+    ax1.set_title(f"Anchuras distribuciones residuales separadas vs D en {titulo}", fontsize=14)
 
     # --- panel 2: semiancho corte p95 vs D (3 hits y 4 hits) ---
     xc3, yc3 = limpiar(D, p95_3)
@@ -104,9 +105,9 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
             #f_out.write(f"{etiq}: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
 
     ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
-    ax2.set_xlabel("D (cm)"); ax2.set_ylabel("Semianchura del percentil 95 (mm)")
-    ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs D")
-    ax2.legend(fontsize=10); ax2.grid()
+    ax2.set_xlabel("D (cm)", fontsize=14); ax2.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=12)
+    ax2.set_title("Ventana de ajuste (semianchura del percentil 95) vs D", fontsize=14)
+    ax2.legend(loc='upper left', fontsize=10); ax2.grid()
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, f"{nombre}.png"), dpi=200)
@@ -115,11 +116,11 @@ def plot_separado(D, g3, e3, g1, e1, g2, e2, ge,
 
 plot_separado(D, X3_g, X3_e, X4_g1, X4_e1, X4_g2, X4_e2, X4_ge,
               X3_p95_ancho, X4_p95_ancho,
-              "Anchura resolución por separado X", "D_X_separado")
+              "X", "D_X_separado")
 
 plot_separado(D, Z3_g, Z3_e, Z4_g1, Z4_e1, Z4_g2, Z4_e2, Z4_ge,
               Z3_p95_ancho, Z4_p95_ancho,
-              "Anchura resolución por separado Z", "D_Z_separado")
+              "Z", "D_Z_separado")
 
 f_out.close()
 print(f"\nPendientes en: {carpeta}\\pendientes_D.txt")

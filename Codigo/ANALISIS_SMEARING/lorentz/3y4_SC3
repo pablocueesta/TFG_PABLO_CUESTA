@@ -70,7 +70,7 @@ f_out = open(os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz", "pendie
 def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, ge, chi2s,chi2dl, p95_ancho, titulo, nombre):
 
     fig, (ax1, ax2, ax3) = plt.subplots(3,1,figsize=(9,14),sharex=True)
-    fig.suptitle(titulo)
+    fig.suptitle(titulo, fontsize=14)
 
     xs,ys,ees = limpiar(s_hit,gs,es)
     x1,y1,ee1 = limpiar(s_hit,g1,e1)
@@ -96,13 +96,13 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, ge, chi2s,chi2dl, p95_ancho, ti
             ax1.plot(xf,a*xf+b,color=color,linewidth=2,
                      label=f'Fit {etiq_latex[etiq]}: a={a:.3f}+-{ea:.3f}')
             f_out.write(f"{etiq}: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
-    ax1.set_ylabel("Anchuras (mm)", fontsize=14); ax1.legend(fontsize=11); ax1.grid()
+    ax1.set_ylabel("Anchura (mm)", fontsize=12); ax1.legend(fontsize=11); ax1.grid()
 
     # panel 2: chi2
     ax2.plot(xcs,ycs,'o-',color='orange',label=rf"$\chi^2/\nu$ Lorentz simple")
     ax2.plot(xcd,ycd,'s-',color='red',   label=rf"$\chi^2/\nu$ Doble Lorentz")
     ax2.axhline(1.0,color='black',linestyle='--',linewidth=1,label=rf"$\chi^2/\nu=1$")
-    ax2.set_ylabel(rf"$\chi^2/\nu$", fontsize=14); ax2.set_title("Calidad del ajuste", fontsize=12)
+    ax2.set_ylabel(rf"$\chi^2/\nu$", fontsize=14); ax2.set_title("Calidad del ajuste", fontsize=14)
     ax2.legend(fontsize=14); ax2.grid()
 
     # panel 3: ventana p95
@@ -113,8 +113,8 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, ge, chi2s,chi2dl, p95_ancho, ti
         #ax3.plot(xf,p2[0]*xf+p2[1],'--',color='darkviolet',linewidth=2,
                  #label=f'Fit: a={p2[0]:.4f}, b={p2[1]:.4f}')
         #f_out.write(f"p95_semiancho: a={p2[0]:.4f}, b={p2[1]:.4f}\n")
-    ax3.set_xlabel(rf"$\sigma_{{\text{{hit}}}}$ (mm)", fontsize=14); ax3.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=14)
-    ax3.set_title("Ventana de ajuste (semianchura del percentil 95) vs smearing", fontsize=12)
+    ax3.set_xlabel(rf"$\sigma_{{\text{{hit}}}}$ (mm)", fontsize=14); ax3.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=12)
+    ax3.set_title("Ventana de ajuste (semianchura del percentil 95) vs smearing", fontsize=14)
     ax3.legend(fontsize=14); ax3.grid()
 
     plt.tight_layout()
@@ -122,9 +122,9 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, ge, chi2s,chi2dl, p95_ancho, ti
     print(f"Guardado: {nombre}.png")
 
 plot_comparacion(s_hit, X_gs,X_es,X_g1,X_e1,X_g2,X_e2, X_ge, X_chi2s,X_chi2dl,X_p95_ancho,
-                 "Anchura resolución combinada X","combinado_X")
+                 "Anchura distribuciones residuales vs smearing en X","combinado_X")
 plot_comparacion(s_hit, Z_gs,Z_es,Z_g1,Z_e1,Z_g2,Z_e2, Z_ge, Z_chi2s,Z_chi2dl,Z_p95_ancho,
-                 "Anchura resolución combinada Z","combinado_Z")
+                 "Anchura distribuciones residuales vs smearing en Z","combinado_Z")
 
 f_out.close()
 print("\nPendientes en pendientes.txt")
