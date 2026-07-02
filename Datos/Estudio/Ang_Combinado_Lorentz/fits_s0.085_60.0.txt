@@ -1,6 +1,6 @@
 ang=60.0 degrees  sigma_hit=0.085 mm
 
---- Combinado X (3+4 hits) ---
+--- Residual X (3+4 hits) ---
 N para fit (p95): 15588  N total: 16410
 Corte p95:   [-0.7475, 0.7890] mm (95.0% datos totales)
 Corte 3sigma:[-44.6976, 44.6672] mm (98.6% datos totales)
@@ -11,7 +11,7 @@ Doble Lorentz: mu=0.0010
    gamma_eff=0.0467  chi2/ndf=4.3203
 Decision: SIMPLE SUFICIENTE
 
---- Combinado Z (3+4 hits) ---
+--- Residual Z (3+4 hits) ---
 N para fit (p95): 15588  N total: 16410
 Corte p95:   [-0.7449, 0.8805] mm (95.0% datos totales)
 Corte 3sigma:[-70.5823, 69.3663] mm (97.8% datos totales)

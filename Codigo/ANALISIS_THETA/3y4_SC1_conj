@@ -165,23 +165,23 @@ def ejecutar_analisis_ang(ang):
         base   = rf"{RUTA}\{nombre}_{sigma_hit:.3f}_{D:.1f}_{ang:.0f}"
 
         def _dibujar(ax_o_plt, log=False):
-            if simple_ok:
-                ax_o_plt.plot(x_fit, lorentz(x_fit,A_s,mu_s,gamma_s),
-                              color='orange', linewidth=2,
-                              label=f"Lorentz: gamma={gamma_s:.3f}  chi2={chi2_s:.1f} mu={mu_s:.3f}")
+            #if simple_ok:
+            #    ax_o_plt.plot(x_fit, lorentz(x_fit,A_s,mu_s,gamma_s),
+            #                  color='orange', linewidth=2,
+            #                  label=rf"Lorentz: gamma={gamma_s:.3f}  chi2={chi2_s:.1f} mu={mu_s:.3f}")
             if double_ok:
                 ax_o_plt.plot(x_fit, double_lorentz(x_fit,A1,g1,A2,g2,mu_dl),
                               color='red', linewidth=2,
-                              label=f"Doble  chi2={chi2_dl:.1f} mu={mu_dl:.3f}")
+                              label=rf"Lorentz doble: $\mu={mu_dl:.3f}$ mm")
                 ax_o_plt.plot(x_fit, lorentz(x_fit,A1,mu_dl,g1),
                               '--', color='blue', linewidth=1.5,
-                              label=f"Core g1={g1:.3f}")
+                              label=rf"Core $\gamma_1={g1:.3f}\pm{eg1:.3f}$ mm")
                 ax_o_plt.plot(x_fit, lorentz(x_fit,A2,mu_dl,g2),
                               '--', color='green', linewidth=1.5,
-                              label=f"Cola g2={g2:.3f}")
+                              label=rf"Cola $\gamma_2={g2:.3f}\pm{eg2:.3f}$ mm")
             # p95: linea solida magenta — coincide con extremo del histograma
             ax_o_plt.axvline(corte_p95[0], color='magenta', linestyle='-', linewidth=1.5,
-                             label=f"p95: [{corte_p95[0]:.3f},{corte_p95[1]:.3f}] mm ({frac_p95:.1f}%)")
+                             label=f"p95: [{corte_p95[0]:.3f},{corte_p95[1]:.3f}] mm")
             ax_o_plt.axvline(corte_p95[1], color='magenta', linestyle='-', linewidth=1.5)
             # 3sigma: linea discontinua cyan — solo comparacion
             #ax_o_plt.axvline(corte_3s[0], color='cyan', linestyle='--', linewidth=1.2,
@@ -191,12 +191,12 @@ def ejecutar_analisis_ang(ang):
         # plot lineal
         plt.figure(figsize=(9,6))
         plt.hist(data, bins=N_BINS, alpha=0.6, color='steelblue',
-                 label=f"Datos (p95)  N={len(data)}")
+                 label=f"Datos (p95) N={len(data)}")
         _dibujar(plt)
         plt.xlim(-margen, margen)
-        plt.title(titulo+f" D={D:.1f}cm")
-        plt.xlabel("Ángulo [grados]"); plt.ylabel("Counts")
-        plt.legend(fontsize=7); plt.grid()
+        plt.title(titulo+rf" - $\theta={ang:.1f}°$", fontsize=14)
+        plt.xlabel("Residual (mm)", fontsize=12); plt.ylabel("Cuentas", fontsize=12)
+        plt.legend(fontsize=11); plt.grid()
         plt.savefig(base+"_lineal.png", dpi=150); plt.close()
 
         # plot logaritmico
@@ -236,9 +236,9 @@ def ejecutar_analisis_ang(ang):
               f"  p95=[{corte_p95[0]:.3f},{corte_p95[1]:.3f}] ({frac_p95:.1f}%)")
 
     analizar_combinado(resX_comb_cut, cp95_X, c3s_X, frac_p95_X, frac_3s_X,
-                       "Combinado X (3+4 hits)")
+                       "Residual X (3+4 hits)")
     analizar_combinado(resZ_comb_cut, cp95_Z, c3s_Z, frac_p95_Z, frac_3s_Z,
-                       "Combinado Z (3+4 hits)")
+                       "Residual Z (3+4 hits)")
     f_info.close()
 
 

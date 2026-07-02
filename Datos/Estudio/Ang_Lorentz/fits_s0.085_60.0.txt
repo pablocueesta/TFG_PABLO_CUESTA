@@ -17,22 +17,22 @@ Lorentz simple: mu = 0.0613, gamma = 0.0011 +- 0.0000
 N total: 7944  N tras p95: 7546
 Corte p95: [-0.1369, 0.1416] mm
 Corte 3sigma: [-6.8337, 6.8357] mm
-Gauss simple (ref): sigma = 0.0369
-Lorentz simple: gamma = 0.0320
+Gauss simple (ref): sigma = 0.0483
+Lorentz simple: gamma = 0.0335
 Doble Lorentz:
    mu = 0.0008
-   gamma1 (core) = 0.0083 +- 0.0023
-   gamma2 (cola) = 0.0399 +- 0.0025
-   gamma_eff = 0.0296
+   gamma1 (core) = 0.0000 +- 23826739.6986
+   gamma2 (cola) = 0.0335 +- 0.0084
+   gamma_eff = 0.0335
 
 --- Residual Z (4 hits) ---
 N total: 7944  N tras p95: 7546
 Corte p95: [-0.1544, 0.1496] mm
 Corte 3sigma: [-17.2978, 17.3280] mm
-Gauss simple (ref): sigma = 0.0367
-Lorentz simple: gamma = 0.0319
+Gauss simple (ref): sigma = 0.0489
+Lorentz simple: gamma = 0.0347
 Doble Lorentz:
-   mu = -0.0002
-   gamma1 (core) = 0.0118 +- 0.0024
-   gamma2 (cola) = 0.0415 +- 0.0028
-   gamma_eff = 0.0305
+   mu = -0.0003
+   gamma1 (core) = 0.0000 +- 102197.9625
+   gamma2 (cola) = 0.0347 +- 0.0270
+   gamma_eff = 0.0283

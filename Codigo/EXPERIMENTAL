@@ -87,6 +87,16 @@ def aplicar_percentil(data, p=95):
 # Y_exp <-> X_sim   (eje que se rota experimentalmente, equivalente a rotar X_sim)
 # Z_exp <-> Y_sim   (vertical/zenith, no medido en el residual)
 
+titulos_det = {
+    'einstein': 'Einstein',
+    'fermi':    'Fermi',
+    'fert':     'Fert',
+}
+titulos_coord = {
+    'X': r'eje $X$ experimental',
+    'Y': r'eje $Y$ experimental',
+}
+
 archivos = {
     'resx_einstein': ('einstein', 'X', 0),
     'resy_einstein': ('einstein', 'Y', 0),
@@ -194,7 +204,8 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
 
         # ---- PLOT 1: curva del modelo (gamma vs sigma a D,theta fijos) + punto experimental ----
         fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-        fig.suptitle(f"{nombre}{nota}  (eje_sim={eje_sim}, D={D_FIJO}cm, θ={theta}°)", fontsize=11)
+        fig.suptitle(f"Detector {titulos_det[det]} — {titulos_coord[coord_exp]}"
+                     rf" (eje ${eje_sim}$ simulado) $\theta={theta}°$, $D={D_FIJO}\,\text{{cm}}$", fontsize=16)
 
         ax = axes[0]
         sigma_max = 0.30
@@ -206,43 +217,43 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
         # curva gamma1 del modelo
         g1_curva = gamma_modelo(sf, D_FIJO, theta, coef_g1)
         ax.plot(sf, g1_curva, color='blue', linewidth=2,
-                label=f'Modelo γ1 (D={D_FIJO}, θ={theta}°)')
+                label=rf"Modelo $\gamma_1$")
 
         # curva gamma2 del modelo
         g2_curva = gamma_modelo(sf, D_FIJO, theta, coef_g2)
         ax.plot(sf, g2_curva, color='red', linewidth=2,
-                label=f'Modelo γ2 (D={D_FIJO}, θ={theta}°)')
+                label=rf"Modelo $\gamma_2$")
 
         if double_ok:
             # punto gamma1
             ax.axhline(g1, color='blue', linestyle='--', linewidth=1.2,
-                       label=f'γ1_exp = {g1:.4f}±{eg1:.4f} mm')
+                       label=rf"$\gamma_1$={g1:.4f}±{eg1:.4f} mm")
             sh1, esh1 = resultados['gamma1 (core)'][2:]
             if np.isfinite(sh1) and sh1 > 0:
                 ax.axvline(sh1, color='blue', linestyle=':', linewidth=1.2)
                            #label=f'σ_hit (γ1) = {sh1:.4f}±{esh1:.4f} mm')
                 ax.errorbar(sh1, g1, xerr=esh1, fmt='s', color='darkblue', markersize=5, capsize=6, linewidth=1.5, zorder=5,
-                            label=f'σ_hit (γ1) = {sh1:.4f}±{esh1:.4f} mm')
+                            label=rf"$\sigma_{{\text{{hit}}}}\,(\gamma_1)$={sh1:.4f}±{esh1:.4f} mm")
                 #ax.plot(sh1, g1, 's', color='darkblue', markersize=10, zorder=5)
 
             # punto gamma2 (resultado principal)
             ax.axhline(g2, color='red', linestyle='--', linewidth=1.5,
-                       label=f'γ2_exp = {g2:.4f}±{eg2:.4f} mm')
+                       label=rf"$\gamma_2$={g2:.4f}±{eg2:.4f} mm")
             sh2, esh2 = resultados['gamma2 (cola)'][2:]
             if np.isfinite(sh2) and sh2 > 0:
                 ax.axvline(sh2, color='red', linestyle=':', linewidth=1.5)
                            #label=f'σ_hit (γ2) = {sh2:.4f}±{esh2:.4f} mm')
                 ax.errorbar(sh2, g2, xerr=esh2, fmt='o', color='darkred', markersize=8, capsize=6, linewidth=1.5, zorder=5,
-                            label=f'σ_hit (γ2) = {sh2:.4f}±{esh2:.4f} mm')
+                            label=rf"$\sigma_{{\text{{hit}}}}\,(\gamma_2)$={sh2:.4f}±{esh2:.4f} mm")
                 #ax.plot(sh2, g2, 'o', color='darkred', markersize=12, zorder=5,
                 #        label='Punto resolución (γ2, esperado)')
 
         ax.set_xlim(left=0, right=sigma_max)
         ax.set_ylim(bottom=0)
-        ax.set_xlabel("σ_hit [mm]")
-        ax.set_ylabel("γ [mm]")
-        ax.set_title("γ(σ_hit, D, θ) para D y θ fijos: Interpolación inversa")
-        ax.legend(fontsize=7)
+        ax.set_xlabel(r"$\sigma_{\text{hit}}$ (mm)", fontsize=14)
+        ax.set_ylabel(r"Anchuras Lorentz (mm)", fontsize=12)
+        ax.set_title(rf"Interpolación inversa: $\gamma\rightarrow\sigma_{{hit}}$  (D={D_FIJO}cm, θ={theta}°)", fontsize=14)
+        ax.legend(fontsize=10)
         ax.grid()
 
         # ---- PLOT 2: histograma experimental con fits ----
@@ -252,28 +263,28 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
                 alpha=0.6, color='steelblue', label=f"Datos (p95) N={N:,}")
 
         x_fit = np.linspace(-margen_p95, margen_p95, 800)
-        if simple_ok:
-            ax2.plot(x_fit, lorentz(x_fit, A_s, mu_s, gamma_s),
-                     color='orange', linewidth=2,
-                     label=f"Lorentz simple: γ={gamma_s:.3f}±{err_gs:.3f} mm")
+        #if simple_ok:
+            #ax2.plot(x_fit, lorentz(x_fit, A_s, mu_s, gamma_s),
+            #         color='orange', linewidth=2,
+            #         label=rf"Lorentz simple: γ={gamma_s:.3f}±{err_gs:.3f} mm")
         if double_ok:
             ax2.plot(x_fit, double_lorentz(x_fit, A1, g1, A2, g2, mu_dl),
                      color='red', linewidth=2,
-                     label=f"Doble Lorentz: γ1, γ2")
+                     label=rf"Doble Lorentz: $\gamma_1, \gamma_2$")
             ax2.plot(x_fit, lorentz(x_fit, A1, mu_dl, g1),
-                     '--', color='blue', linewidth=1.5, label=f"Core: γ1={g1:.3f}±{eg1:.3f} mm")
+                     '--', color='blue', linewidth=1.5, label=rf"Core: $\gamma_1$={g1:.3f}±{eg1:.3f} mm")
             ax2.plot(x_fit, lorentz(x_fit, A2, mu_dl, g2),
-                     '--', color='green', linewidth=1.5, label=f"Cola: γ2={g2:.3f}±{eg2:.3f} mm")
+                     '--', color='green', linewidth=1.5, label=rf"Cola: $\gamma_2$={g2:.3f}±{eg2:.3f} mm")
 
         ax2.axvline(p95_lo, color='magenta', linestyle='-', linewidth=1.5,
-                   label=f"p95: [{p95_lo:.3f},{p95_hi:.3f}] mm (N_total={N_full:,})")
+                   label=rf"p95: [{p95_lo:.3f},{p95_hi:.3f}] mm") #  (N_total={N_full:,})
         ax2.axvline(p95_hi, color='magenta', linestyle='-', linewidth=1.5)
 
         ax2.set_yscale('log')
-        ax2.set_xlabel("Residual [mm]")
-        ax2.set_ylabel("Counts (log)")
-        ax2.set_title("Distribución experimental [log] con percentil 95%)")
-        ax2.legend(fontsize=7)
+        ax2.set_xlabel("Residual (mm)", fontsize=12)
+        ax2.set_ylabel("Cuentas (log)", fontsize=12)
+        ax2.set_title("Distribución combinada (3 y 4 hits) - Doble Lorentz\n(percentil 95%)", fontsize=14)
+        ax2.legend(fontsize=10)
         ax2.grid(which='both', linestyle='--', alpha=0.5)
 
         plt.tight_layout()

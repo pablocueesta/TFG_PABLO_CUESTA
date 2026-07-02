@@ -8,7 +8,8 @@ BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 sigma_hit  = 0.085
 theta      = 0.00
-valores_ang  = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
+#valores_ang  = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
+valores_ang = [0.0, 40.0, 60.0]
 
 def aplicar_percentil(data, p=95):
     low  = np.percentile(data, (100-p)/2)
@@ -113,10 +114,10 @@ def ejecutar_analisis_ang(ang):
         fits_lineal / fits_log: lista de (x, y, kwargs_plot)
         La distribucion se corta exactamente en corte_p95 (xlim).
         """
-        margen = max(abs(corte_p95[0]), abs(corte_p95[1])) * 1.05
+        margen = max(abs(corte_p95[0]), abs(corte_p95[1]))*1.05
 
         # --- lineal ---
-        fig, ax = plt.subplots(figsize=(8,6))
+        fig, ax = plt.subplots(figsize=(9,6))
         ax.hist(data, bins=60, alpha=0.6, label=f"Datos (p95)  N={len(data)}")
         for (xf, yf, kw) in fits_lineal:
             ax.plot(xf, yf, **kw)
@@ -127,9 +128,13 @@ def ejecutar_analisis_ang(ang):
                    #label=f"3sigma: [{corte_3s[0]:.3f}, {corte_3s[1]:.3f}] mm")
         #ax.axvline(corte_3s[1],  color='cyan',    linestyle='--', linewidth=1.2)
         ax.set_xlim(-margen, margen)
-        ax.set_title(titulo); ax.set_xlabel("Ángulo [grados]"); ax.set_ylabel("Counts")
-        ax.legend(fontsize=7); ax.grid()
-        fig.savefig(ruta_base + "_lineal.png", dpi=150); plt.close(fig)
+        ax.set_title(rf"{titulo} - $\theta={ang:.1f}$°", fontsize=14)
+        ax.set_xlabel(rf"Residual (mm)", fontsize=12)
+        ax.set_ylabel("Cuentas", fontsize=12)
+        ax.legend(fontsize=11)
+        ax.grid()
+        fig.savefig(ruta_base + "_lineal.png", dpi=150)
+        #plt.close(fig)
 
         # --- logaritmico ---
         fig, ax = plt.subplots(figsize=(8,6))
@@ -153,6 +158,8 @@ def ejecutar_analisis_ang(ang):
     
     def analizar_residuals_3hits(data, data_full, corte_p95, corte_3s, titulo):
         hist, bins = np.histogram(data, bins=60)
+        margen = max(abs(corte_p95[0]), abs(corte_p95[1]))*1.05
+        #hist, bins = np.histogram(data, bins=60, range=(-margen, margen))
         centers    = (bins[:-1]+bins[1:])/2
         gamma0     = np.std(data)*0.5
         x_fit      = np.linspace(corte_p95[0], corte_p95[1], 300)
@@ -179,10 +186,10 @@ def ejecutar_analisis_ang(ang):
         if gauss_ok:
             fits.append((x_fit, gauss(x_fit,*pg),
                          {'linestyle':'--','color':'gray','linewidth':1.5,
-                          'label':f"Gauss: sigma={sigma_g:.3f} (ref)"}))
+                          'label':rf"Gauss: $\sigma_s$={sigma_g:.3f} mm"}))
         fits.append((x_fit, lorentz(x_fit,A_l,mu_l,gamma_l),
                      {'color':'blue','linewidth':2,
-                      'label':f"Lorentz: gamma={gamma_l:.3f}+-{err_gl:.3f}, mu={mu_l:.3f}"}))
+                      'label':rf"Lorentz: $\gamma_s={gamma_l:.3f}\pm{err_gl:.3f}$ mm" + "\n" + rf"              $\mu={mu_l:.3f}$ mm"}))
 
         nombre = titulo.replace(" ","_").replace("(","").replace(")","")
         hacer_plots(data, x_fit, hist, centers, bins,
@@ -198,7 +205,8 @@ def ejecutar_analisis_ang(ang):
         print(f"  {titulo} OK  gamma={gamma_l:.4f}")
 
     def analizar_residuals_4hits(data, data_full, corte_p95, corte_3s, titulo):
-        hist, bins = np.histogram(data, bins=60)
+        margen_display = 1.6
+        hist, bins = np.histogram(data, bins=60, range=(-margen_display, margen_display))
         centers    = (bins[:-1]+bins[1:])/2
         gamma0     = np.std(data)*0.5
         x_fit      = np.linspace(corte_p95[0], corte_p95[1], 300)

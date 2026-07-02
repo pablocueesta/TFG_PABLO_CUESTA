@@ -200,7 +200,7 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
             ax3.plot(xf3, lorentz(xf3,A3s,mu3s,gamma3s), color='orange', linewidth=2,
                      label=rf"Fit $\gamma_s$={gamma3s:.3f}±{err_g3s:.3f} mm")
         ax3.axvline(p95_lo3, color='magenta', linewidth=1.5,
-                    label=f"p95:[{p95_lo3:.2f},{p95_hi3:.2f}]")
+                    label=rf"p95:[{p95_lo3:.2f},{p95_hi3:.2f}]")
         ax3.axvline(p95_hi3, color='magenta', linewidth=1.5)
         ax3.set_yscale('log')
         ax3.set_xlabel("Residual (mm)", fontsize=12); ax3.set_ylabel("Cuentas (log)", fontsize=12)
