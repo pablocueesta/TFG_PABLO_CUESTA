@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 import os
+import matplotlib.patheffects as pe
 
 BASE    = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                         '..', '..'))
@@ -65,7 +66,7 @@ def calcular_ns_grupo(lista_valores):
     if desv < 0.01: desv = 0.01
     return desv
 
-def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
+def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None, param=r"$\gamma$"):
     fig, axes = plt.subplots(1, 4, figsize=(20,5))
     fig.suptitle(rf"{titulo_base} — Mapa $D \times \theta$ para cada $\sigma_{{\text{{hit}}}}$" + "\n",
                  fontsize=15)
@@ -80,7 +81,7 @@ def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
         else:
             print(f"  AVISO: sin nominal para sigma={s} en {titulo_base}"); continue
         ax.set_title(rf"$\sigma_{{\text{{hit}}}}$={s:.3f} mm" + "\n" +
-                     rf"(Anchura nominal = {v_nom_s:.4f} mm)", fontsize=11)
+                     rf"({param} nominal = {v_nom_s:.4f} mm)", fontsize=14)
 
         xs,ys,vs,ns = [],[],[],[]
         for d in D_vals:
@@ -106,12 +107,15 @@ def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
 
         sc=ax.scatter(xs,ys,c=ns_sat,cmap=CMAP,norm=norm,
                       s=800,zorder=3,edgecolors='gray',linewidths=0.5)
-        fig.colorbar(sc,ax=ax,label="Valor nominal normalizado",extend='both')
+        #fig.colorbar(sc,ax=ax,label="Valor nominal normalizado",extend='both')
+        cbar = fig.colorbar(sc,ax=ax,extend='both')
+        cbar.set_label("Valor nominal normalizado", fontsize=12)
 
         for xi,yi,vi,ni in zip(xs,ys,vs,ns):
             pct=(ni-1)*100#; sign='+' if pct>=0 else ''
             ax.text(xi,yi,f"{pct:.1f}%",ha='center',va='center',
-                    fontsize=7.0,fontweight='bold',color='white',zorder=4)
+                    fontsize=7.0,fontweight='bold',color='white',zorder=4,
+                    path_effects=[pe.Stroke(linewidth=1.5, foreground='black'), pe.Normal()])
 
         ax.set_xticks(D_vals); ax.set_xticklabels([f"{d:.0f}" for d in D_vals])
         ax.set_yticks(ang_vals); ax.set_yticklabels([f"{a:.0f}" for a in ang_vals])
@@ -180,12 +184,12 @@ desv_g1 = calcular_ns_grupo([X4g1, Z4g1])
 desv_g2 = calcular_ns_grupo([X4g2, Z4g2])
 
 # matriz de mapas D×theta para cada sigma
-matriz_mapas(X3g,  r"Mapas $\gamma_s\,\text{(mm)}$ 3 hits eje X",       "X3_gamma",  desv_compartida=desv_g3)
-matriz_mapas(X4g1, r"Mapas $\gamma_1\,\text{(mm)}$ 4 hits eje X",     "X4_gamma1", desv_compartida=desv_g1)
-matriz_mapas(X4g2, r"Mapas $\gamma_2\,\text{(mm)}$ 4 hits eje X",     "X4_gamma2", desv_compartida=desv_g2)
-matriz_mapas(Z3g,  r"Mapas $\gamma_s\,\text{(mm)}$ 3 hits eje Z",       "Z3_gamma",  desv_compartida=desv_g3)
-matriz_mapas(Z4g1, r"Mapas $\gamma_1\,\text{(mm)}$ 4 hits eje Z",     "Z4_gamma1", desv_compartida=desv_g1)
-matriz_mapas(Z4g2, r"Mapas $\gamma_2\,\text{(mm)}$ 4 hits eje Z",     "Z4_gamma2", desv_compartida=desv_g2)
+matriz_mapas(X3g,  r"Mapas $\gamma_s\,\text{(mm)}$ 3 hits eje X",       "X3_gamma",  desv_compartida=desv_g3, param=r"$\gamma_s$")
+matriz_mapas(X4g1, r"Mapas $\gamma_1\,\text{(mm)}$ 4 hits eje X",     "X4_gamma1", desv_compartida=desv_g1, param=r"$\gamma_1$")
+matriz_mapas(X4g2, r"Mapas $\gamma_2\,\text{(mm)}$ 4 hits eje X",     "X4_gamma2", desv_compartida=desv_g2, param=r"$\gamma_2$")
+matriz_mapas(Z3g,  r"Mapas $\gamma_s\,\text{(mm)}$ 3 hits eje Z",       "Z3_gamma",  desv_compartida=desv_g3, param=r"$\gamma_s$")
+matriz_mapas(Z4g1, r"Mapas $\gamma_1\,\text{(mm)}$ 4 hits eje Z",     "Z4_gamma1", desv_compartida=desv_g1, param=r"$\gamma_1$")
+matriz_mapas(Z4g2, r"Mapas $\gamma_2\,\text{(mm)}$ 4 hits eje Z",     "Z4_gamma2", desv_compartida=desv_g2, param=r"$\gamma_2$")
 
 # evolución vs sigma_hit
 evolucion_vs_sigma(X3g,  X3e,  r"Evolución $\gamma_s\,\text{(mm)}$ 3 hits eje X",   "X3_gamma",  r"$\gamma_s$ (mm)")

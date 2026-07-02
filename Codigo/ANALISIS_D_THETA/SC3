@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 import os
+import matplotlib.patheffects as pe
 
 BASE    = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                         '..', '..'))
@@ -75,7 +76,7 @@ def calcular_ns_grupo(lista_valores):
     if desv < 0.01: desv = 0.01
     return desv
 
-def mapa_color(valores, titulo, nombre, desv_compartida=None):
+def mapa_color(valores, titulo, nombre, desv_compartida=None, param=r"$\gamma$"):
     v_nom = get_nominal(valores)
     if np.isnan(v_nom):
         print(f"  AVISO: no hay valor nominal para {titulo}, saltando")
@@ -116,10 +117,11 @@ def mapa_color(valores, titulo, nombre, desv_compartida=None):
     for xi, yi, vi, ni in zip(xs, ys, vs, ns):
         pct = (ni - 1) * 100
         ax.text(xi, yi, f"{pct:.1f}%", ha='center', va='center',
-                fontsize=7.5, fontweight='bold', color='white', zorder=4)
+                fontsize=7.5, fontweight='bold', color='white', zorder=4,
+                path_effects=[pe.Stroke(linewidth=1.5, foreground='black'), pe.Normal()])
 
     cbar = fig.colorbar(sc, ax=ax, extend='both')
-    cbar.set_label(rf"Valor nominal normalizado", fontsize=9)
+    cbar.set_label(rf"Valor nominal normalizado", fontsize=12)
 
     ax.set_xticks(D_vals); ax.set_xticklabels([f"{d:.0f}" for d in D_vals])
     ax.set_yticks(ang_vals); ax.set_yticklabels([f"{a:.0f}" for a in ang_vals])
@@ -127,7 +129,7 @@ def mapa_color(valores, titulo, nombre, desv_compartida=None):
     ax.set_ylim(ang_vals[0]-8, ang_vals[-1]+8)
     ax.set_xlabel(r"$D\,\text{(cm)}$", fontsize=12)
     ax.set_ylabel(r"$\theta$ (°)", fontsize=12)
-    ax.set_title(titulo + f"\n(Anchura nominal = {v_nom:.4f} mm)", fontsize=13)
+    ax.set_title(titulo + f"\n({param} nominal = {v_nom:.4f} mm)", fontsize=13)
     fig.tight_layout()
     fig.savefig(os.path.join(out_mapas, f"{nombre}.png"), dpi=200)
     plt.close(fig)
@@ -169,12 +171,12 @@ def plot_evolucion(D, ang, gamma, err, p95_ancho, D_vals, ang_vals,
 desv_grupo = calcular_ns_grupo([X3g, Z3g, X4g1, Z4g1, X4g2, Z4g2])
 
 # --- mapas de color ---
-mapa_color(X3g,  r"Mapa $\gamma_s$ (mm) 3 hits — eje $X$",    "mapa_X3_gamma",  desv_compartida=desv_grupo)
-mapa_color(Z3g,  r"Mapa $\gamma_s$ (mm) 3 hits — eje $Z$",    "mapa_Z3_gamma",  desv_compartida=desv_grupo)
-mapa_color(X4g1, r"Mapa $\gamma_1$ (mm) 4 hits — eje $X$",  "mapa_X4_gamma1", desv_compartida=desv_grupo)
-mapa_color(X4g2, r"Mapa $\gamma_2$ (mm) 4 hits — eje $X$",  "mapa_X4_gamma2", desv_compartida=desv_grupo)
-mapa_color(Z4g1, r"Mapa $\gamma_1$ (mm) 4 hits — eje $Z$",  "mapa_Z4_gamma1", desv_compartida=desv_grupo)
-mapa_color(Z4g2, r"Mapa $\gamma_2$ (mm) 4 hits — eje $Z$",  "mapa_Z4_gamma2", desv_compartida=desv_grupo)
+mapa_color(X3g,  r"Mapa $\gamma_s$ (mm) 3 hits — eje $X$",    "mapa_X3_gamma",  desv_compartida=desv_grupo, param=r"$\gamma_s$")
+mapa_color(Z3g,  r"Mapa $\gamma_s$ (mm) 3 hits — eje $Z$",    "mapa_Z3_gamma",  desv_compartida=desv_grupo, param=r"$\gamma_s$")
+mapa_color(X4g1, r"Mapa $\gamma_1$ (mm) 4 hits — eje $X$",  "mapa_X4_gamma1", desv_compartida=desv_grupo, param=r"$\gamma_1$")
+mapa_color(X4g2, r"Mapa $\gamma_2$ (mm) 4 hits — eje $X$",  "mapa_X4_gamma2", desv_compartida=desv_grupo, param=r"$\gamma_2$")
+mapa_color(Z4g1, r"Mapa $\gamma_1$ (mm) 4 hits — eje $Z$",  "mapa_Z4_gamma1", desv_compartida=desv_grupo, param=r"$\gamma_1$")
+mapa_color(Z4g2, r"Mapa $\gamma_2$ (mm) 4 hits — eje $Z$",  "mapa_Z4_gamma2", desv_compartida=desv_grupo, param=r"$\gamma_2$")
 # p95 quedan sin escala compartida (magnitud distinta)
 mapa_color(X3p95, r"Mapa semiancho p95 (mm) 3 hits — eje $X$", "mapa_X3_p95")
 mapa_color(X4p95, r"Mapa semiancho p95 (mm) 4 hits — eje $X$", "mapa_X4_p95")

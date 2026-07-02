@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 import os
+import matplotlib.patheffects as pe
 
 BASE    = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                         '..', '..'))
@@ -84,7 +85,7 @@ def calcular_ns_grupo(lista_valores):
     if desv < 0.01: desv = 0.01
     return desv
 
-def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
+def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None, param=r"$\gamma$"):
     fig, axes = plt.subplots(1, 4, figsize=(20,5))
     fig.suptitle(rf"{titulo_base} — Mapa $D \times \theta$ para cada $\sigma_{{\text{{hit}}}}$" +"\n",
                  fontsize=15)
@@ -99,7 +100,7 @@ def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
             v_nom_s = valores[mask_nom][0]
         else:
             print(f"  AVISO: sin nominal para sigma={s} en {titulo_base}"); continue
-        ax.set_title(rf"$\sigma_{{\text{{hit}}}}$={s:.3f} mm" +"\n"+ rf"(Anchura nominal = {v_nom_s:.4f} mm)", fontsize=11)
+        ax.set_title(rf"$\sigma_{{\text{{hit}}}}$={s:.3f} mm" +"\n"+ rf"({param} nominal = {v_nom_s:.4f} mm)", fontsize=14)
 
         xs,ys,vs,ns = [],[],[],[]
         for d in D_vals:
@@ -130,12 +131,15 @@ def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None):
 
         sc=ax.scatter(xs,ys,c=ns_sat,cmap=CMAP,norm=norm,
                       s=800,zorder=3,edgecolors='gray',linewidths=0.5)
-        fig.colorbar(sc,ax=ax,label="Valor nominal normalizado",extend='both')
+        #fig.colorbar(sc,ax=ax,label="Valor nominal normalizado",extend='both')
+        cbar = fig.colorbar(sc,ax=ax,extend='both')
+        cbar.set_label("Valor nominal normalizado", fontsize=12)
 
         for xi,yi,vi,ni in zip(xs,ys,vs,ns):
             pct=(ni-1)*100#; sign='+' if pct>=0 else ''
             ax.text(xi,yi,f"{pct:.1f}%",ha='center',va='center',
-                    fontsize=7.0, fontweight='bold',color='white',zorder=4)
+                    fontsize=7.0, fontweight='bold',color='white',zorder=4,
+                    path_effects=[pe.Stroke(linewidth=1.5, foreground='black'), pe.Normal()])
 
         ax.set_xticks(D_vals); ax.set_xticklabels([f"{d:.0f}" for d in D_vals])
         ax.set_yticks(ang_vals); ax.set_yticklabels([f"{a:.0f}" for a in ang_vals])
@@ -206,10 +210,10 @@ desv_g1 = calcular_ns_grupo([X_g1, Z_g1])
 desv_g2 = calcular_ns_grupo([X_g2, Z_g2])
 
 # matriz de mapas D×theta para cada sigma
-matriz_mapas(X_g1, r"Mapas $\gamma_1\,\text{(mm)}$ eje X", "comb_X_g1", desv_compartida=desv_g1)
-matriz_mapas(X_g2, r"Mapas $\gamma_2\,\text{(mm)}$ eje X", "comb_X_g2", desv_compartida=desv_g2)
-matriz_mapas(Z_g1, r"Mapas $\gamma_1\,\text{(mm)}$ eje Z", "comb_Z_g1", desv_compartida=desv_g1)
-matriz_mapas(Z_g2, r"Mapas $\gamma_2\,\text{(mm)}$ eje Z", "comb_Z_g2", desv_compartida=desv_g2)
+matriz_mapas(X_g1, r"Mapas $\gamma_1\,\text{(mm)}$ eje X", "comb_X_g1", desv_compartida=desv_g1, param=r"$\gamma_1$")
+matriz_mapas(X_g2, r"Mapas $\gamma_2\,\text{(mm)}$ eje X", "comb_X_g2", desv_compartida=desv_g2, param=r"$\gamma_2$")
+matriz_mapas(Z_g1, r"Mapas $\gamma_1\,\text{(mm)}$ eje Z", "comb_Z_g1", desv_compartida=desv_g1, param=r"$\gamma_1$")
+matriz_mapas(Z_g2, r"Mapas $\gamma_2\,\text{(mm)}$ eje Z", "comb_Z_g2", desv_compartida=desv_g2, param=r"$\gamma_2$")
 
 # evolución vs sigma_hit
 evolucion_vs_sigma(X_g1, X_e1, r"Evolución $\gamma_1\,\text{(mm)}$ eje X", "comb_X_g1", r"$\gamma_1\,\text{(mm)}$")
