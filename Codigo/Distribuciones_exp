@@ -1,0 +1,124 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+CARPETA_DATOS = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Datos\Experimentales"
+CARPETA_SALIDA = r"C:\Users\pablo\OneDrive\Escritorio\FISICA\Cuarto Fisica\TFG\Plots\Experimentales\Histogramas"
+os.makedirs(CARPETA_SALIDA, exist_ok=True)
+
+N_BINS  = 100
+LIMITE  = 10.0   # mm — recorte para no mostrar outliers extremos
+
+# --------------------------------------------------
+# detectores con columna nhits: Einstein, Fermi y Fert
+# --------------------------------------------------
+archivos_nhits = {
+    'resx_einstein_nhits_P3': ('Einstein', r'$X$'),
+    'resy_einstein_nhits_P3': ('Einstein', r'$Y$'),
+    'resx_fermi_nhits_P3':    ('Fermi',    r'$X$'),
+    'resy_fermi_nhits_P3':    ('Fermi',    r'$Y$'),
+}
+
+# --------------------------------------------------
+# Fert — una sola columna (residuales combinados)
+# --------------------------------------------------
+archivos_fert = {
+    'resx_fert': ('Fert', r'$X$'),
+    'resy_fert': ('Fert', r'$Y$'),
+}
+
+def hacer_histograma(data, titulo, nombre_archivo, color='steelblue'):
+    """Histograma simple sin ajustes."""
+    data_plot = data[np.abs(data) <= LIMITE]
+    mu = np.mean(data_plot)
+    std = np.std(data_plot)
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.hist(data_plot, bins=N_BINS, color=color, alpha=0.7,
+            label=f"N={len(data_plot):,}\n" +  rf"$\mu$={mu:.3f} mm" + "\n" + rf"$\sigma$={std:.3f} mm")
+    ax.set_xlabel("Residual (mm)", fontsize=12)
+    ax.set_ylabel("Cuentas", fontsize=12)
+    ax.set_title(titulo, fontsize=13)
+    ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    ruta = os.path.join(CARPETA_SALIDA, f"{nombre_archivo}.png")
+    fig.savefig(ruta, dpi=200)
+    plt.close(fig)
+    print(f"Guardado: {nombre_archivo}.png")
+
+def hacer_histograma_nhits(data3, data4, titulo, nombre_archivo):
+    """Histograma separando 3 y 4 hits en el mismo plot."""
+    data3_plot = data3[np.abs(data3) <= LIMITE]
+    data4_plot = data4[np.abs(data4) <= LIMITE]
+    mu3 = np.mean(data3_plot); std3 = np.std(data3_plot)
+    mu4 = np.mean(data4_plot); std4 = np.std(data4_plot)
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.hist(data3_plot, bins=N_BINS, color='steelblue', alpha=0.6,
+            label=f"           N = {len(data3_plot):,}\n" +  rf"3 hits: $\mu$={mu3:.3f} mm" + "\n" + rf"           $\sigma$={std3:.3f} mm")
+    ax.hist(data4_plot, bins=N_BINS, color='salmon', alpha=0.6,
+            label=f"           N = {len(data4_plot):,}\n" +  rf"4 hits: $\mu$={mu4:.3f} mm" + "\n" + rf"           $\sigma$={std4:.3f} mm")
+    ax.set_xlabel("Residual (mm)", fontsize=12)
+    ax.set_ylabel("Cuentas", fontsize=12)
+    ax.set_title(titulo, fontsize=13)
+    ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    ruta = os.path.join(CARPETA_SALIDA, f"{nombre_archivo}_nhits.png")
+    fig.savefig(ruta, dpi=200)
+    plt.close(fig)
+    print(f"Guardado: {nombre_archivo}_nhits.png")
+
+# --------------------------------------------------
+# Einstein y Fermi — con y sin separacion nhits
+# --------------------------------------------------
+for nombre, (det, coord) in archivos_nhits.items():
+    ruta = os.path.join(CARPETA_DATOS, f"{nombre}.txt")
+    if not os.path.exists(ruta):
+        print(f"No encontrado: {ruta}")
+        continue
+
+    raw = np.loadtxt(ruta)
+    residuals_all = raw[:,0]
+    nhits_all     = raw[:,1].astype(int)
+
+    mask_valido = np.isfinite(residuals_all)
+    data_all = residuals_all[mask_valido]
+    nhits    = nhits_all[mask_valido]
+
+    data3 = data_all[nhits == 3]
+    data4 = data_all[nhits == 4]
+
+    titulo_base = rf"Detector {det} — eje {coord}"
+
+    # histograma combinado (todos los hits)
+    hacer_histograma(data_all,
+                     titulo_base,
+                     f"hist_{det.lower()}_{coord.strip('$')}",
+                     color='steelblue')
+
+    # histograma separando 3 y 4 hits
+    hacer_histograma_nhits(data3, data4,
+                           titulo_base + " (3 y 4 hits)",
+                           f"hist_{det.lower()}_{coord.strip('$')}")
+
+
+
+# --------------------------------------------------
+# Fert
+# --------------------------------------------------
+for nombre, (det, coord) in archivos_fert.items():
+    ruta = os.path.join(CARPETA_DATOS, f"{nombre}.txt")
+    if not os.path.exists(ruta):
+        print(f"No encontrado: {ruta}")
+        continue
+
+    data_all = np.loadtxt(ruta)
+    data_all = data_all[np.isfinite(data_all)]
+
+    titulo_base = rf"Detector {det} — eje {coord}"
+    hacer_histograma(data_all,
+                     titulo_base,
+                     f"hist_{det.lower()}_{coord.strip('$')}",
+                     color='steelblue')
+
+print("\nTodos los histogramas generados.")
