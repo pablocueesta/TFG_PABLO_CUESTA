@@ -112,12 +112,12 @@ def mapa_color(valores, titulo, nombre, desv_compartida=None, param=r"$\gamma$")
     ax.set_facecolor('#f5f5f5')
 
     sc = ax.scatter(xs, ys, c=ns_sat, cmap=CMAP, norm=norm,
-                    s=1200, zorder=3, edgecolors='gray', linewidths=0.5)
+                    s=2100, zorder=3, edgecolors='gray', linewidths=0.5)
 
     for xi, yi, vi, ni in zip(xs, ys, vs, ns):
         pct = (ni - 1) * 100
         ax.text(xi, yi, f"{pct:.1f}%", ha='center', va='center',
-                fontsize=7.5, fontweight='bold', color='white', zorder=4,
+                fontsize=11.5, fontweight='bold', color='white', zorder=4,
                 path_effects=[pe.Stroke(linewidth=1.5, foreground='black'), pe.Normal()])
 
     cbar = fig.colorbar(sc, ax=ax, extend='both')

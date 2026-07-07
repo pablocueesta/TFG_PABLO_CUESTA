@@ -130,7 +130,7 @@ def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None, param=
         ns_sat = np.clip(ns, 1-desv, 1+desv)
 
         sc=ax.scatter(xs,ys,c=ns_sat,cmap=CMAP,norm=norm,
-                      s=800,zorder=3,edgecolors='gray',linewidths=0.5)
+                      s=1500,zorder=3,edgecolors='gray',linewidths=0.5)
         #fig.colorbar(sc,ax=ax,label="Valor nominal normalizado",extend='both')
         cbar = fig.colorbar(sc,ax=ax,extend='both')
         cbar.set_label("Valor nominal normalizado", fontsize=12)
@@ -138,7 +138,7 @@ def matriz_mapas(valores, titulo_base, nombre_base, desv_compartida=None, param=
         for xi,yi,vi,ni in zip(xs,ys,vs,ns):
             pct=(ni-1)*100#; sign='+' if pct>=0 else ''
             ax.text(xi,yi,f"{pct:.1f}%",ha='center',va='center',
-                    fontsize=7.0, fontweight='bold',color='white',zorder=4,
+                    fontsize=10.5, fontweight='bold',color='white',zorder=4,
                     path_effects=[pe.Stroke(linewidth=1.5, foreground='black'), pe.Normal()])
 
         ax.set_xticks(D_vals); ax.set_xticklabels([f"{d:.0f}" for d in D_vals])
