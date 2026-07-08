@@ -107,7 +107,7 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
             p1, cov1 = np.polyfit(x_t1, y_t1, 1, w=1/e_t1, cov=True)
             xf1 = np.linspace(min(x_t1), 20, 200)
             ax1.plot(xf1, p1[0]*xf1+p1[1], color=color, linewidth=2, linestyle='-',
-                     label=f'Fit {etiq_latex[etiq]} (D≤20): a={p1[0]:.4f}±{np.sqrt(cov1[0,0]):.4f}')
+                     label=rf'Fit {etiq_latex[etiq]} (D≤20): a={p1[0]:.4f}±{np.sqrt(cov1[0,0]):.4f}')
             f_out.write(f"    a={p1[0]:.4f}+-{np.sqrt(cov1[0,0]):.4f}"
                         f", b={p1[1]:.4f}+-{np.sqrt(cov1[1,1]):.4f}\n")
 

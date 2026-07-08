@@ -1,0 +1,84 @@
+ESTIMACION DE RESOLUCION INTRINSECA - MODELO MULTIVARIABLE
+======================================================================
+Modelo: gamma = a0+a1*sigma+a2*D+a3*theta+a12*sigma*D+a13*sigma*theta+a23*D*theta
+D fijo = 13.0 cm (tramo D<=20cm)
+Correspondencia de ejes: X_exp<->Z_sim, Y_exp<->X_sim, Z_exp<->Y_sim
+
+
+==================================================
+Detector: EINSTEIN  Coord_exp: X  -> eje_sim: Z  Theta: 0°  D: 13.0cm
+N total: 5026215   N tras p95: 4774902
+Corte p95: [-4.9997, 4.8135] mm
+Std: 1.2670 mm  Mediana: -0.0151 mm
+
+Lorentz simple:  gamma = 0.2650 +- 0.0071 mm  chi2/ndf = 4326.93
+Doble Lorentz:   gamma1 = 0.1518 +- 0.0038 mm  gamma2 = 0.7269 +- 0.0279 mm  chi2/ndf = 504.42
+
+Estimacion sigma_hit (modelo multivariable, D=13cm):
+  [gamma1 (core)]: gamma_exp=0.1518+-0.0038  =>  sigma_hit = 1.5847 +- 0.0402 mm
+  [gamma2 (cola)]: gamma_exp=0.7269+-0.0279  =>  sigma_hit = 1.4343 +- 0.0556 mm  <-- RESULTADO ESPERADO (colas)
+
+==================================================
+Detector: EINSTEIN  Coord_exp: Y  -> eje_sim: X  Theta: 0°  D: 13.0cm
+N total: 5026215   N tras p95: 4774903
+Corte p95: [-5.1240, 4.8343] mm
+Std: 1.3125 mm  Mediana: 0.0048 mm
+
+Lorentz simple:  gamma = 0.3223 +- 0.0090 mm  chi2/ndf = 3702.96
+Doble Lorentz:   gamma1 = 0.1575 +- 0.0033 mm  gamma2 = 0.7505 +- 0.0173 mm  chi2/ndf = 302.72
+
+Estimacion sigma_hit (modelo multivariable, D=13cm):
+  [gamma1 (core)]: gamma_exp=0.1575+-0.0033  =>  sigma_hit = 1.7220 +- 0.0369 mm
+  [gamma2 (cola)]: gamma_exp=0.7505+-0.0173  =>  sigma_hit = 1.4731 +- 0.0343 mm  <-- RESULTADO ESPERADO (colas)
+
+==================================================
+Detector: FERMI  Coord_exp: X  -> eje_sim: Z  Theta: 0°  D: 13.0cm
+N total: 4606031   N tras p95: 4375729
+Corte p95: [-4.7454, 4.8003] mm
+Std: 1.3373 mm  Mediana: 0.0030 mm
+
+Lorentz simple:  gamma = 0.4295 +- 0.0117 mm  chi2/ndf = 2276.49
+Doble Lorentz:   gamma1 = 0.1773 +- 0.0028 mm  gamma2 = 0.8388 +- 0.0108 mm  chi2/ndf = 75.78
+
+Estimacion sigma_hit (modelo multivariable, D=13cm):
+  [gamma1 (core)]: gamma_exp=0.1773+-0.0028  =>  sigma_hit = 1.8554 +- 0.0301 mm
+  [gamma2 (cola)]: gamma_exp=0.8388+-0.0108  =>  sigma_hit = 1.6572 +- 0.0215 mm  <-- RESULTADO ESPERADO (colas)
+
+==================================================
+Detector: FERMI  Coord_exp: Y  -> eje_sim: X  Theta: 0°  D: 13.0cm
+N total: 4606031   N tras p95: 4375729
+Corte p95: [-4.8123, 5.0452] mm
+Std: 1.4301 mm  Mediana: 0.0169 mm
+
+Lorentz simple:  gamma = 0.4843 +- 0.0139 mm  chi2/ndf = 2438.31
+Doble Lorentz:   gamma1 = 0.1990 +- 0.0044 mm  gamma2 = 0.9773 +- 0.0180 mm  chi2/ndf = 70.46
+
+Estimacion sigma_hit (modelo multivariable, D=13cm):
+  [gamma1 (core)]: gamma_exp=0.1990+-0.0044  =>  sigma_hit = 2.1833 +- 0.0487 mm
+  [gamma2 (cola)]: gamma_exp=0.9773+-0.0180  =>  sigma_hit = 1.9221 +- 0.0357 mm  <-- RESULTADO ESPERADO (colas)
+
+==================================================
+Detector: FERT  Coord_exp: X  -> eje_sim: Z  Theta: 30°  D: 13.0cm
+N total: 3579516   N tras p95: 3400540
+Corte p95: [-6.3896, 6.0890] mm
+Std: 1.8636 mm  Mediana: -0.2249 mm
+
+Lorentz simple:  gamma = 0.5815 +- 0.0170 mm  chi2/ndf = 2441.27
+Doble Lorentz:   gamma1 = 0.4197 +- 0.0221 mm  gamma2 = 2.3112 +- 0.3948 mm  chi2/ndf = 473.68
+
+Estimacion sigma_hit (modelo multivariable, D=13cm):
+  [gamma1 (core)]: gamma_exp=0.4197+-0.0221  =>  sigma_hit = 4.4225 +- 0.2342 mm
+  [gamma2 (cola)]: gamma_exp=2.3112+-0.3948  =>  sigma_hit = 4.4012 +- 0.7540 mm  <-- RESULTADO ESPERADO (colas)
+
+==================================================
+Detector: FERT  Coord_exp: Y  -> eje_sim: X  Theta: 30°  D: 13.0cm
+N total: 3579516   N tras p95: 3400540
+Corte p95: [-4.4352, 4.6051] mm
+Std: 1.2826 mm  Mediana: 0.0171 mm
+
+Lorentz simple:  gamma = 0.4049 +- 0.0116 mm  chi2/ndf = 2112.61
+Doble Lorentz:   gamma1 = 0.1773 +- 0.0042 mm  gamma2 = 0.8625 +- 0.0193 mm  chi2/ndf = 227.27
+
+Estimacion sigma_hit (modelo multivariable, D=13cm):
+  [gamma1 (core)]: gamma_exp=0.1773+-0.0042  =>  sigma_hit = 1.9423 +- 0.0470 mm
+  [gamma2 (cola)]: gamma_exp=0.8625+-0.0193  =>  sigma_hit = 1.6314 +- 0.0367 mm  <-- RESULTADO ESPERADO (colas)

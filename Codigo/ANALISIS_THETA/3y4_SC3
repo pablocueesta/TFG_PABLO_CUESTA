@@ -101,16 +101,16 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
         if len(xm) >= 3:
             p, cov = np.polyfit(xm, ym, 1, w=1/em, cov=True)
             xf = np.linspace(min(xm), max(xm), 200)
-            label_fit = f'Fit {etiq_latex[etiq]} (0-50°): a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}' \
+            label_fit = rf'Fit {etiq_latex[etiq]} (0-50°): a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f}' \
                     if etiq == 'gamma2' else \
-                    f'Fit {etiq_latex[etiq]}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}'
+                    rf'Fit {etiq_latex[etiq]}: a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f}'
             ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2, label=label_fit)
             f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
                         f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
 
     #ax1.axvline(7.0, color='gray', linestyle=':', linewidth=1, label='D=d=7cm')
     ax1.set_ylabel("Anchuras Lorentz (mm)", fontsize=12); ax1.legend(fontsize=12); ax1.grid()
-    ax1.set_title(f"Anchuras distribuciones residuales combinadas vs Rotación", fontsize=14)
+    ax1.set_title(f"Anchuras distribuciones residuales combinadas vs Rotación en {titulo}", fontsize=14)
 
     # --- panel inferior: ancho del corte p95 vs D ---
     xc, yc = limpiar(Ang, p95_ancho)
@@ -127,7 +127,7 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
 
     #ax2.axvline(7.0, color='gray', linestyle=':', linewidth=1)
     ax2.set_xlabel(rf"$\theta$ (°)", fontsize=14); ax2.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=12)
-    ax2.set_title(f"Ventana de ajuste (semianchura del percentil 95) vs Rotación en {titulo}", fontsize=14)
+    ax2.set_title(f"Ventana de ajuste (semianchura del percentil 95) vs Rotación", fontsize=14)
     ax2.legend(fontsize=12); ax2.grid()
 
     plt.tight_layout()

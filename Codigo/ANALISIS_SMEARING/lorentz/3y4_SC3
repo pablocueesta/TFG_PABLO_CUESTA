@@ -94,7 +94,7 @@ def plot_comparacion(s_hit, gs,es, g1,e1, g2,e2, ge, chi2s,chi2dl, p95_ancho, ti
             a,b,ea,eb = res
             xf = np.linspace(min(x),max(x),200)
             ax1.plot(xf,a*xf+b,color=color,linewidth=2,
-                     label=f'Fit {etiq_latex[etiq]}: a={a:.3f}+-{ea:.3f}')
+                     label=rf'Fit {etiq_latex[etiq]}: a={a:.3f}$\pm${ea:.3f}')
             f_out.write(f"{etiq}: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
     ax1.set_ylabel("Anchuras Lorentz (mm)", fontsize=12); ax1.legend(fontsize=11); ax1.grid()
 
