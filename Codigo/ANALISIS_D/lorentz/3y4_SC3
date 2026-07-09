@@ -107,7 +107,7 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
             p1, cov1 = np.polyfit(x_t1, y_t1, 1, w=1/e_t1, cov=True)
             xf1 = np.linspace(min(x_t1), 20, 200)
             ax1.plot(xf1, p1[0]*xf1+p1[1], color=color, linewidth=2, linestyle='-',
-                     label=rf'Fit {etiq_latex[etiq]} (D≤20): a={p1[0]:.4f}±{np.sqrt(cov1[0,0]):.4f}')
+                     label=rf'Fit {etiq_latex[etiq]} (D≤20): a={p1[0]:.4f}±{np.sqrt(cov1[0,0]):.4f} mm/cm')
             f_out.write(f"    a={p1[0]:.4f}+-{np.sqrt(cov1[0,0]):.4f}"
                         f", b={p1[1]:.4f}+-{np.sqrt(cov1[1,1]):.4f}\n")
 
@@ -116,13 +116,13 @@ def plot_D_comb(D, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
             p2, cov2 = np.polyfit(x_t2, y_t2, 1, w=1/e_t2, cov=True)
             xf2 = np.linspace(20, max(x_t2), 200)
             ax1.plot(xf2, p2[0]*xf2+p2[1], color=color, linewidth=2, linestyle='--',
-                     label=f'Fit {etiq_latex[etiq]} (D≥20): a={p2[0]:.4f}±{np.sqrt(cov2[0,0]):.4f}')
+                     label=f'Fit {etiq_latex[etiq]} (D≥20): a={p2[0]:.4f}±{np.sqrt(cov2[0,0]):.4f} mm/cm')
             f_out.write(f"    a={p2[0]:.4f}+-{np.sqrt(cov2[0,0]):.4f}"
                         f", b={p2[1]:.4f}+-{np.sqrt(cov2[1,1]):.4f}\n")
 
     ax1.axvline(7.0,  color='gray',   linestyle=':', linewidth=1, label='D=d=7cm')
     ax1.axvline(20.0, color='black',  linestyle=':', linewidth=1, label='D=20cm')
-    ax1.set_ylabel("Anchuras Lorentz (mm)", fontsize=12); ax1.legend(fontsize=11, loc='upper left', bbox_to_anchor=(0.5, 0.8)); ax1.grid()
+    ax1.set_ylabel("Anchuras Lorentz (mm)", fontsize=12); ax1.legend(fontsize=11, loc='upper left', bbox_to_anchor=(0.43, 0.8)); ax1.grid()
     ax1.set_title(f"Anchuras distribuciones residuales combinadas vs D en {titulo}", fontsize=14)
 
     # --- panel inferior: ancho del corte p95 vs D ---

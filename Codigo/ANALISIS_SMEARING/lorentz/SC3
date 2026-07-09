@@ -70,7 +70,7 @@ def plot_3hits(s_hit, g, e, p95_ancho, titulo, nombre):
         a,b,ea,eb = res
         xf = np.linspace(min(x),max(x),200)
         ax1.plot(xf,a*xf+b,color='blue',linewidth=2,
-                 label=rf'Fit: a={a:.3f}$\pm${ea:.3f}, b={b:.4f}$\pm${eb:.4f}')
+                 label=rf'Fit: a={a:.3f}$\pm${ea:.3f}, b={b:.4f}$\pm${eb:.4f} mm')
         f_out.write(f"gamma: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
     ax1.set_ylabel(rf"$\gamma_s$ (mm)", fontsize=14); ax1.legend(fontsize=12); ax1.grid()
 

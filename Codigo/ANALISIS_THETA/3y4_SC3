@@ -101,9 +101,9 @@ def plot_Ang_comb(Ang, gs, es, g1, e1, g2, e2, ge, p95_ancho, titulo, nombre):
         if len(xm) >= 3:
             p, cov = np.polyfit(xm, ym, 1, w=1/em, cov=True)
             xf = np.linspace(min(xm), max(xm), 200)
-            label_fit = rf'Fit {etiq_latex[etiq]} (0-50°): a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f}' \
+            label_fit = rf'Fit {etiq_latex[etiq]} (0-50°): a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f} mm/°' \
                     if etiq == 'gamma2' else \
-                    rf'Fit {etiq_latex[etiq]}: a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f}'
+                    rf'Fit {etiq_latex[etiq]}: a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f} mm/°'
             ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2, label=label_fit)
             f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
                         f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")

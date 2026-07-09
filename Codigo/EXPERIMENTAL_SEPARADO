@@ -204,7 +204,7 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
         ax3.axvline(p95_hi3, color='magenta', linewidth=1.5)
         ax3.set_yscale('log')
         ax3.set_xlabel("Residual (mm)", fontsize=12); ax3.set_ylabel("Cuentas (log)", fontsize=12)
-        ax3.set_title("Distribución 3 hits — Lorentz simple\n(percentil 95%)", fontsize=14)
+        ax3.set_title("Distribución 3 hits — Lorentz simple (percentil 95%)", fontsize=14)
         ax3.legend(fontsize=10); ax3.grid(which='both', linestyle='--', alpha=0.5)
 
         # panel central: histograma 4 hits
@@ -228,7 +228,7 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
         ax4.set_yscale('log')
         ax4.set_xlabel("Residual (mm)", fontsize=12)
         ax4.set_ylabel("Cuentas (log)", fontsize=12)
-        ax4.set_title("Distribución 4 hits — Doble Lorentz\n(percentil 95%)", fontsize=14)
+        ax4.set_title("Distribución 4 hits — Doble Lorentz (percentil 95%)", fontsize=14)
         ax4.legend(fontsize=9); ax4.grid(which='both', linestyle='--', alpha=0.5)
 
         # panel derecho: curvas del modelo + interpolacion (igual que EXPERIMENTAL)
@@ -284,7 +284,7 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
         ax_mod.set_xlim(left=0, right=sigma_max)
         ax_mod.set_ylim(bottom=0)
         ax_mod.set_xlabel(rf"$\sigma_{{hit}}\,$(mm)", fontsize=14); ax_mod.set_ylabel("Anchuras Lorentz (mm)", fontsize=12)
-        ax_mod.set_title(rf"Interpolación inversa: $\gamma\rightarrow\sigma_{{hit}}$  (D={D_FIJO}cm, θ={theta}°)", fontsize=14)
+        ax_mod.set_title(rf"Extrapolación inversa: $\gamma\rightarrow\sigma_{{hit}}$  (D={D_FIJO}cm, θ={theta}°)", fontsize=14)
         ax_mod.legend(fontsize=10); ax_mod.grid()
 
         plt.tight_layout()

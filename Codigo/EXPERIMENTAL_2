@@ -253,7 +253,7 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
         ax.set_xlabel(r"$\sigma_{\text{hit}}$ (mm)", fontsize=16)
         ax.set_ylabel(r"Anchuras Lorentz (mm)", fontsize=14)
         ax.set_title(rf"Extrapolación inversa: $\gamma\rightarrow\sigma_{{hit}}$  (D={D_FIJO}cm, θ={theta}°)", fontsize=16)
-        ax.legend(fontsize=13)
+        ax.legend(fontsize=14)
         ax.grid()
 
         # ---- PLOT 2: histograma experimental con fits ----
@@ -283,12 +283,12 @@ with open(ARCHIVO_RESUMEN, 'w', encoding='utf-8') as f_res:
         ax2.set_yscale('log')
         ax2.set_xlabel("Residual (mm)", fontsize=14)
         ax2.set_ylabel("Cuentas (log)", fontsize=14)
-        ax2.set_title("Distribución 3 y 4 hits - Doble Lorentz\n(percentil 95%)", fontsize=16)
-        ax2.legend(fontsize=13)
+        ax2.set_title("Distribución 3 y 4 hits - Doble Lorentz (percentil 95%)", fontsize=16)
+        ax2.legend(fontsize=14, loc='upper right')
         ax2.grid(which='both', linestyle='--', alpha=0.5)
 
         plt.tight_layout()
-        fig.savefig(os.path.join(CARPETA_SALIDA, f"{nombre}_resolucion_multivariable2.png"), dpi=150)
+        fig.savefig(os.path.join(CARPETA_SALIDA, f"{nombre}_resolucion_multivariable2.png"), dpi=350)
         plt.close(fig)
         print(f"  Plot guardado: {nombre}_resolucion_multivariable2.png")
 

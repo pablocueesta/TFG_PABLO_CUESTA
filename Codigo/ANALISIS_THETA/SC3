@@ -78,7 +78,7 @@ def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
         p, cov = np.polyfit(x50, y50, 1, w=1/e50, cov=True)
         xf = np.linspace(min(x50), max(x50), 200)
         ax1.plot(xf, p[0]*xf+p[1], color='blue', linewidth=2,
-            label=rf"Fit $\gamma_s$ (0-50°): a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}")
+            label=rf"Fit $\gamma_s$ (0-50°): a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f} mm/°")
         f_out.write(f"3hits gamma: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
             f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
 
@@ -91,12 +91,12 @@ def plot_separado(ang, g3, e3, g1, e1, g2, e2, ge,
             p, cov = np.polyfit(x, y, 1, w=1/e, cov=True)
             xf = np.linspace(min(x), max(x), 200)
             ax1.plot(xf, p[0]*xf+p[1], color=color, linewidth=2,
-                label=rf'Fit {etiq_latex[etiq]}: a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f}')
+                label=rf'Fit {etiq_latex[etiq]}: a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f} mm/°')
             f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
                 f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
 
     
-    ax1.set_ylabel("Anchuras Lorentz (mm)", fontsize=12); ax1.legend(fontsize=12, loc='upper left', bbox_to_anchor=(0.5, 0.8)); ax1.grid()
+    ax1.set_ylabel("Anchuras Lorentz (mm)", fontsize=12); ax1.legend(fontsize=12, loc='upper left', bbox_to_anchor=(0.48, 0.8)); ax1.grid()
     ax1.set_title(f"Anchuras distribuciones residuales separadas vs Rotación en {titulo}", fontsize=14)
 
     # --- panel 2: semiancho corte p95 vs ang (3 hits y 4 hits) ---
