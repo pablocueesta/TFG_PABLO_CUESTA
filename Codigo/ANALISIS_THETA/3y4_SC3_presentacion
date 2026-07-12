@@ -1,0 +1,109 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+carpeta  = os.path.join(BASE, "Datos", "Estudio", "Ang_Combinado_Lorentz")
+out_dir  = os.path.join(BASE, "Datos", "Estudio", "Ang_Combinado_Lorentz", "plots_Ang")
+os.makedirs(out_dir, exist_ok=True)
+
+data = np.loadtxt(os.path.join(carpeta, "todos_los_angulos.txt"), skiprows=1)
+data = data[np.argsort(data[:,0])]
+data = data[data[:,0] >= 0.0]
+
+Ang     = data[:,0]
+X_gs    = data[:,1];  X_es  = data[:,2]
+X_g1    = data[:,3];  X_e1  = data[:,4]
+X_g2    = data[:,5];  X_e2  = data[:,6]
+X_ge    = data[:,7]
+X_chi2s = data[:,8];  X_chi2dl = data[:,9]
+X_p95lo = data[:,10]; X_p95hi = data[:,11]
+Z_gs    = data[:,12]; Z_es  = data[:,13]
+Z_g1    = data[:,14]; Z_e1  = data[:,15]
+Z_g2    = data[:,16]; Z_e2  = data[:,17]
+Z_ge    = data[:,18]
+Z_chi2s = data[:,19]; Z_chi2dl = data[:,20]
+Z_p95lo = data[:,21]; Z_p95hi = data[:,22]
+
+X_p95_ancho = (X_p95hi - X_p95lo) / 2
+Z_p95_ancho = (Z_p95hi - Z_p95lo) / 2
+
+etiq_latex = {
+    'gamma1': r'$\gamma_1$ (core)',
+    'gamma2': r'$\gamma_2$ (cola)'
+}
+
+def limpiar(x, y, e=None):
+    if e is not None:
+        mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<5)
+        return x[mask], y[mask], e[mask]
+    mask = np.isfinite(x)&np.isfinite(y)&(y>0)
+    return x[mask], y[mask]
+
+f_out = open(os.path.join(carpeta, "pendientes_angulos.txt"), "w", encoding="utf-8")
+
+def plot_Ang_anchuras(Ang, g1, e1, g2, e2, titulo, nombre):
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    x1, y1, ee1 = limpiar(Ang, g1, e1)
+    x2, y2, ee2 = limpiar(Ang, g2, e2)
+
+    ax.errorbar(x1, y1, yerr=ee1, fmt='s', color='blue', capsize=3, label=etiq_latex['gamma1'])
+    ax.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',  capsize=3, label=etiq_latex['gamma2'])
+
+    f_out.write(f"\n--- {titulo} ---\n")
+    for (x, y, e, color, etiq) in [(x1, y1, ee1, 'blue', 'gamma1'),
+                                    (x2, y2, ee2, 'red',  'gamma2')]:
+        mask = x <= 50 if etiq == 'gamma2' else np.ones(len(x), dtype=bool)
+        xm, ym, em = x[mask], y[mask], e[mask]
+        if len(xm) >= 3:
+            p, cov = np.polyfit(xm, ym, 1, w=1/em, cov=True)
+            xf = np.linspace(min(xm), max(xm), 200)
+            label_fit = (rf'Fit {etiq_latex[etiq]} (0–50°): a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f} mm/°'
+                         if etiq == 'gamma2' else
+                         rf'Fit {etiq_latex[etiq]}: a={p[0]:.4f}$\pm${np.sqrt(cov[0,0]):.4f} mm/°')
+            ax.plot(xf, p[0]*xf+p[1], color=color, linewidth=2, label=label_fit)
+            f_out.write(f"{etiq}: a={p[0]:.4f}+-{np.sqrt(cov[0,0]):.4f}"
+                        f", b={p[1]:.4f}+-{np.sqrt(cov[1,1]):.4f}\n")
+
+    ax.set_xlabel(rf"$\theta$ (°)", fontsize=13)
+    ax.set_ylabel("Anchuras Lorentz (mm)", fontsize=13)
+    ax.set_title(f"Anchuras distribuciones residuales combinadas vs rotación en {titulo}", fontsize=14)
+    ax.legend(fontsize=12)
+    ax.grid()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{nombre}_presentacion.png"), dpi=200)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+def plot_Ang_percentil(Ang, p95_ancho, titulo, nombre):
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    xc, yc = limpiar(Ang, p95_ancho)
+    ax.plot(xc, yc, 'D-', color='magenta', linewidth=2,
+            label='Semianchura del percentil 95 (mm)')
+
+    ax.set_xlabel(rf"$\theta$ (°)", fontsize=13)
+    ax.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=13)
+    ax.set_title(f"Ventana de ajuste (semianchura del percentil 95) vs rotación en {titulo}", fontsize=14)
+    ax.legend(fontsize=12)
+    ax.grid()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{nombre}_p95_presentacion.png"), dpi=200)
+    plt.close()
+    print(f"Guardado: {nombre}_p95.png")
+
+# Anchuras
+plot_Ang_anchuras(Ang, X_g1, X_e1, X_g2, X_e2, "X", "Ang_X_combinado")
+plot_Ang_anchuras(Ang, Z_g1, Z_e1, Z_g2, Z_e2, "Z", "Ang_Z_combinado")
+
+# Percentil 95 por separado
+plot_Ang_percentil(Ang, X_p95_ancho, "X", "Ang_X_combinado")
+plot_Ang_percentil(Ang, Z_p95_ancho, "Z", "Ang_Z_combinado")
+
+f_out.close()
+print(f"\nPendientes en: {carpeta}/pendientes_angulos.txt")

@@ -1,0 +1,115 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+
+data = np.loadtxt(os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz", "todos_los_sigmas.txt"), skiprows=1)
+
+s_hit    = data[:,0]
+X_gs     = data[:,1];  X_es    = data[:,2];  X_chi2s  = data[:,3]
+X_g1     = data[:,4];  X_e1    = data[:,5]
+X_g2     = data[:,6];  X_e2    = data[:,7]
+X_ge     = data[:,8]
+X_chi2dl = data[:,9]
+X_p95_lo = data[:,10]; X_p95_hi= data[:,11]
+Z_gs     = data[:,12]; Z_es    = data[:,13]; Z_chi2s  = data[:,14]
+Z_g1     = data[:,15]; Z_e1    = data[:,16]
+Z_g2     = data[:,17]; Z_e2    = data[:,18]
+Z_ge     = data[:,19]
+Z_chi2dl = data[:,20]
+Z_p95_lo = data[:,21]; Z_p95_hi= data[:,22]
+
+X_p95_ancho = (X_p95_hi - X_p95_lo) / 2
+Z_p95_ancho = (Z_p95_hi - Z_p95_lo) / 2
+
+etiq_latex = {
+    'gamma_simple': r'$\gamma_s$',
+    'gamma1': r'$\gamma_1$ (core)',
+    'gamma2': r'$\gamma_2$ (cola)'
+}
+
+def limpiar(x, y, e=None):
+    if e is not None:
+        mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<2.0)
+        return x[mask],y[mask],e[mask]
+    mask = np.isfinite(x)&np.isfinite(y)&(y>0)
+    return x[mask],y[mask]
+
+def fit_lineal(x,y,e):
+    x,y,e = limpiar(x,y,e)
+    if len(x)<3: return None
+    p,cov = np.polyfit(x,y,1,w=1/e,cov=True)
+    return p[0],p[1],np.sqrt(cov[0,0]),np.sqrt(cov[1,1])
+
+out_dir = os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz", "plots_sigmas")
+os.makedirs(out_dir, exist_ok=True)
+
+f_out = open(os.path.join(BASE, "Datos", "Estudio", "Combinado_Lorentz", "pendientes.txt"), "w", encoding="utf-8")
+
+def plot_anchuras(s_hit, gs, es, g1, e1, g2, e2, titulo, nombre):
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    fig.suptitle(titulo, fontsize=14)
+
+    #xs, ys, ees = limpiar(s_hit, gs, es)
+    x1, y1, ee1 = limpiar(s_hit, g1, e1)
+    x2, y2, ee2 = limpiar(s_hit, g2, e2)
+
+    #ax.errorbar(xs, ys, yerr=ees, fmt='o', color='orange', capsize=3, label=r"$\gamma_s$ (Lorentz simple)")
+    ax.errorbar(x1, y1, yerr=ee1, fmt='o', color='blue',   capsize=3, label=r"$\gamma_1$ (core)")
+    ax.errorbar(x2, y2, yerr=ee2, fmt='s', color='red',    capsize=3, label=r"$\gamma_2$ (cola)")
+
+    f_out.write(f"\n--- {titulo} ---\n")
+    for (x, y, e, color, etiq) in [#(xs, ys, ees, 'orange', 'gamma_simple'),
+                                    (x1, y1, ee1, 'blue',   'gamma1'),
+                                    (x2, y2, ee2, 'red',    'gamma2')]:
+        res = fit_lineal(x, y, e)
+        if res:
+            a, b, ea, eb = res
+            xf = np.linspace(min(x), max(x), 200)
+            ax.plot(xf, a*xf+b, color=color, linewidth=2,
+                    label=rf'Fit {etiq_latex[etiq]}: a={a:.3f}$\pm${ea:.3f}')
+            f_out.write(f"{etiq}: a={a:.4f}+-{ea:.4f}, b={b:.4f}+-{eb:.4f}\n")
+
+    ax.set_xlabel(rf"$\sigma_{{\text{{hit}}}}$ (mm)", fontsize=13)
+    ax.set_ylabel("Anchuras Lorentz (mm)", fontsize=13)
+    ax.legend(fontsize=11)
+    ax.grid()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{nombre}_presentacion.png"), dpi=200)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+def plot_smearing_percentil(s_hit, p95_ancho, titulo, nombre):
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    xc, yc = limpiar(s_hit, p95_ancho)
+    ax.plot(xc, yc, 'D-', color='magenta', linewidth=2,
+            label='Semianchura del percentil 95 (mm)')
+
+    ax.set_xlabel(rf"$\sigma_{{\text{{hit}}}}$ (mm)", fontsize=13)
+    ax.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=13)
+    ax.set_title(f"Ventana de ajuste (semianchura del percentil 95) vs smearing en {titulo}", fontsize=14)
+    ax.legend(fontsize=12)
+    ax.grid()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{nombre}_p95_presentacion.png"), dpi=200)
+    plt.close()
+    print(f"Guardado: {nombre}_p95.png")
+
+# Anchuras
+plot_anchuras(s_hit, X_gs, X_es, X_g1, X_e1, X_g2, X_e2,
+              "Anchura distribuciones residuales vs smearing en X", "combinado_X")
+plot_anchuras(s_hit, Z_gs, Z_es, Z_g1, Z_e1, Z_g2, Z_e2,
+              "Anchura distribuciones residuales vs smearing en Z", "combinado_Z")
+
+# Percentil 95 por separado
+plot_smearing_percentil(s_hit, X_p95_ancho, "X", "combinado_X")
+plot_smearing_percentil(s_hit, Z_p95_ancho, "Z", "combinado_Z")
+
+f_out.close()
+print("\nPendientes en pendientes.txt")

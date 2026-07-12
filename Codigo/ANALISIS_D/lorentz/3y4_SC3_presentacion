@@ -1,0 +1,126 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+carpeta  = os.path.join(BASE, "Datos", "Estudio", "D_Combinado_Lorentz")
+out_dir  = os.path.join(BASE, "Datos", "Estudio", "D_Combinado_Lorentz", "plots_D")
+os.makedirs(out_dir, exist_ok=True)
+
+data = np.loadtxt(os.path.join(carpeta, "todos_los_D.txt"), skiprows=1)
+data = data[np.argsort(data[:,0])]
+data = data[data[:,0] >= 7.0]
+
+D       = data[:,0]
+X_gs    = data[:,1];  X_es  = data[:,2]
+X_g1    = data[:,3];  X_e1  = data[:,4]
+X_g2    = data[:,5];  X_e2  = data[:,6]
+X_ge    = data[:,7]
+X_chi2s = data[:,8];  X_chi2dl = data[:,9]
+X_p95lo = data[:,10]; X_p95hi = data[:,11]
+Z_gs    = data[:,12]; Z_es  = data[:,13]
+Z_g1    = data[:,14]; Z_e1  = data[:,15]
+Z_g2    = data[:,16]; Z_e2  = data[:,17]
+Z_ge    = data[:,18]
+Z_chi2s = data[:,19]; Z_chi2dl = data[:,20]
+Z_p95lo = data[:,21]; Z_p95hi = data[:,22]
+
+X_p95_ancho = (X_p95hi - X_p95lo) / 2
+Z_p95_ancho = (Z_p95hi - Z_p95lo) / 2
+
+etiq_latex = {
+    'gamma1': r'$\gamma_1$ (core)',
+    'gamma2': r'$\gamma_2$ (cola)'
+}
+
+def limpiar(x, y, e=None):
+    if e is not None:
+        mask = np.isfinite(x)&np.isfinite(y)&np.isfinite(e)&(e>0)&(y>0)&(y<5)
+        return x[mask], y[mask], e[mask]
+    mask = np.isfinite(x)&np.isfinite(y)&(y>0)
+    return x[mask], y[mask]
+
+f_out = open(os.path.join(carpeta, "pendientes_D.txt"), "w", encoding="utf-8")
+
+def plot_D_anchuras(D, g1, e1, g2, e2, titulo, nombre):
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    x1, y1, ee1 = limpiar(D, g1, e1)
+    x2, y2, ee2 = limpiar(D, g2, e2)
+
+    ax.errorbar(x1, y1, yerr=ee1, fmt='s', color='blue', capsize=3, label=etiq_latex['gamma1'])
+    ax.errorbar(x2, y2, yerr=ee2, fmt='^', color='red',  capsize=3, label=etiq_latex['gamma2'])
+
+    f_out.write(f"\n--- {titulo} ---\n")
+    for (x, y, e, color, etiq) in [
+        (x1, y1, ee1, 'blue', 'gamma1'),
+        (x2, y2, ee2, 'red',  'gamma2'),
+    ]:
+        mask1 = x <= 20
+        x_t1, y_t1, e_t1 = x[mask1], y[mask1], e[mask1]
+        mask2 = x >= 20
+        x_t2, y_t2, e_t2 = x[mask2], y[mask2], e[mask2]
+
+        f_out.write(f"\n  {etiq} — tramo D<=20cm:\n")
+        if len(x_t1) >= 2:
+            p1, cov1 = np.polyfit(x_t1, y_t1, 1, w=1/e_t1, cov=True)
+            xf1 = np.linspace(min(x_t1), 20, 200)
+            ax.plot(xf1, p1[0]*xf1+p1[1], color=color, linewidth=2, linestyle='-',
+                    label=rf'Fit {etiq_latex[etiq]} (D≤20): a={p1[0]:.4f}±{np.sqrt(cov1[0,0]):.4f} mm/cm')
+            f_out.write(f"    a={p1[0]:.4f}+-{np.sqrt(cov1[0,0]):.4f}"
+                        f", b={p1[1]:.4f}+-{np.sqrt(cov1[1,1]):.4f}\n")
+
+        f_out.write(f"  {etiq} — tramo D>=20cm:\n")
+        if len(x_t2) >= 2:
+            p2, cov2 = np.polyfit(x_t2, y_t2, 1, w=1/e_t2, cov=True)
+            xf2 = np.linspace(20, max(x_t2), 200)
+            ax.plot(xf2, p2[0]*xf2+p2[1], color=color, linewidth=2, linestyle='--',
+                    label=rf'Fit {etiq_latex[etiq]} (D≥20): a={p2[0]:.4f}±{np.sqrt(cov2[0,0]):.4f} mm/cm')
+            f_out.write(f"    a={p2[0]:.4f}+-{np.sqrt(cov2[0,0]):.4f}"
+                        f", b={p2[1]:.4f}+-{np.sqrt(cov2[1,1]):.4f}\n")
+
+    ax.axvline(7.0,  color='gray',  linestyle=':', linewidth=1, label='D=d=7 cm')
+    ax.axvline(20.0, color='black', linestyle=':', linewidth=1, label='D=20 cm')
+    ax.set_xlabel("D (cm)", fontsize=13)
+    ax.set_ylabel("Anchuras Lorentz (mm)", fontsize=13)
+    ax.set_title(f"Anchuras distribuciones residuales combinadas vs D en {titulo}", fontsize=14)
+    ax.legend(fontsize=11, loc='upper left', bbox_to_anchor=(0.43, 0.8))
+    ax.grid()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{nombre}_presentacion.png"), dpi=200)
+    plt.close()
+    print(f"Guardado: {nombre}.png")
+
+def plot_D_percentil(D, p95_ancho, titulo, nombre):
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    xc, yc = limpiar(D, p95_ancho)
+    ax.plot(xc, yc, 'D-', color='magenta', linewidth=2,
+            label='Semianchura del percentil 95 (mm)')
+
+    ax.axvline(7.0,  color='gray',  linestyle=':', linewidth=1, label='D=d=7 cm')
+    ax.axvline(20.0, color='black', linestyle=':', linewidth=1, label='D=20 cm')
+    ax.set_xlabel("D (cm)", fontsize=13)
+    ax.set_ylabel("Semianchura del percentil 95 (mm)", fontsize=13)
+    ax.set_title(f"Ventana de ajuste (semianchura del percentil 95) vs D en {titulo}", fontsize=14)
+    ax.legend(fontsize=12)
+    ax.grid()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{nombre}_p95_presentacion.png"), dpi=200)
+    plt.close()
+    print(f"Guardado: {nombre}_p95.png")
+
+# Anchuras
+plot_D_anchuras(D, X_g1, X_e1, X_g2, X_e2, "X", "D_X_combinado")
+plot_D_anchuras(D, Z_g1, Z_e1, Z_g2, Z_e2, "Z", "D_Z_combinado")
+
+# Percentil 95 por separado
+plot_D_percentil(D, X_p95_ancho, "X", "D_X_combinado")
+plot_D_percentil(D, Z_p95_ancho, "Z", "D_Z_combinado")
+
+f_out.close()
+print(f"\nPendientes en: {carpeta}/pendientes_D.txt")
